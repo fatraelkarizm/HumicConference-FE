@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router'; 
-import { EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { EnvelopeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { loginUser } from '@/lib/LoginApi'; 
 import type { LoginPayload } from '@/types/auth'; 
 
@@ -12,7 +12,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  // State untuk loading dan pesan error
+  // PERUBAHAN: State baru untuk visibilitas password
+  const [showPassword, setShowPassword] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +37,7 @@ export default function LoginPage() {
   };
 
   return (
-     // @message: halaman login akan fetching data dari backend 
+    // @message: halaman login akan fetching data dari backend 
     <main className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="flex w-full max-w-5xl mx-4 bg-white rounded-2xl shadow-lg overflow-hidden">
 
@@ -63,11 +65,9 @@ export default function LoginPage() {
           </h2>
 
           {/* Form */}
-
           <form onSubmit={handleSubmit}>
 
-          {/* Email Field */}
-
+            {/* Email Field */}
             <div className="mb-4">
               <label htmlFor="email" className="block text-gray-700 text-sm font-semibold mb-2">Email</label>
               <div className="relative">
@@ -79,26 +79,33 @@ export default function LoginPage() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pr-10 pl-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-[#64748B] placeholder:text-[#64748B placeholder:opacity-50"
+                  className="w-full pr-10 pl-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-[#64748B] placeholder:text-[#64748B] placeholder:opacity-50"
                   required
                 />
               </div>
             </div>
 
             {/* Password Field */}
-
             <div className="mb-6">
               <label htmlFor="password" className="block text-gray-700 text-sm font-semibold mb-2">Password</label>
               <div className="relative">
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <LockClosedIcon className="h-5 w-5 text-gray-400" />
+                <div 
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5 text-gray-400" />
+                  )}
                 </div>
                 <input
-                  type="password" id="password" name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  id="password" name="password"
                   placeholder="6+ Characters, 1 Capital letter"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pr-10 pl-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-[#64748B] placeholder:text-[#64748B] placeholder:opacity-30"
+                  className="w-full pr-10 pl-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-[#64748B] placeholder:text-[#64748B] placeholder:opacity-50"
                   required
                 />
               </div>
