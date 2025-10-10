@@ -19,8 +19,7 @@ export interface LoginPayload {
   password: string;
 }
 
-// Tipe data yang ada di dalam field "data" saat login berhasil
-// PENTING: Saya tambahkan 'token' di sini berdasarkan asumsi umum.
+// Tipe data yang diterima dari backend saat login
 export interface LoginData {
   user: User;
   token: string; 
@@ -35,7 +34,7 @@ export interface ApiResponse<T> {
   data: T;
   errors: any | null;
 }
-
+// Tipe untuk konteks autentikasi
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
