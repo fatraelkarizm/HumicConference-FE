@@ -1,20 +1,25 @@
-import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/router'; 
-import { EnvelopeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import { loginUser } from '@/lib/LoginApi'; 
-import type { LoginPayload } from '@/types/auth'; 
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation"; // UBAH: Gunakan dari 'next/navigation'
+import {
+  EnvelopeIcon,
+  EyeIcon,
+  EyeSlashIcon,
+} from "@heroicons/react/24/outline";
+import { loginUser } from "@/lib/LoginApi";
+import type { LoginPayload } from "@/types/auth";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth(); // Ambil fungsi login dari context
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  
-  // PERUBAHAN: State baru untuk visibilitas password
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,10 +30,8 @@ export default function LoginPage() {
 
     try {
       const payload: LoginPayload = { email, password };
-      const data = await loginUser(payload);
-      console.log('Login success:', data);
-      router.push('/dashboard');
-
+      const userData = await loginUser(payload);
+      login(userData);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -37,10 +40,9 @@ export default function LoginPage() {
   };
 
   return (
-    // @message: halaman login akan fetching data dari backend 
+    // @message: halaman login akan fetching data dari backend
     <main className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="flex w-full max-w-5xl mx-4 bg-white rounded-2xl shadow-lg overflow-hidden">
-
         {/* Kolom Kiri (Ilustrasi) */}
         <div className="hidden md:flex flex-col items-center justify-center w-1/2 p-12 bg-white text-center">
           <h1 className="text-4xl font-bold text-gray-800 mb-3">
@@ -52,7 +54,9 @@ export default function LoginPage() {
           <Image
             src="/Humic-Login.svg"
             alt="Person logging into a system"
-            width={350} height={350} priority
+            width={350}
+            height={350}
+            priority
             className="object-contain"
           />
         </div>
@@ -66,16 +70,22 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-
             {/* Email Field */}
             <div className="mb-4">
-              <label htmlFor="email" className="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+              <label
+                htmlFor="email"
+                className="block text-gray-700 text-sm font-semibold mb-2"
+              >
+                Email
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <EnvelopeIcon className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="email" id="email" name="email"
+                  type="email"
+                  id="email"
+                  name="email"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -87,9 +97,14 @@ export default function LoginPage() {
 
             {/* Password Field */}
             <div className="mb-6">
-              <label htmlFor="password" className="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+              <label
+                htmlFor="password"
+                className="block text-gray-700 text-sm font-semibold mb-2"
+              >
+                Password
+              </label>
               <div className="relative">
-                <div 
+                <div
                   className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer"
                   onClick={() => setShowPassword(!showPassword)}
                 >
@@ -100,8 +115,9 @@ export default function LoginPage() {
                   )}
                 </div>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password" name="password"
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
                   placeholder="6+ Characters, 1 Capital letter"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -112,14 +128,16 @@ export default function LoginPage() {
             </div>
 
             {/* Error Message */}
-            {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
+            {error && (
+              <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+            )}
 
             <button
               type="submit"
-              disabled={loading} 
+              disabled={loading}
               className="w-full bg-[#015B97] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#014d80] transition duration-300 focus:outline-none focus:ring-2 focus:ring-[#015B97] focus:ring-opacity-50 disabled:opacity-50"
             >
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>
 
@@ -130,7 +148,10 @@ export default function LoginPage() {
           </div>
           <p className="text-center text-sm text-gray-500 mt-6">
             Don't have any account?{" "}
-            <Link href="/signup" className="text-[#015B97] hover:underline font-semibold">
+            <Link
+              href="/signup"
+              className="text-[#015B97] hover:underline font-semibold"
+            >
               Sign Up
             </Link>
           </p>

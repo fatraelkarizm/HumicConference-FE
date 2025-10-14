@@ -1,3 +1,7 @@
+// src/context/AuthContext.tsx
+
+"use client"; // WAJIB: Context yang menggunakan hook adalah Client Component
+
 import {
   createContext,
   useContext,
@@ -5,10 +9,11 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation"; // UBAH: import dari next/navigation
 import { getProfile, logoutUser } from "@/lib/LoginApi";
 import type { User, AuthContextType } from "@/types/auth";
 
+// ... (sisa kode AuthContext Anda sama persis, tidak perlu diubah)
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -22,7 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = await getProfile();
         setUser(userData);
       } catch (error) {
-        // Kalo gagal, berarti tidak ada sesi yang valid.
         console.log("No active session found.");
       }
       setLoading(false);
@@ -30,13 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkUserLoggedIn();
   }, []);
 
-  // Login Menerima data User
   const login = (userData: User) => {
     setUser(userData);
     router.push("/dashboard");
   };
 
-  // Logout memanggil API buat hapus cookie di server
   const logout = async () => {
     try {
       await logoutUser();
@@ -51,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
-    </AuthContext.Provider>
+    </AuthContext.Provider>    
   );
 }
 

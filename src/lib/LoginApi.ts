@@ -1,6 +1,6 @@
 import type { LoginPayload, LoginData, User, ApiResponse } from '../types/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 // Fungsi login
 export async function loginUser(payload: LoginPayload): Promise<User> {
