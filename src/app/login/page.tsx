@@ -23,6 +23,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // di dalam fungsi handleSubmit di login/page.tsx
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -30,8 +31,7 @@ export default function LoginPage() {
 
     try {
       const payload: LoginPayload = { email, password };
-      const userData = await loginUser(payload);
-      login(userData);
+      await login(payload); // Cukup panggil login dari context dengan payload
     } catch (err: any) {
       setError(err.message);
     } finally {

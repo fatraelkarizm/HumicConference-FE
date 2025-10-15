@@ -22,7 +22,7 @@ export interface LoginPayload {
 // Tipe data yang diterima dari backend saat login
 export interface LoginData {
   user: User;
-  token: string; 
+  token: string;
 }
 
 // Tipe generic untuk semua respons dari API kamu
@@ -37,7 +37,8 @@ export interface ApiResponse<T> {
 // Tipe untuk konteks autentikasi
 export interface AuthContextType {
   user: User | null;
+  token: string | null; 
   loading: boolean;
-  login: (userData: User) => void;
+  login: (payload: LoginPayload) => Promise<void>; 
   logout: () => void;
 }

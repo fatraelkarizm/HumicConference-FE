@@ -1,6 +1,4 @@
-// src/context/AuthContext.tsx
-
-"use client"; // WAJIB: Context yang menggunakan hook adalah Client Component
+"use client";
 
 import {
   createContext,
@@ -9,33 +7,42 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { useRouter } from "next/navigation"; // UBAH: import dari next/navigation
-import { getProfile, logoutUser } from "@/lib/LoginApi";
-import type { User, AuthContextType } from "@/types/auth";
+import { useRouter } from "next/navigation";
+import { getProfile, loginUser as apiLogin, logoutUser } from "@/lib/LoginApi";
+import type { User, AuthContextType, LoginPayload } from "@/types/auth";
 
-// ... (sisa kode AuthContext Anda sama persis, tidak perlu diubah)
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null); 
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const checkUserLoggedIn = async () => {
-      try {
-        const userData = await getProfile();
-        setUser(userData);
-      } catch (error) {
-        console.log("No active session found.");
+      const storedToken = localStorage.getItem('accessToken');
+      if (storedToken) {
+        setToken(storedToken);
+        try {
+          const userData = await getProfile(storedToken);
+          setUser(userData);
+        } catch (error) {
+          console.error("Session expired or token invalid.", error);
+          localStorage.removeItem('accessToken'); 
+          setToken(null);
+        }
       }
       setLoading(false);
     };
     checkUserLoggedIn();
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
+  const login = async (payload: LoginPayload) => {
+    const { user, access_token } = await apiLogin(payload);
+    localStorage.setItem('accessToken', access_token); 
+    setToken(access_token);
+    setUser(user);
     router.push("/dashboard");
   };
 
@@ -43,17 +50,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await logoutUser();
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout API call failed:", error);
     } finally {
       setUser(null);
+      setToken(null);
+      localStorage.removeItem('accessToken'); 
       router.push("/login");
     }
   };
-  const value = { user, loading, login, logout };
+
+  const value = { user, token, loading, login, logout };
+  
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>    
+      {children}
+    </AuthContext.Provider>
   );
 }
 

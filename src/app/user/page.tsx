@@ -120,7 +120,7 @@ const Header = () => (
           ICICTYA
         </a>
         <a href="#" className="text-white">
-          ICOBSA
+          ICoDSA
         </a>
         <a href="#" className="text-white">
           About
