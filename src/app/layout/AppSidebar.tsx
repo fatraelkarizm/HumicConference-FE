@@ -36,14 +36,14 @@ type MenuItem = {
 
 // --- DATA MENU: Semua menu diatur dari sini ---
 const menuItems: MenuItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: Squares2X2Icon, href: "/dashboard" },
+  { id: "dashboard", label: "Dashboard", href: "/super-admin/dashboard",  icon: Squares2X2Icon },
   {
     id: "jadwal",
     label: "Manajemen Jadwal",
     icon: CalendarDaysIcon,
     subItems: [
-      { label: "Jadwal ICICyTA", href: "/dashboard/schedule/icicyta", icon: DocumentTextIcon },
-      { label: "Jadwal ICoDSA", href: "/dashboard/schedule/icodsa", icon: DocumentTextIcon },
+      { label: "Jadwal ICICyTA", href: "/super-admin/ICICyta", icon: DocumentTextIcon },
+      { label: "Jadwal ICoDSA", href: "/super-admin/ICoDSA", icon: DocumentTextIcon },
     ],
   },
   {
@@ -51,7 +51,7 @@ const menuItems: MenuItem[] = [
     label: "Manajemen User",
     icon: UserGroupIcon,
     subItems: [
-      { label: "Manajemen Admin", href: "/dashboard/users/admin", icon: UserPlusIcon },
+      { label: "Manajemen Admin", href: "/super-admin/manage-admin", icon: UserPlusIcon },
     ],
   },
   {
@@ -73,7 +73,7 @@ const SingleMenuItem = ({ item, isActive }: { item: MenuItem; isActive: boolean 
     href={item.href || '#'}
     onClick={item.onClick}
     className={`rounded-[3px] px-[15px] py-2 flex items-center gap-2.5 cursor-pointer transition-colors ${
-      isActive ? 'bg-[#333A48]' : 'hover:bg-[#333A48]' // Warna aktif dan hover disamakan
+      isActive ? 'bg-[#333A48]' : 'hover:bg-[#333A48]' 
     }`}
   >
     <item.icon className="w-5 h-5 text-white flex-shrink-0" />
@@ -87,7 +87,7 @@ const SingleMenuItem = ({ item, isActive }: { item: MenuItem; isActive: boolean 
 const CollapsibleMenuItem = ({ item }: { item: MenuItem }) => {
   const pathname = usePathname();
   const isAnySubItemActive = item.subItems?.some(sub => pathname.startsWith(sub.href)) || false;
-  const [isOpen, setIsOpen] = useState(isAnySubItemActive); // Buka jika ada sub-menu yang aktif
+  const [isOpen, setIsOpen] = useState(isAnySubItemActive); 
 
   return (
     <div className="flex flex-col">
@@ -141,7 +141,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         </button>
         
         <div className="p-[50px_55px_20px] text-center">
-          <h1 className="text-white font-satoshi text-[27px] font-bold leading-normal">
+          <h1 className="text-white font-satoshi text-3xl font-semibold  leading-normal">
             Humic<br />Conference
           </h1>
         </div>

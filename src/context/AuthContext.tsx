@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('accessToken', access_token); 
     setToken(access_token);
     setUser(user);
-    router.push("/dashboard");
+    router.push("/super-admin/dashboard");
   };
 
   const logout = async () => {

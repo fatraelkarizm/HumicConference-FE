@@ -1,11 +1,11 @@
-// src/app/dashboard/layout.tsx
+// src/app/super-admin/layout.tsx
 "use client";
 
 import { useState } from "react";
 import Sidebar from "@/app/layout/AppSidebar";
 import TopBar from "@/app/layout/AppTopbar";
 
-export default function DashboardLayout({
+export default function SuperAdminLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-[#F1F5F9] flex">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col lg:ml-[500px]">
+      <div className="flex-1 flex flex-col lg:ml-[330px]">
         <TopBar onMenuClick={() => setSidebarOpen(true)} />
         <main className="p-4 lg:p-8">{children}</main>
       </div>

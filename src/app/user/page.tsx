@@ -114,7 +114,7 @@ const scheduleData = [
 const Header = () => (
   <header className="bg-white shadow-md">
     <nav className="px-16 py-4 flex justify-between items-center bg-[#015B97]">
-      <div className="text-2xl font-semibold text-white">Humic Conference</div>
+      <div className="text-2xl font- text-white">Humic Conference</div>
       <div className="flex items-center space-x-6">
         <a href="#" className="text-white">
           ICICTYA

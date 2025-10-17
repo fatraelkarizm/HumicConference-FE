@@ -57,7 +57,7 @@ export default function DashboardPage() {
       <p className="text-gray-600 font-poppins text-base lg:text-xl mb-6 lg:mb-8">to Dashboard</p>
 
       {/* Kartu Statistik */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-2xl">
         {stats.map(stat => <StatCard key={stat.title} {...stat} />)}
       </div>
 
