@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import AdminTable, { AdminRow } from "@/components/AdminTable";
 import AdminModal, { Admin } from "@/components/AdminModal";
-import { createAdmin, deleteAdmin, getAdmins, updateAdmin } from "@/services/adminService";
+import { createAdmin, deleteAdmin, getAdmins, updateAdmin } from "@/services/AdminService";
 
 /**
  * Page glue: loads admins, passes them to AdminTable, opens AdminModal for create/edit.

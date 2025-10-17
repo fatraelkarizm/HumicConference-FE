@@ -3,18 +3,15 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // UBAH: Gunakan dari 'next/navigation'
 import {
   EnvelopeIcon,
   EyeIcon,
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
-import { loginUser } from "@/lib/LoginApi";
 import type { LoginPayload } from "@/types/auth";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const router = useRouter();
   const { login } = useAuth(); // Ambil fungsi login dari context
 
   const [email, setEmail] = useState("");
@@ -23,7 +20,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // di dalam fungsi handleSubmit di login/page.tsx
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -31,7 +27,7 @@ export default function LoginPage() {
 
     try {
       const payload: LoginPayload = { email, password };
-      await login(payload); // Cukup panggil login dari context dengan payload
+      await login(payload);
     } catch (err: any) {
       setError(err.message);
     } finally {

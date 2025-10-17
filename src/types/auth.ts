@@ -27,6 +27,8 @@ export interface LoginData {
 
 // Tipe generic untuk semua respons dari API kamu
 export interface ApiResponse<T> {
+  access_token?: string;
+  refresh_token?: string;
   code: number;
   status: string;
   message: string;
