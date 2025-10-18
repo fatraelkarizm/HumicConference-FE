@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import StatCard from "@/components/StatCard";
-import ScheduleCard from "@/components/ScheduleCard";
+import ScheduleCard from "@/components/schedule/ScheduleCard";
 import TimelineRow from "@/components/TimelineRow";
 
 // --- DATA DUMMY --- (Nanti bisa diganti dari API)

@@ -42,7 +42,7 @@ const menuItems: MenuItem[] = [
     label: "Manajemen Jadwal",
     icon: CalendarDaysIcon,
     subItems: [
-      { label: "Jadwal ICICyTA", href: "/super-admin/ICICyta", icon: DocumentTextIcon },
+      { label: "Jadwal ICICyTA", href: "/super-admin/ICICyTA", icon: DocumentTextIcon },
       { label: "Jadwal ICoDSA", href: "/super-admin/ICoDSA", icon: DocumentTextIcon },
     ],
   },

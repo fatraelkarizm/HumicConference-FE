@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import StatCard from "@/components/StatCard";
-import ScheduleCard from "@/components/ScheduleCard";
+import ScheduleCard from "@/components/schedule/ScheduleCard";
 import TimelineRow from "@/components/TimelineRow";
 
 // --- DATA DUMMY --- (Nanti bisa diganti dari API)
@@ -61,16 +61,6 @@ export default function DashboardPage() {
         {stats.map(stat => <StatCard key={stat.title} {...stat} />)}
       </div>
 
-      {/* Timeline Jadwal */}
-      <div className="space-y-6">
-        {timeline.map(item => (
-          <TimelineRow key={item.time} time={item.time}>
-            <div className={`grid grid-cols-1 ${item.events.length > 1 ? 'sm:grid-cols-2' : ''} gap-4`}>
-              {item.events.map(event => <ScheduleCard key={event.id} {...event} />)}
-            </div>
-          </TimelineRow>
-        ))}
-      </div>
     </>
   );
 }

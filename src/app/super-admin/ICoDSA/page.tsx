@@ -7,9 +7,9 @@ import {
   ArrowUpTrayIcon,
   CalendarDaysIcon,
 } from "@heroicons/react/24/outline";
-import ScheduleCard from "@/components/ScheduleCard";
+import ScheduleCard from "@/components/schedule/ScheduleCard";
 import TimelineRow from "@/components/TimelineRow";
-import SessionModal from "@/components/ScheduleModal";
+import SessionModal from "@/components/schedule/ScheduleAddModal";
 
 // --- INITIAL DUMMY DATA ---
 // no color fields here so you can replace with fetched data later

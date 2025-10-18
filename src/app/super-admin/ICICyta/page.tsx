@@ -1,243 +1,208 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   PlusIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   CalendarDaysIcon,
 } from "@heroicons/react/24/outline";
-import ScheduleCard from "@/components/ScheduleCard";
-import TimelineRow from "@/components/TimelineRow";
-import SessionModal from "@/components/ScheduleModal";
-
-// --- INITIAL DUMMY DATA ---
-// no color fields here so you can replace with fetched data later
-const initialEvents = [
-  {
-    id: 1,
-    title:
-      "Speech by General Chair Representation (Assoc. Prof. Dr. Putu Harry Gunawan)",
-    time: "1h 40m",
-    speaker: "Mahananta",
-    room: "Room A",
-  },
-  {
-    id: 2,
-    title:
-      "Speech by General Chair Representation (Assoc. Prof. Dr. Putu Harry Gunawan)",
-    time: "1h 40m",
-    speaker: "Mahananta",
-    room: "Room B",
-  },
-  {
-    id: 3,
-    title:
-      "Speech by General Chair Representation (Assoc. Prof. Dr. Putu Harry Gunawan)",
-    time: "1h 40m",
-    speaker: "Mahananta",
-    room: "Room C",
-  },
-];
-
-const ReportingRow = ({
-  time,
-  title,
-  duration,
-}: {
-  time: string;
-  title: string;
-  duration: string;
-}) => (
-  <div className="grid grid-cols-[140px_1fr] items-stretch gap-4">
-    <div className="h-full">
-      <div className="h-full flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-700 text-sm shadow-sm">
-        {time}
-      </div>
-    </div>
-
-    <div className="h-full">
-      <div className="h-full bg-white rounded-lg p-4 shadow-sm border border-blue-50 flex flex-col justify-start">
-        <div className="text-gray-800 font-medium break-words">{title}</div>
-        <div className="text-gray-500 text-sm mt-1">{duration}</div>
-      </div>
-    </div>
-  </div>
-);
-
-const ColorSeparator = ({
-  time,
-  title,
-  duration,
-  bgColor,
-}: {
-  time: string;
-  title: string;
-  duration: string;
-  bgColor: string;
-}) => (
-  <div className="grid grid-cols-[140px_1fr] items-stretch gap-4">
-    <div className="h-full">
-      <div className="h-full flex items-center justify-center rounded-lg px-4 py-3 text-gray-700 text-sm">
-        {time}
-      </div>
-    </div>
-
-    <div className="h-full">
-      <div className={`h-full rounded-lg p-4 shadow-sm ${bgColor}`}>
-        <div className="font-bold text-gray-800 break-words">{title}</div>
-        <div className="text-sm mt-1 text-gray-600">{duration}</div>
-      </div>
-    </div>
-  </div>
-);
+import ScheduleCard from "@/components/schedule/ScheduleCard";
+import ScheduleModal from "@/components/schedule/ScheduleAddModal";
+import ScheduleDetailModal from "@/components/schedule/ScheduleDetailModal";
+import type { ScheduleItem, NewScheduleData } from "@/types/schedule";
+import { createSchedule, getSchedules, updateSchedule, deleteSchedule } from "@/services/ScheduleService";
 
 export default function JadwalICICytaPage() {
-  const [events, setEvents] = useState(initialEvents);
+  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  function handleAddSessionClick() {
-    setIsModalOpen(true);
+  // detail/edit modal state
+  const [activeItem, setActiveItem] = useState<ScheduleItem | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+
+  async function loadSchedules() {
+    setLoading(true);
+    let all = await getSchedules("ICICyTA");
+    if (!all || all.length === 0) {
+      all = await getSchedules();
+    }
+    setSchedules(all);
+    setLoading(false);
   }
 
-  function handleSaveSession(data: {
-    title: string;
-    conference: string;
-    date: string;
-    startTime: string;
-    endTime: string;
-    speaker: string;
-    description: string;
-    location: string;
-    sessionType: string;
-  }) {
-    // create a minimal event object to add to the list.
-    const newEvent = {
-      id: Date.now(),
-      title: data.title,
-      // store time as "HH:MM - HH:MM" for now; adapt as needed when you fetch real data
-      time:
-        data.startTime && data.endTime
-          ? `${data.startTime} - ${data.endTime}`
-          : "",
-      speaker: data.speaker,
-      room: data.location || "",
-      date: data.date,
-    };
+  useEffect(() => {
+    loadSchedules();
+  }, []);
 
-    setEvents((prev) => [newEvent, ...prev]);
+  async function handleSave(payload: NewScheduleData, id?: string) {
+    if (id) {
+      // update
+      const updated = await updateSchedule(id, payload);
+      setSchedules((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    } else {
+      // create
+      const created = await createSchedule(payload);
+      setSchedules((prev) => [created, ...prev]);
+    }
   }
+
+  async function handleDelete(id?: string) {
+    if (!id) return;
+    await deleteSchedule(id);
+    setSchedules((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  function openDetail(id?: string) {
+    const item = schedules.find((s) => s.id === id) ?? null;
+    setActiveItem(item);
+    setDetailOpen(true);
+  }
+
+  function openEditFromDetail(item: ScheduleItem) {
+    setActiveItem(item);
+    setDetailOpen(false);
+    // open ScheduleModal in edit mode
+    setTimeout(() => {
+      setEditMode(true);
+      setIsModalOpen(true);
+    }, 50);
+  }
+
+  function handleSavedUpdate(updated: ScheduleItem) {
+    setSchedules((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  }
+
+  // grouping by dayNumber
+  const byDay: Record<string, ScheduleItem[]> = {};
+  schedules.forEach((s) => {
+    const day = s.dayNumber !== undefined && s.dayNumber !== null ? Number(s.dayNumber) : 1;
+    const key = `day-${day}`;
+    (byDay[key] = byDay[key] || []).push(s);
+  });
+
+  const dayKeys = Object.keys(byDay).sort((a, b) => {
+    const na = Number(a.split("-")[1] || 1);
+    const nb = Number(b.split("-")[1] || 1);
+    return na - nb;
+  });
 
   return (
     <>
-      {/* Header Halaman */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div className="bg-white rounded-lg shadow-sm px-4 py-3 flex items-center gap-4">
-          <span
-            className="inline-flex items-center justify-center rounded-md"
-            style={{ backgroundColor: "#FFB84D", padding: 8 }}
-          >
+          <span className="inline-flex items-center justify-center rounded-md" style={{ backgroundColor: "#FFB84D", padding: 8 }}>
             <CalendarDaysIcon className="w-5 h-5 text-white" />
           </span>
           <div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800 leading-tight">
-              Jadwal ICICyta
-            </h1>
-            <p className="text-gray-500 mt-1 text-sm">Lorem ipsum</p>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-black leading-tight">Jadwal ICICyta</h1>
+            <p className="text-black mt-1 text-sm">Lorem ipsum</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleAddSessionClick}
-            className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition"
-            style={{ backgroundColor: "#10B981" }}
-          >
+        <div className="flex items-center gap-2 ml-auto">
+          <button onClick={() => { setEditMode(false); setIsModalOpen(true); }} className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: "#10B981" }}>
             <PlusIcon className="w-5 h-5" />
-            <span>Tambah Sesi Baru</span>
+            <span>Tambah Schedule Baru</span>
           </button>
-
-          <button
-            className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition"
-            style={{ backgroundColor: "#2563EB" }}
-          >
+          <button className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: "#2563EB" }}>
             <ArrowDownTrayIcon className="w-5 h-5" />
             <span>Import Data</span>
           </button>
-
-          <button
-            className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition"
-            style={{ backgroundColor: "#949CA2" }}
-          >
+          <button className="flex items-center gap-2 text-white px-4 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: "#949CA2" }}>
             <ArrowUpTrayIcon className="w-5 h-5" />
             <span>Export Data</span>
           </button>
         </div>
       </div>
 
-      {/* Konten Jadwal */}
-      <div className="space-y-4">
-        <ReportingRow
-          time="7.30 - 09.10"
-          title="Reporting: Design concept of visual dashboard"
-          duration="6h 30m"
-        />
-        <ReportingRow
-          time="7.30 - 09.10"
-          title="Reporting: Design concept of visual dashboard"
-          duration="6h 30m"
-        />
-        <ReportingRow
-          time="7.30 - 09.10"
-          title="Reporting: Design concept of visual dashboard"
-          duration="6h 30m"
-        />
+      <div className="space-y-8">
+        {dayKeys.length === 0 && !loading && <div className="text-gray-500">No schedules yet — try adding one.</div>}
 
-        <TimelineRow time="7.30 - 09.10">
-          <div className="p-4 rounded-lg">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-4">
-              {events.map((event) => (
-                <ScheduleCard
-                  key={event.id}
-                  title={event.title}
-                  time={event.time}
-                  speaker={event.speaker}
-                  room={event.room}
-                  description=""
-                  bgColor={""}
-                  borderColor={""}
-                />
-              ))}
-            </div>
-          </div>
-        </TimelineRow>
+        {dayKeys.map((dayKey) => {
+          const items = byDay[dayKey];
+          const dayNumber = Number(dayKey.split("-")[1] || 1);
+          const first = items[0];
+          const headerTitle = first?.dayTitle ?? `Day ${dayNumber}`;
 
-        <ReportingRow
-          time="7.30 - 09.10"
-          title="Reporting: Design concept of visual dashboard"
-          duration="6h 30m"
-        />
-        <ReportingRow
-          time="7.30 - 09.10"
-          title="Reporting: Design concept of visual dashboard"
-          duration="6h 30m"
-        />
+          // group items by time
+          const byTime: Record<string, ScheduleItem[]> = {};
+          items.forEach((s) => {
+            const k = s.timeDisplay || s.date || "TBD";
+            (byTime[k] = byTime[k] || []).push(s);
+          });
 
-        <TimelineRow time="09.30 - 11.00">
-          <div className="bg-gray-100 p-4 rounded-lg">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              <div className="col-span-full text-center text-gray-500 p-8">
-                Sesi berikutnya...
+          const timeKeys = Object.keys(byTime);
+
+          return (
+            <section key={dayKey}>
+              <div className="mb-4 rounded-md p-3 bg-[#CAF2D7]">
+                <div className="text-sm font-semibold text-[#064e3b]">{headerTitle}</div>
               </div>
-            </div>
-          </div>
-        </TimelineRow>
+
+              <div className="space-y-6">
+                {timeKeys.map((timeKey) => {
+                  const rowItems = byTime[timeKey];
+                  return (
+                    <div key={timeKey} className="grid grid-cols-[160px_1fr] items-stretch gap-6">
+                      <div className="h-full">
+                        <div className="h-full rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-semibold text-lg shadow-sm px-4">
+                          {timeKey}
+                        </div>
+                      </div>
+
+                      <div className="h-full">
+                        <div className="h-full rounded-lg p-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {rowItems.map((s) => (
+                              <div key={s.id} className="h-full">
+                                <ScheduleCard item={s} onOpenDetail={openDetail} className="h-full" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
-      <SessionModal
+      {/* Create/Edit modal uses same UI (mode controlled by editMode + activeItem) */}
+      <ScheduleModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={(data) => handleSaveSession(data)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setActiveItem(null);
+          setEditMode(false);
+        }}
+        initialData={editMode ? activeItem ?? null : null}
+        mode={editMode ? "edit" : "create"}
+        onSave={async (payload, id) => {
+          await handleSave(payload, id);
+          // after save ensure we reload (or we already updated state)
+        }}
+      />
+
+      {/* Detail modal (shows info + edit/delete icons). Edit opens the same modal in edit mode */}
+      <ScheduleDetailModal
+        open={detailOpen}
+        item={activeItem}
+        onClose={() => {
+          setDetailOpen(false);
+          setActiveItem(null);
+        }}
+        onEdit={(item) => {
+          openEditFromDetail(item);
+        }}
+        onDelete={(id) => {
+          handleDelete(id);
+        }}
       />
     </>
   );
