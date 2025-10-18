@@ -1,3 +1,10 @@
+// Tipe singkat untuk respons login dari backend
+export interface LoginResponse {
+  user?: User;
+  access_token?: string;
+  refresh_token?: string;
+}
+
 // Tipe untuk object User sesuai data dari backend
 export interface User {
   id: string;

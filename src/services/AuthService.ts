@@ -1,14 +1,8 @@
 // services/AuthService.ts
 import Cookies from "js-cookie";
-import type { LoginPayload, User, ApiResponse } from '../types/auth';
+import type { LoginPayload, User, ApiResponse, LoginResponse } from '../types/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-interface LoginResponse {
-  user?: User;
-  access_token?: string;
-  refresh_token?: string;
-}
 
 export async function loginUser(payload: LoginPayload): Promise<LoginResponse & { user?: User }> {
   const response = await fetch(`${API_URL}/api/v1/auth/login`, {

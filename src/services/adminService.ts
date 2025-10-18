@@ -1,15 +1,5 @@
 import { Admin } from "@/components/AdminModal";
 
-/**
- * adminService
- *
- * Strategy:
- * - Try to call a backend endpoint /api/admins if available.
- * - If fetch fails (no backend), fall back to localStorage for demo.
- *
- * You can replace the fetch calls with your real API endpoints as needed.
- */
-
 const STORAGE_KEY = "hc_admins_v1";
 
 async function fetchFromServer(input: RequestInfo, init?: RequestInit) {
