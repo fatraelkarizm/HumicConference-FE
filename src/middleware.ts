@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Protected routes yang memerlukan authentication
 const protectedRoutes = [
-  '/dashboard',
   '/profile',
   '/super-admin',
-  '/admin', // ADMIN routes
+  '/admin', 
 ];
 
 // Public routes yang tidak memerlukan authentication
@@ -15,7 +14,9 @@ const publicRoutes = [
   '/forgot-password',
   '/',
   '/about',
-  '/conferences',
+  '/user',
+  '/user/ICICYTA',
+  '/user/ICODSA',
 ];
 
 // Admin routes mapping
@@ -56,23 +57,18 @@ export async function middleware(request: NextRequest) {
 
   // Check refresh token exists
   const refreshToken = request.cookies.get('refresh_token')?.value;
-
-  // If it's a protected route, check authentication
   if (isProtectedRoute) {
     if (!refreshToken) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
-
-    // For admin routes, we'll let the client-side handle role verification
-    // since server-side user data fetching is complex in middleware
     return NextResponse.next();
   }
 
   // Handle auth routes (login, register) - redirect if already authenticated
   if ((pathname === '/login' || pathname === '/register') && refreshToken) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
@@ -80,13 +76,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };

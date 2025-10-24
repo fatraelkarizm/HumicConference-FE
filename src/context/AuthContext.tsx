@@ -66,7 +66,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       setUser(loginResponse.user);
       setAccessToken(loginResponse.accessToken);
       
-      
       // Automatic redirect based on role
       const dashboardUrl = getDashboardUrl(loginResponse.user.role);
       
@@ -83,18 +82,90 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
   }, [getDashboardUrl]);
 
-  // Logout function
+  // Logout function - UPDATED dengan proper cleanup
   const logout = useCallback(async (): Promise<void> => {
     setLoading(true);
+    
     try {
-      await AuthService.logout();
-    } catch (error) {
-    } finally {
+      console.log('🔄 Starting logout process...');
+      
+      // Step 1: Try to call backend logout endpoint (jika ada)
+      // Tapi kalau ga ada API, skip aja
+      try {
+        const response = await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (response.ok) {
+          console.log('✅ Backend logout successful');
+        } else {
+          console.log('⚠️ Backend logout failed, continuing with client cleanup');
+        }
+      } catch (apiError) {
+        console.log('⚠️ No logout API available, continuing with client cleanup');
+      }
+
+      // Step 2: Clear all client-side auth state
+      console.log('🧹 Clearing client-side authentication state...');
       setUser(null);
       setAccessToken(null);
-      setLoading(false);
+
+      // Step 3: Clear browser storage (localStorage, sessionStorage)
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        try {
+          // Clear any stored tokens/data
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          localStorage.removeItem('auth_token');
+          
+          // Clear session storage too
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem('refreshToken');
+          sessionStorage.removeItem('user');
+          
+          console.log('✅ Browser storage cleared');
+        } catch (storageError) {
+          console.error('Storage clear error:', storageError);
+        }
+      }
+
+      // Step 4: Clear HTTP-only cookies dengan request ke backend
+      try {
+        await fetch('/api/auth/clear-cookies', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        console.log('✅ Cookies cleared');
+      } catch (cookieError) {
+        console.log('⚠️ Cookie clear endpoint not available');
+      }
+
+      console.log('✅ Logout completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Even if there's an error, still clear client state
+      setUser(null);
+      setAccessToken(null);
+    } finally {
+      setLoading(false);
+      
+      // Step 5: Redirect to login page
+      if (typeof window !== 'undefined') {
+        console.log('🔄 Redirecting to login page...');
+        
+        // Clear the current page from history
+        window.history.replaceState(null, '', '/login');
+        
+        // Force redirect
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 100);
       }
     }
   }, []);
@@ -163,8 +234,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           try {
             const newToken = await refreshToken();
             if (newToken) {
+              console.log('✅ Auth restored from refresh token');
             }
           } catch (error) {
+            console.error('Auth restoration failed:', error);
           } finally {
             setLoading(false);
           }
@@ -183,6 +256,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   useEffect(() => {
     if (!loading && user) {
       const canAccess = canAccessCurrentRoute();
+      if (!canAccess) {
+        console.log('❌ User cannot access current route');
+      }
     }
   }, [user, loading, canAccessCurrentRoute]);
 
@@ -191,12 +267,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (!accessToken || !user || typeof window === 'undefined') return;
 
     const refreshInterval = setInterval(async () => {
-      await refreshToken();
+      try {
+        await refreshToken();
+      } catch (error) {
+        console.error('Token refresh failed:', error);
+        // If refresh fails, logout user
+        await logout();
+      }
     }, 14 * 60 * 1000); // Refresh every 14 minutes
+
     return () => {
       clearInterval(refreshInterval);
     };
-  }, [accessToken, user, refreshToken]);
+  }, [accessToken, user, refreshToken, logout]);
+
+  // Handle page unload - cleanup
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleBeforeUnload = () => {
+      // Could add any cleanup logic here if needed
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   const value: AuthContextType = {
     user,

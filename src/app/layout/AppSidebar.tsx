@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import {
   Squares2X2Icon,
   CalendarDaysIcon,
@@ -18,7 +19,7 @@ import {
   PencilIcon,       
 } from "@heroicons/react/24/outline";
 
-// --- Tipe Data untuk Menu (Menambahkan ikon untuk sub-menu) ---
+// --- Tipe Data untuk Menu ---
 type SubMenuItem = {
   label: string;
   href: string;
@@ -32,40 +33,8 @@ type MenuItem = {
   href?: string;
   subItems?: SubMenuItem[];
   onClick?: () => void;
+  roles?: string[]; // Role yang bisa akses menu ini
 };
-
-// --- DATA MENU: Semua menu diatur dari sini ---
-const menuItems: MenuItem[] = [
-  { id: "dashboard", label: "Dashboard", href: "/super-admin/dashboard",  icon: Squares2X2Icon },
-  {
-    id: "jadwal",
-    label: "Manajemen Jadwal",
-    icon: CalendarDaysIcon,
-    subItems: [
-      { label: "Jadwal ICICyTA", href: "/super-admin/ICICyTA", icon: DocumentTextIcon },
-      { label: "Jadwal ICoDSA", href: "/super-admin/ICoDSA", icon: DocumentTextIcon },
-    ],
-  },
-  {
-    id: "user",
-    label: "Manajemen User",
-    icon: UserGroupIcon,
-    subItems: [
-      { label: "Manajemen Admin", href: "/super-admin/manage-admin", icon: UserPlusIcon },
-    ],
-  },
-  {
-    id: "profile",
-    label: "Kelola Profile",
-    icon: UserCircleIcon,
-    subItems: [
-      { label: "Profile Image", href: "/dashboard/profile/image", icon: PhotoIcon },
-      { label: "Change Name", href: "/dashboard/profile/name", icon: PencilIcon },
-    ],
-  },
-  { id: "logout", label: "Logout", icon: ArrowLeftStartOnRectangleIcon, onClick: () => console.log('Logout!') },
-];
-
 
 // --- MODUL 1: Komponen Link Tunggal ---
 const SingleMenuItem = ({ item, isActive }: { item: MenuItem; isActive: boolean }) => (
@@ -126,10 +95,122 @@ const CollapsibleMenuItem = ({ item }: { item: MenuItem }) => {
   );
 };
 
-
 // --- KOMPONEN UTAMA: SIDEBAR ---
 const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) => {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+
+  // Handle logout dengan konfirmasi
+  const handleLogout = async () => {
+    const confirmed = window.confirm('Are you sure you want to logout?');
+    if (confirmed) {
+      try {
+        await logout();
+        // AuthContext akan handle redirect ke login
+      } catch (error) {
+        console.error('Logout failed:', error);
+        alert('Logout failed. Please try again.');
+      }
+    }
+  };
+
+  // Generate menu items berdasarkan role user
+  const getMenuItems = (): MenuItem[] => {
+    const baseItems: MenuItem[] = [
+      { 
+        id: "dashboard", 
+        label: "Dashboard", 
+        href: "/super-admin/dashboard",  
+        icon: Squares2X2Icon,
+        roles: ['SUPER_ADMIN', 'ADMIN_ICICYTA', 'ADMIN_ICODSA']
+      },
+    ];
+
+    // Menu Jadwal - berbeda berdasarkan role
+    if (user?.role === 'SUPER_ADMIN') {
+      baseItems.push({
+        id: "jadwal",
+        label: "Manajemen Jadwal",
+        icon: CalendarDaysIcon,
+        roles: ['SUPER_ADMIN'],
+        subItems: [
+          { label: "Jadwal ICICyTA", href: "/super-admin/ICICyTA", icon: DocumentTextIcon },
+          { label: "Jadwal ICoDSA", href: "/super-admin/ICoDSA", icon: DocumentTextIcon },
+        ],
+      });
+    } else if (user?.role === 'ADMIN_ICICYTA') {
+      baseItems.push({
+        id: "jadwal",
+        label: "Jadwal ICICyTA",
+        href: "/admin/ICICYTA",
+        icon: CalendarDaysIcon,
+        roles: ['ADMIN_ICICYTA'],
+      });
+    } else if (user?.role === 'ADMIN_ICODSA') {
+      baseItems.push({
+        id: "jadwal",
+        label: "Jadwal ICoDSA", 
+        href: "/admin/ICODSA",
+        icon: CalendarDaysIcon,
+        roles: ['ADMIN_ICODSA'],
+      });
+    }
+
+    // Menu User Management - hanya untuk SUPER_ADMIN
+    if (user?.role === 'SUPER_ADMIN') {
+      baseItems.push({
+        id: "user",
+        label: "Manajemen User",
+        icon: UserGroupIcon,
+        roles: ['SUPER_ADMIN'],
+        subItems: [
+          { label: "Manajemen Admin", href: "/super-admin/manage-admin", icon: UserPlusIcon },
+        ],
+      });
+    }
+
+    // Menu Profile - hanya untuk SUPER_ADMIN
+    if (user?.role === 'SUPER_ADMIN') {
+      baseItems.push({
+        id: "profile",
+        label: "Kelola Profile",
+        icon: UserCircleIcon,
+        roles: ['SUPER_ADMIN'],
+        subItems: [
+          { label: "Profile Image", href: "/dashboard/profile/image", icon: PhotoIcon },
+          { label: "Change Name", href: "/dashboard/profile/name", icon: PencilIcon },
+        ],
+      });
+    }
+
+    // Logout - untuk semua role
+    baseItems.push({ 
+      id: "logout", 
+      label: "Logout", 
+      icon: ArrowLeftStartOnRectangleIcon, 
+      onClick: handleLogout,
+      roles: ['SUPER_ADMIN', 'ADMIN_ICICYTA', 'ADMIN_ICODSA']
+    });
+
+    return baseItems;
+  };
+
+  // Filter menu berdasarkan role user
+  const filteredMenuItems = getMenuItems().filter(item => 
+    !item.roles || item.roles.includes(user?.role || '')
+  );
+
+  // Title berdasarkan role
+  const getTitle = () => {
+    switch (user?.role) {
+      case 'ADMIN_ICICYTA':
+        return 'ICICyTA\nAdmin';
+      case 'ADMIN_ICODSA':
+        return 'ICoDSA\nAdmin';
+      default:
+        return 'Humic\nConference';
+    }
+  };
 
   return (
     <>
@@ -140,16 +221,22 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
           <XMarkIcon className="w-6 h-6" />
         </button>
         
+        {/* Header dengan title dinamis */}
         <div className="p-[50px_55px_20px] text-center">
-          <h1 className="text-white font-satoshi text-3xl font-semibold  leading-normal">
-            Humic<br />Conference
+          <h1 className="text-white font-satoshi text-3xl font-semibold leading-normal whitespace-pre-line">
+            {getTitle()}
           </h1>
+          {user && (
+            <div className="mt-2 text-white/70 text-sm">
+              Welcome, {user.name}
+            </div>
+          )}
         </div>
 
-        {/* Wrapper untuk menu agar bisa scroll jika menunya panjang */}
+        {/* Menu Navigation */}
         <div className="flex-1 px-[25px] pt-8 overflow-y-auto">
           <nav className="flex flex-col gap-[18px]">
-            {menuItems.map((item) => 
+            {filteredMenuItems.map((item) => 
                 item.subItems ? (
                     <CollapsibleMenuItem key={item.id} item={item} />
                 ) : (
@@ -158,7 +245,14 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
             )}
           </nav>
         </div>
-        
+
+        {/* Footer info */}
+        <div className="p-4 border-t border-white/20">
+          <div className="text-white/60 text-xs text-center">
+            <div>Role: {user?.role || 'Unknown'}</div>
+            <div>User: {user?.email || 'Unknown'}</div>
+          </div>
+        </div>
       </div>
     </>
   );
