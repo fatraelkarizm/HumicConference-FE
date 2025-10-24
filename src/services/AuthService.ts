@@ -1,86 +1,282 @@
-// services/AuthService.ts
-import Cookies from "js-cookie";
-import type { LoginPayload, User, ApiResponse, LoginResponse } from '../types/auth';
+import { LoginPayload, LoginResponse, RefreshTokenResponse, ApiResponse, User } from '@/types/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+class AuthService {
+  private baseUrl: string;
 
-export async function loginUser(payload: LoginPayload): Promise<LoginResponse & { user?: User }> {
-  const response = await fetch(`${API_URL}/api/v1/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
-
-  const authHeader = response.headers.get('Authorization') || response.headers.get('authorization') || null;
-
-  let responseJson: ApiResponse<any> | null = null;
-  try {
-    responseJson = await response.json();
-  } catch (err) {
-    responseJson = null;
+  constructor() {
+    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+    console.log('AuthService initialized with baseUrl:', this.baseUrl);
   }
 
-  if (!response.ok) {
-    const msg = responseJson?.message || 'Login failed';
-    throw new Error(msg);
+  async login(loginData: LoginPayload): Promise<LoginResponse> {
+    try {
+      if (!loginData || typeof loginData !== 'object') {
+        throw new Error('Invalid login data');
+      }
+      
+      if (!loginData.email || typeof loginData.email !== 'string') {
+        throw new Error('Email is required and must be a string');
+      }
+      
+      if (!loginData.password || typeof loginData.password !== 'string') {
+        throw new Error('Password is required and must be a string');
+      }
+
+      const cleanLoginData = {
+        email: loginData.email.trim(),
+        password: loginData.password
+      };
+
+      console.log('Attempting login with:', { 
+        email: cleanLoginData.email, 
+        password: '***'
+      });
+      
+      // HIT API ROUTE INSTEAD OF DIRECT BACKEND
+      const loginUrl = '/api/auth/login';
+      console.log('Login URL:', loginUrl);
+      
+      const response = await fetch(loginUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(cleanLoginData),
+        credentials: 'include',
+      });
+
+      console.log('Login response status:', response.status);
+
+      const result = await response.json();
+      console.log('Login response data:', result);
+
+      if (!response.ok) {
+        if (result.errors && result.errors.validation) {
+          const validationErrors = result.errors.validation;
+          const errorMessages = [];
+          
+          if (validationErrors.email) {
+            errorMessages.push(...validationErrors.email);
+          }
+          if (validationErrors.password) {
+            errorMessages.push(...validationErrors.password);
+          }
+          
+          throw new Error(errorMessages.join(', ') || result.message);
+        }
+        
+        throw new Error(result.message || `HTTP Error: ${response.status}`);
+      }
+
+      if (result.code !== 200) {
+        throw new Error(result.message || 'Login failed');
+      }
+
+      if (!result.data) {
+        throw new Error('No data received from server');
+      }
+
+      console.log('Backend response structure:', result.data);
+
+      // Now access token should be in result.data.accessToken (thanks to API route)
+      const userData = {
+        id: result.data.id,
+        name: result.data.name,
+        email: result.data.email,
+        profile_uri: result.data.profile_uri,
+        role: result.data.role,
+        verified_at: result.data.verified_at,
+        created_at: result.data.created_at,
+        updated_at: result.data.updated_at,
+        deleted_at: result.data.deleted_at,
+        banned_at: result.data.banned_at,
+        last_login: result.data.last_login,
+      };
+      
+      const accessToken = result.data.accessToken;
+      
+      console.log('Extracted data:', { 
+        user: userData ? 'exists' : 'missing',
+        accessToken: accessToken ? 'exists' : 'missing',
+        note: 'refresh_token handled by HttpOnly cookies'
+      });
+
+      if (!accessToken) {
+        throw new Error('No access token received from server');
+      }
+
+      // Verify refresh token was set via correct API endpoint
+      if (typeof window !== 'undefined') {
+        setTimeout(async () => {
+          try {
+            const checkResponse = await fetch('/api/auth/refresh', {
+              method: 'GET',
+              credentials: 'include'
+            });
+            const checkResult = await checkResponse.json();
+            console.log('Refresh token check after login:', checkResult);
+          } catch (error) {
+            console.error('Error checking refresh token after login:', error);
+          }
+        }, 500);
+      }
+
+      return {
+        user: userData,
+        accessToken: accessToken,
+        refreshToken: 'httponly-cookie',
+      };
+    } catch (error: any) {
+      console.error('Login error:', error);
+      throw error;
+    }
   }
 
-  const tokenFromHeader = authHeader ? (authHeader.split(' ')[1] ?? authHeader) : undefined;
-  const tokenFromBody = responseJson?.data?.access_token ?? responseJson?.access_token;
-  const accessToken = tokenFromBody ?? tokenFromHeader;
-
-  if (accessToken) {
-    Cookies.set('accessToken', accessToken, {
-      expires: 7,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
-    });
+  async logout(): Promise<void> {
+    try {
+      await fetch(`${this.baseUrl}/api/v1/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      await fetch('/api/auth/clear-token', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    }
   }
 
-  const refreshToken = responseJson?.data?.refresh_token ?? responseJson?.refresh_token;
-  const user = responseJson?.data?.user ?? responseJson?.data ?? responseJson;
+  async refreshAccessToken(): Promise<string | null> {
+    try {
+      console.log('Attempting to refresh access token...');
+      
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      });
 
-  return {
-    user,
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  };
+      if (!response.ok) {
+        console.log('Refresh failed with status:', response.status);
+        return null;
+      }
+
+      const result = await response.json();
+      console.log('Full refresh response:', result);
+      
+      if (result.code !== 200) {
+        console.log('Refresh failed with code:', result.code);
+        return null;
+      }
+
+      // Access token sekarang ada di result.data.accessToken (thanks to API route fix)
+      let accessToken = null;
+      
+      if (result.data && result.data.accessToken) {
+        accessToken = result.data.accessToken;
+        console.log('Found access token in response data');
+      } else {
+        console.log('No access token found in response');
+        console.log('Response structure:', result);
+        return null;
+      }
+
+      console.log('Token refreshed successfully');
+      return accessToken;
+    } catch (error) {
+      console.error('Refresh token error:', error);
+      return null;
+    }
+  }
+
+  async getCurrentUser(accessToken: string): Promise<User | null> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/v1/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        console.log('Get current user failed with status:', response.status);
+        return null;
+      }
+
+      const result = await response.json();
+      
+      if (result.code !== 200) {
+        console.log('Get current user failed with code:', result.code);
+        return null;
+      }
+
+      return result.data;
+    } catch (error) {
+      console.error('Get current user error:', error);
+      return null;
+    }
+  }
+
+  async serverSideAuthCheck(request: Request): Promise<{ isAuthenticated: boolean; user: User | null; accessToken: string | null }> {
+    try {
+      const refreshToken = this.getRefreshTokenFromCookies(request);
+      
+      if (!refreshToken) {
+        return { isAuthenticated: false, user: null, accessToken: null };
+      }
+
+      const response = await fetch(`${this.baseUrl}/api/v1/auth/refresh-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          refreshToken: refreshToken
+        }),
+      });
+
+      if (!response.ok) {
+        return { isAuthenticated: false, user: null, accessToken: null };
+      }
+
+      const refreshResult = await response.json();
+      
+      if (refreshResult.code !== 200) {
+        return { isAuthenticated: false, user: null, accessToken: null };
+      }
+
+      const accessToken = refreshResult.data.accessToken;
+      const user = await this.getCurrentUser(accessToken);
+      
+      return {
+        isAuthenticated: !!user,
+        user,
+        accessToken,
+      };
+    } catch (error) {
+      console.error('Server side auth check error:', error);
+      return { isAuthenticated: false, user: null, accessToken: null };
+    }
+  }
+
+  private getRefreshTokenFromCookies(request: Request): string | null {
+    const cookieHeader = request.headers.get('cookie');
+    if (!cookieHeader) return null;
+
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, string>);
+
+    return cookies.refresh_token || null;
+  }
 }
 
-export async function getProfile(token?: string): Promise<User> {
-  if (!token) {
-    token = Cookies.get('accessToken') ?? undefined;
-  }
-
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-    method: 'GET',
-    headers,
-    credentials: 'include',
-  });
-
-  const responseJson: ApiResponse<User> = await response.json();
-
-  if (!response.ok) {
-    throw new Error(responseJson.message || 'Failed to fetch user profile');
-  }
-  return responseJson.data;
-}
-
-export async function logoutUser(): Promise<void> {
-  try {
-    await fetch(`${API_URL}/api/v1/auth/logout`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-    });
-  } catch (err) {
-    console.error('API logout failed.', err);
-  } finally {
-    Cookies.remove('accessToken', { path: '/' });
-  }
-}
+export default new AuthService();

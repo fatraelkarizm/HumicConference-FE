@@ -1,104 +1,216 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
-import { getProfile, loginUser as apiLogin, logoutUser } from "@/services/AuthService";
-import type { User, AuthContextType, LoginPayload } from "@/types/auth";
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { AuthContextType, User, ROLE_ROUTES } from '@/types/auth';
+import AuthService from '@/services/AuthService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
-  useEffect(() => {
-    const checkUserLoggedIn = async () => {
-      // Read token from cookie first (cookies set by loginUser), fallback to localStorage for backward compatibility
-      const storedToken = Cookies.get('accessToken') ?? localStorage.getItem('accessToken');
-      if (storedToken) {
-        setToken(storedToken);
-        try {
-          const userData = await getProfile(storedToken);
-          setUser(userData);
-        } catch (error) {
-          console.error("Session expired or token invalid.", error);
-          Cookies.remove('accessToken');
-          localStorage.removeItem('accessToken');
-          setToken(null);
-          setUser(null);
-        }
-      }
-      setLoading(false);
-    };
-    checkUserLoggedIn();
+interface AuthProviderProps {
+  children: React.ReactNode;
+  initialUser?: User | null;
+  initialAccessToken?: string | null;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ 
+  children, 
+  initialUser = null,
+  initialAccessToken = null 
+}) => {
+  const [user, setUser] = useState<User | null>(initialUser);
+  const [loading, setLoading] = useState(!initialUser);
+  const [accessToken, setAccessToken] = useState<string | null>(initialAccessToken);
+
+  // Get dashboard URL based on role
+  const getDashboardUrl = useCallback((role: string): string => {
+    const url = ROLE_ROUTES[role as keyof typeof ROLE_ROUTES] || '/dashboard';
+    return url;
   }, []);
 
-  const login = async (payload: LoginPayload) => {
-    // apiLogin (loginUser) will set credentials: 'include' so server refresh cookie is stored and it will also set client cookie
-    const result = await apiLogin(payload);
-    // result may contain user and optionally tokens
-    const returnedUser = result.user ?? (result as any).data ?? null;
-    const returnedAccessToken = result.access_token ?? undefined;
+  // Refresh access token
+  const refreshToken = useCallback(async (): Promise<string | null> => {
+    try {
+      const newAccessToken = await AuthService.refreshAccessToken();
+      setAccessToken(newAccessToken);
+      
+      if (newAccessToken && !user) {
+        const currentUser = await AuthService.getCurrentUser(newAccessToken);
+        if (currentUser) {
+          setUser(currentUser);
+        }
+      } else if (!newAccessToken) {
+        setUser(null);
+      }
+      
+      return newAccessToken;
+    } catch (error) {
+      setAccessToken(null);
+      setUser(null);
+      return null;
+    }
+  }, [user]);
 
-    // If token wasn't set inside apiLogin for some reason, try reading cookie that apiLogin set
-    const cookieToken = Cookies.get('accessToken') ?? returnedAccessToken ?? localStorage.getItem('accessToken');
+  // Login function dengan role-based redirect
+  const login = useCallback(async (email: string, password: string): Promise<void> => {
+    setLoading(true);
+    try {
+      const loginResponse = await AuthService.login({ email, password });
+      setUser(loginResponse.user);
+      setAccessToken(loginResponse.accessToken);
+      
+      
+      // Automatic redirect based on role
+      const dashboardUrl = getDashboardUrl(loginResponse.user.role);
+      
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          window.location.href = dashboardUrl;
+        }, 200);
+      }
+      
+    } catch (error: any) {
+      throw new Error(error.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  }, [getDashboardUrl]);
 
-    if (cookieToken) {
-      // persist in memory and optionally localStorage for old code paths
-      setToken(cookieToken);
-      localStorage.setItem('accessToken', cookieToken);
+  // Logout function
+  const logout = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    try {
+      await AuthService.logout();
+    } catch (error) {
+    } finally {
+      setUser(null);
+      setAccessToken(null);
+      setLoading(false);
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+  }, []);
+
+  // Check refresh token via same endpoint dengan GET method
+  const checkRefreshToken = useCallback(async (): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        return result.hasRefreshToken || false;
+      }
+      
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }, []);
+
+  // Check if current user can access current route
+  const canAccessCurrentRoute = useCallback((): boolean => {
+    if (typeof window === 'undefined' || !user) return true; // Let middleware handle
+
+    const currentPath = window.location.pathname;
+
+    // Super admin can access everything
+    if (user.role === 'SUPER_ADMIN') {
+      return true;
     }
 
-    if (returnedUser) {
-      setUser(returnedUser as User);
-    } else {
-      // in case backend returned only tokens and no user, fetch profile
-      if (cookieToken) {
-        const userData = await getProfile(cookieToken);
-        setUser(userData);
+    // Admin users can only access their specific admin routes
+    if (user.role === 'ADMIN_ICICYTA' && currentPath.startsWith('/admin/ICICYTA')) {
+      return true;
+    }
+
+    if (user.role === 'ADMIN_ICODSA' && currentPath.startsWith('/admin/ICODSA')) {
+      return true;
+    }
+
+    // If trying to access wrong admin area, redirect to correct one
+    if (currentPath.startsWith('/admin/') || currentPath.startsWith('/super-admin/')) {
+      const correctUrl = getDashboardUrl(user.role);
+      if (currentPath !== correctUrl) {
+        setTimeout(() => {
+          window.location.href = correctUrl;
+        }, 100);
+        return false;
       }
     }
 
-    // redirect after login
-    router.push("/super-admin/dashboard");
-  };
+    return true;
+  }, [user, getDashboardUrl]);
 
-  const logout = async () => {
-    try {
-      await logoutUser();
-    } catch (error) {
-      console.error("Logout API call failed:", error);
-    } finally {
-      setUser(null);
-      setToken(null);
-      Cookies.remove('accessToken');
-      localStorage.removeItem('accessToken');
-      router.push("/login");
+  // Initialize auth state ONLY if we have refresh token
+  useEffect(() => {
+    if (!initialUser && !initialAccessToken && typeof window !== 'undefined') {
+      const initializeAuth = async () => {
+        const hasToken = await checkRefreshToken();
+        
+        if (hasToken) {
+          setLoading(true);
+          try {
+            const newToken = await refreshToken();
+            if (newToken) {
+            }
+          } catch (error) {
+          } finally {
+            setLoading(false);
+          }
+        } else {
+          setLoading(false);
+        }
+      };
+
+      initializeAuth();
+    } else {
+      setLoading(false);
     }
-  };
+  }, [initialUser, initialAccessToken, refreshToken, checkRefreshToken]);
 
-  const value = { user, token, loading, login, logout };
+  // Check route access after user is loaded
+  useEffect(() => {
+    if (!loading && user) {
+      const canAccess = canAccessCurrentRoute();
+    }
+  }, [user, loading, canAccessCurrentRoute]);
+
+  // Auto refresh token ONLY if user is authenticated
+  useEffect(() => {
+    if (!accessToken || !user || typeof window === 'undefined') return;
+
+    const refreshInterval = setInterval(async () => {
+      await refreshToken();
+    }, 14 * 60 * 1000); // Refresh every 14 minutes
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, [accessToken, user, refreshToken]);
+
+  const value: AuthContextType = {
+    user,
+    loading,
+    login,
+    logout,
+    refreshToken,
+    isAuthenticated: !!user && !!accessToken,
+    getDashboardUrl,
+  };
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-}
+};

@@ -8,11 +8,10 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
-import type { LoginPayload } from "@/types/auth";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const { login } = useAuth(); // Ambil fungsi login dari context
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,9 +25,11 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const payload: LoginPayload = { email, password };
-      await login(payload);
+      console.log('Submitting login with:', { email, password: '***' });
+      await login(email, password);
+      // Redirect will be handled automatically by AuthContext based on role
     } catch (err: any) {
+      console.log('Login failed:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -36,7 +37,6 @@ export default function LoginPage() {
   };
 
   return (
-    // @message: halaman login akan fetching data dari backend
     <main className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="flex w-full max-w-5xl mx-4 bg-white rounded-2xl shadow-lg overflow-hidden">
         {/* Kolom Kiri (Ilustrasi) */}

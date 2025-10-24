@@ -4,7 +4,7 @@ export type Admin = {
   id: string;
   fullName: string;
   email: string;
-  role: "Admin ICICyTA" | "Admin ICoDSA" | string;
+  role: "ADMIN_ICICYTA" | "ADMIN_ICODSA" | string; // FIXED: ICODSA
   createdAt?: string;
 };
 
@@ -67,6 +67,10 @@ export default function AdminModal({ open, onClose, onSave, initialData = null, 
       alert("Email harus diisi.");
       return;
     }
+    if (!role) {
+      alert("Role harus dipilih.");
+      return;
+    }
     if (mode === "create") {
       if (!password) {
         alert("Password harus diisi.");
@@ -83,6 +87,8 @@ export default function AdminModal({ open, onClose, onSave, initialData = null, 
         return;
       }
     }
+
+    console.log('AdminModal submitting with role:', role); // Debug log
 
     onSave({ fullName: fullName.trim(), email: email.trim(), password: password || undefined, role }, initialData?.id);
     onClose();
@@ -163,8 +169,9 @@ export default function AdminModal({ open, onClose, onSave, initialData = null, 
                 className="mt-1 w-full rounded-md border text-black border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
               >
                 <option value="">Pilih Role</option>
-                <option value="Admin ICICyTA">Admin ICICyTA</option>
-                <option value="Admin ICoDSA">Admin ICoDSA</option>
+                {/* FIXED: Use backend expected values - ICODSA */}
+                <option value="ADMIN_ICICYTA">Admin ICICYTA</option>
+                <option value="ADMIN_ICODSA">Admin ICODSA</option>
               </select>
             </div>
 

@@ -1,82 +1,92 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
-/**
- * Simple JWT payload parser (Edge-safe, uses atob).
- * Expects a standard JWT: header.payload.signature
- */
-function parseJwtPayload(token: string | undefined | null) {
-  if (!token) return null;
-  const parts = token.split(".");
-  if (parts.length < 2) return null;
-  const base64Url = parts[1];
-  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-  try {
-    const jsonPayload = decodeURIComponent(
-      Array.prototype.map
-        .call(atob(base64), (c: string) => {
-          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-        })
-        .join("")
-    );
-    return JSON.parse(jsonPayload);
-  } catch (err) {
-    return null;
-  }
-}
+// Protected routes yang memerlukan authentication
+const protectedRoutes = [
+  '/dashboard',
+  '/profile',
+  '/super-admin',
+  '/admin', // ADMIN routes
+];
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+// Public routes yang tidak memerlukan authentication
+const publicRoutes = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/',
+  '/about',
+  '/conferences',
+];
 
-  // skip static, api, _next, assets, etc.
+// Admin routes mapping
+const adminRoutes = {
+  '/admin/ICICYTA': 'ADMIN_ICICYTA',
+  '/admin/ICODSA': 'ADMIN_ICODSA',
+};
+
+// Super admin routes
+const superAdminRoutes = [
+  '/super-admin'
+];
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip middleware untuk API routes, static files, dan _next
   if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/static") ||
-    pathname.startsWith("/favicon.ico")
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/static/') ||
+    pathname.includes('.') ||
+    pathname.startsWith('/favicon')
   ) {
     return NextResponse.next();
   }
 
-  // Protect all /super-admin routes
-  if (pathname.startsWith("/super-admin")) {
-    // try to read non-httpOnly cookie 'accessToken' (we set this client-side)
-    const accessToken = req.cookies.get("accessToken")?.value;
 
-    if (!accessToken) {
-      // no token -> redirect to login
-      const loginUrl = req.nextUrl.clone();
-      loginUrl.pathname = "/login";
-      loginUrl.searchParams.set("returnTo", pathname);
+  // Check if route is protected
+  const isProtectedRoute = protectedRoutes.some(route => 
+    pathname.startsWith(route)
+  );
+
+  // Check if route is public
+  const isPublicRoute = publicRoutes.some(route => 
+    pathname === route || pathname.startsWith(route)
+  );
+
+  // Check refresh token exists
+  const refreshToken = request.cookies.get('refresh_token')?.value;
+
+  // If it's a protected route, check authentication
+  if (isProtectedRoute) {
+    if (!refreshToken) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    const payload = parseJwtPayload(accessToken);
-    if (!payload || !payload.role) {
-      const loginUrl = req.nextUrl.clone();
-      loginUrl.pathname = "/login";
-      loginUrl.searchParams.set("returnTo", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    // allow only SUPER_ADMIN
-    // adapt condition if payload.role format differs (string or array)
-    const role = payload.role;
-    if (role !== "SUPER_ADMIN") {
-      const loginUrl = req.nextUrl.clone();
-      loginUrl.pathname = "/login";
-      loginUrl.searchParams.set("returnTo", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    // allowed
+    // For admin routes, we'll let the client-side handle role verification
+    // since server-side user data fetching is complex in middleware
     return NextResponse.next();
+  }
+
+  // Handle auth routes (login, register) - redirect if already authenticated
+  if ((pathname === '/login' || pathname === '/register') && refreshToken) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next();
 }
 
-// Apply middleware only to /super-admin routes
 export const config = {
-  matcher: ["/super-admin/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
