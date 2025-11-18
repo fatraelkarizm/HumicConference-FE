@@ -1,24 +1,4 @@
-// Backend response types - REAL structure
-export interface BackendConferenceSchedule {
-  id: string;
-  name: string;
-  description?: string;
-  year: string;
-  start_date: string; // ISO string
-  end_date: string; // ISO string
-  type: 'ICICYTA' | 'ICODSA';
-  contact_email?: string;
-  timezone_iana?: string;
-  onsite_presentation?: string;
-  online_presentation?: string;
-  notes?: string;
-  no_show_policy?: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-  schedules?: BackendSchedule[];
-}
-
+// =================== BACKEND SCHEDULE TYPES ===================
 export interface BackendSchedule {
   id: string;
   date: string; // ISO string
@@ -32,47 +12,19 @@ export interface BackendSchedule {
   rooms?: BackendRoom[];
 }
 
-export interface BackendRoom {
-  id: string;
-  name: string;
-  identifier?: string;
-  description?: string;
-  type: 'MAIN' | 'PARALLEL';
-  online_meeting_url?: string;
-  start_time?: string;
-  end_time?: string;
-  schedule_id: string;
-  track_id?: string;
-  created_at: string;
-  updated_at: string;
-  track?: BackendTrack;
-}
+// ✅ FIX: Import types properly
+import type { BackendRoom } from './room';
+import type { BackendTrack } from './track';
+import type { BackendApiResponse } from './api';
 
-export interface BackendTrack {
-  id: string;
-  name: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface BackendApiResponse<T> {
-  code: number;
-  status: string;
-  message: string;
-  pagination?: any;
-  data: T;
-  errors?: any;
-}
-
-// Frontend processed types - FIXED
+// =================== FRONTEND SCHEDULE TYPES ===================
 export interface ScheduleItem {
   id: string;
   title: string;
   description?: string;
   speaker?: string;
   location?: string;
-  conference?: string; // ✅ ADDED: Missing property
+  conference?: string; // ICICYTA or ICODSA
   date: string; // YYYY-MM-DD format
   startTime?: string;
   endTime?: string;
@@ -96,24 +48,7 @@ export interface DaySchedule {
   items: ScheduleItem[];
 }
 
-export interface ProcessedConferenceSchedule {
-  id: string;
-  name: string;
-  description?: string;
-  year: string;
-  startDate: string;
-  endDate: string;
-  type: 'ICICYTA' | 'ICODSA';
-  contactEmail?: string;
-  timezone?: string;
-  onsiteLocation?: string;
-  onlineLocation?: string;
-  notes?: string;
-  noShowPolicy?: string;
-  days: DaySchedule[];
-}
-
-// Legacy types for compatibility
+// =================== FORM DATA TYPES ===================
 export type NewScheduleData = {
   title: string;
   conference: string;
@@ -128,8 +63,8 @@ export type NewScheduleData = {
   dayTitle?: string;
 };
 
-// ✅ ADDED: For update operations
 export type UpdateScheduleData = Partial<NewScheduleData>;
 
-// Alias for API response
-export type ScheduleApiResponse = BackendApiResponse<BackendConferenceSchedule[]>;
+// =================== API RESPONSE ALIASES ===================
+export type ScheduleListApiResponse = BackendApiResponse<BackendSchedule[]>;
+export type ScheduleApiResponse = BackendApiResponse<BackendSchedule>;

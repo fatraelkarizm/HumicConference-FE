@@ -2,192 +2,146 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import scheduleService from '@/services/ScheduleService';
 import { ScheduleProcessor, mapUserRoleToConference, findConferenceByType } from '@/utils/scheduleUtils';
-import type { ProcessedConferenceSchedule, ScheduleItem, NewScheduleData } from '@/types/schedule';
-export const useSchedule = () => {
-     const { user, isAuthenticated } = useAuth();
-     const [schedule, setSchedule] = useState<ProcessedConferenceSchedule | null>(null);
-     const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
-     const [loading, setLoading] = useState(true);
-     const [error, setError] = useState<string | null>(null);
+import type { 
+  ProcessedConferenceSchedule, 
+  ScheduleItem, 
+  NewScheduleData,
+  BackendSchedule,
+  UpdateScheduleData,
+  DaySchedule
+} from '@/types';
 
-     const loadSchedule = useCallback(async () => {
-          if (!isAuthenticated || !user) {
-               setError('User not authenticated');
-               setLoading(false);
-               return;
-          }
+export const useSchedule = (conferenceScheduleId?: string) => {
+  const { user, isAuthenticated } = useAuth();
+  const [schedules, setSchedules] = useState<BackendSchedule[]>([]);
+  const [processedSchedule, setProcessedSchedule] = useState<ProcessedConferenceSchedule | null>(null);
+  const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-          setLoading(true);
-          setError(null);
+  const loadSchedules = useCallback(async () => {
+    if (!isAuthenticated || !user) {
+      setError('User not authenticated');
+      setLoading(false);
+      return;
+    }
 
-          try {
-               const accessToken = await scheduleService.getAccessToken();
-               if (!accessToken) {
-                    throw new Error('Access token not available');
-               }
+    setLoading(true);
+    setError(null);
 
-               const [currentUser, allConferences] = await Promise.all([
-                    scheduleService.getCurrentUser(accessToken),
-                    scheduleService.getAllConferenceSchedules(accessToken)
-               ]);
+    try {
+      const accessToken = await scheduleService.getAccessToken();
+      if (!accessToken) {
+        throw new Error('Access token not available');
+      }
 
-               const conferenceType = mapUserRoleToConference(currentUser.role);
-               const targetConference = findConferenceByType(allConferences, conferenceType);
+      // If specific conference schedule ID provided
+      if (conferenceScheduleId) {
+        const schedulesData = await scheduleService.getAllSchedules(accessToken, conferenceScheduleId);
+        setSchedules(schedulesData);
+        return;
+      }
 
-               if (!targetConference) {
-                    throw new Error(`No ${conferenceType} conference found`);
-               }
+      // Otherwise, load based on user role (legacy behavior)
+      const [currentUser, allConferences] = await Promise.all([
+        scheduleService.getCurrentUser(accessToken),
+        scheduleService.getAllConferenceSchedules(accessToken)
+      ]);
 
-               const processedSchedule = ScheduleProcessor.processConferenceSchedule(targetConference);
-               setSchedule(processedSchedule);
+      const conferenceType = mapUserRoleToConference(currentUser.role);
+      const targetConference = findConferenceByType(allConferences, conferenceType);
 
-               const allItems = processedSchedule.days.flatMap(day =>
-                    day.items.map(item => ({
-                         ...item,
-                         conference: conferenceType,
-                         dayTitle: day.dayTitle,
-                         date: day.date
-                    }))
-               );
-               setScheduleItems(allItems);
+      if (!targetConference) {
+        throw new Error(`No ${conferenceType} conference found`);
+      }
 
-               // Schedule loaded successfully
-          } catch (err: any) {
-               console.error('❌ Failed to load schedule:', err.message);
-               setError(err.message || 'Failed to load schedule');
-          } finally {
-               setLoading(false);
-          }
-     }, [isAuthenticated, user]);
+      const processed = ScheduleProcessor.processConferenceSchedule(targetConference);
+      setProcessedSchedule(processed);
 
-     useEffect(() => {
-          if (isAuthenticated && user) {
-               loadSchedule();
-          }
-     }, [loadSchedule, isAuthenticated, user]);
+      // ✅ FIX: Add proper types for day and item
+      const allItems = processed.days.flatMap((day: DaySchedule) =>
+        day.items.map((item: ScheduleItem) => ({
+          ...item,
+          conference: conferenceType,
+          dayTitle: day.dayTitle,
+          date: day.date
+        }))
+      );
+      setScheduleItems(allItems);
 
-     return {
-          schedule,
-          scheduleItems,
-          loading,
-          error,
-          refetch: loadSchedule
-     };
+    } catch (err: any) {
+      console.error('❌ Failed to load schedules:', err.message);
+      setError(err.message || 'Failed to load schedules');
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, user, conferenceScheduleId]);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadSchedules();
+    }
+  }, [loadSchedules, isAuthenticated, user]);
+
+  return {
+    schedules,
+    processedSchedule,
+    scheduleItems,
+    loading,
+    error,
+    refetch: loadSchedules
+  };
 };
 
 export const useScheduleActions = () => {
-     const createScheduleItem = async (data: NewScheduleData): Promise<boolean> => {
-          if (!data.title || !data.date || !data.startTime || !data.endTime || !data.conference) {
-               throw new Error('Missing required fields');
-          }
+  const createSchedule = async (data: NewScheduleData, conferenceId: string): Promise<BackendSchedule | 'success'> => {
+    if (!data.title || !data.date || !data.startTime || !data.endTime) {
+      throw new Error('Missing required fields');
+    }
 
-          const accessToken = await scheduleService.getAccessToken();
-          if (!accessToken) {
-               throw new Error('Access token not available');
-          }
+    const accessToken = await scheduleService.getAccessToken();
+    if (!accessToken) {
+      throw new Error('Access token not available');
+    }
 
-          const allConferences = await scheduleService.getAllConferenceSchedules(accessToken);
-          const targetConference = findConferenceByType(allConferences, data.conference);
+    return await scheduleService.createSchedule(accessToken, data, conferenceId);
+  };
 
-          if (!targetConference) {
-               const availableTypes = allConferences.map(c => c.type).join(', ');
-               throw new Error(`Conference "${data.conference}" not found. Available: ${availableTypes}`);
-          }
+  const updateSchedule = async (scheduleId: string, data: UpdateScheduleData): Promise<BackendSchedule> => {
+    const accessToken = await scheduleService.getAccessToken();
+    if (!accessToken) {
+      throw new Error('Access token not available');
+    }
 
-          // ✅ Step 1: Create schedule
-          let createResult = null;
-          try {
-               createResult = await scheduleService.createSchedule(accessToken, data, targetConference.id);
-          } catch (error: any) {
-               console.error('❌ Schedule creation error:', error.message);
+    return await scheduleService.updateSchedule(accessToken, scheduleId, data);
+  };
 
-               if (error.message.toLowerCase().includes('required') ||
-                    error.message.toLowerCase().includes('invalid') ||
-                    error.message.toLowerCase().includes('before') ||
-                    error.message.toLowerCase().includes('validation')) {
-                    throw error;
-               }
+  const deleteSchedule = async (scheduleId: string): Promise<boolean> => {
+    const accessToken = await scheduleService.getAccessToken();
+    if (!accessToken) {
+      throw new Error('Access token not available');
+    }
 
-               if (error.message.toLowerCase().includes('successfully') ||
-                    error.message.toLowerCase().includes('created') ||
-                    error.message.toLowerCase().includes('saved')) {
-                    createResult = 'success';
-               } else {
-                    throw error;
-               }
-          }
+    if (!scheduleId || scheduleId.length < 10) {
+      throw new Error(`Invalid schedule ID: ${scheduleId}`);
+    }
 
-          // ✅ Step 2: Create room if successful (simplified)
-          if (createResult === 'success' || (createResult && typeof createResult === 'object')) {
-               if (createResult !== 'success' && createResult.id) {
-                    try {
-                         // Always create room if we have schedule ID - room contains speaker/moderator info
-                         const room = await scheduleService.createRoom(accessToken, createResult.id, data);
+    return await scheduleService.deleteSchedule(accessToken, scheduleId);
+  };
 
-                         // Skip separate track creation since speaker goes to room description
-                         // if (data.speaker?.trim()) {
-                         //      const track = await scheduleService.createTrackSeparate(accessToken, data.speaker);
-                         // }
-                    } catch (roomError :any) {
-                         console.warn('⚠️ Room creation failed (non-critical):', roomError.message);
-                         // Don't throw error - schedule creation was successful
-                    }
-               }
-          }
+  const getScheduleById = async (scheduleId: string): Promise<BackendSchedule> => {
+    const accessToken = await scheduleService.getAccessToken();
+    if (!accessToken) {
+      throw new Error('Access token not available');
+    }
 
-          return true;
-     };
+    return await scheduleService.getScheduleById(accessToken, scheduleId);
+  };
 
-     const updateScheduleItem = async (id: string, data: NewScheduleData): Promise<boolean> => {
-          const accessToken = await scheduleService.getAccessToken();
-          if (!accessToken) {
-               throw new Error('Access token not available');
-          }
-
-          const scheduleId = extractScheduleId(id);
-          await scheduleService.updateSchedule(accessToken, scheduleId, data);
-          return true;
-     };
-
-     const deleteScheduleItem = async (id: string): Promise<boolean> => {
-          const accessToken = await scheduleService.getAccessToken();
-          if (!accessToken) {
-               throw new Error('Access token not available');
-          }
-
-          const scheduleId = extractScheduleId(id);
-
-          if (!scheduleId || scheduleId.length < 10) {
-               throw new Error(`Invalid schedule ID: ${scheduleId}`);
-          }
-
-          const success = await scheduleService.deleteSchedule(accessToken, scheduleId);
-
-          if (!success) {
-               throw new Error('Delete operation failed');
-          }
-
-          return true;
-     };
-
-     const extractScheduleId = (id: string): string => {
-          if (!id) {
-               throw new Error('No ID provided');
-          }
-
-          if (id.includes('-') && id.split('-').length > 2) {
-               const parts = id.split('-');
-               if (parts.length >= 5) {
-                    return parts.slice(0, 5).join('-');
-               }
-          }
-
-          return id;
-     };
-
-     return {
-          createScheduleItem,
-          updateScheduleItem,
-          deleteScheduleItem
-     };
+  return {
+    createSchedule,
+    updateSchedule,
+    deleteSchedule,
+    getScheduleById
+  };
 };

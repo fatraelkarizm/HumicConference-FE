@@ -1,11 +1,10 @@
+import { BackendApiResponse } from '@/types/api';
 import {
-  BackendConferenceSchedule,
   BackendSchedule,
-  BackendRoom,
-  BackendApiResponse,
   NewScheduleData,
   UpdateScheduleData
 } from '@/types/schedule';
+import { BackendConferenceSchedule } from '@/types/conferenceSchedule';
 
 class ScheduleService {
   private readonly baseUrl: string;
@@ -56,26 +55,19 @@ class ScheduleService {
       throw new Error(result.message || `Request failed with code ${result.code}`);
     }
 
-    if (result.status && result.status.toLowerCase().includes('error')) {
-      console.error(`❌ Backend error status on ${endpoint}:`, result);
-      throw new Error(result.message || `Request failed with status ${result.status}`);
-    }
-
-    const hasSuccessCode = !result.code || result.code === 200 || result.code === 201;
-    const hasSuccessStatus = !result.status || result.status === 'OK' || result.status === 'CREATED';
-    const hasData = result.data !== undefined && result.data !== null;
-    
-    if (hasSuccessCode && hasSuccessStatus && hasData) {
-      return result;
-    }
-
-    if (result.message && result.message.toLowerCase().includes('successfully')) {
-      return result;
-    }
-
     return result;
   }
 
+  // ✅ ADD: Get current user method
+  async getCurrentUser(accessToken: string): Promise<any> {
+    const response = await this.makeRequest('/api/v1/auth/me', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    return response.data;
+  }
+
+  // ✅ ADD: Get all conference schedules method
   async getAllConferenceSchedules(accessToken: string): Promise<BackendConferenceSchedule[]> {
     const response = await this.makeRequest(
       `/api/v1/conference-schedule?include_relation[0]=schedules`,
@@ -87,10 +79,25 @@ class ScheduleService {
     return Array.isArray(response.data) ? response.data : [];
   }
 
-  async getCurrentUser(accessToken: string): Promise<any> {
-    const response = await this.makeRequest('/api/v1/auth/me', {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
+  async getAllSchedules(accessToken: string, conferenceScheduleId?: string): Promise<BackendSchedule[]> {
+    const queryParam = conferenceScheduleId ? `?conference_schedule_id=${conferenceScheduleId}` : '';
+    const response = await this.makeRequest(
+      `/api/v1/schedule${queryParam}`,
+      {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      }
+    );
+
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  async getScheduleById(accessToken: string, scheduleId: string): Promise<BackendSchedule> {
+    const response = await this.makeRequest(
+      `/api/v1/schedule/${scheduleId}`,
+      {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      }
+    );
 
     return response.data;
   }
@@ -101,10 +108,10 @@ class ScheduleService {
       throw new Error(clientValidation.error);
     }
 
-    // The backend does not accept start_time/end_time at the schedule level.
-    // Times are handled at the room level during room creation.
     const schedulePayload: any = {
       date: data.date,
+      start_time: data.startTime,
+      end_time: data.endTime,
       type: this.mapScheduleTypeToBackend(data.scheduleType),
       notes: data.description || null,
       conference_schedule_id: conferenceId,
@@ -130,14 +137,6 @@ class ScheduleService {
       console.error('❌ Schedule creation failed:', error.message);
       
       if (error.message && error.message.toLowerCase().includes('successfully')) {
-        return 'success';
-      }
-      
-      if (error.message && (
-        error.message.toLowerCase().includes('created') ||
-        error.message.toLowerCase().includes('saved') ||
-        error.message.toLowerCase().includes('success')
-      )) {
         return 'success';
       }
       
@@ -204,86 +203,6 @@ class ScheduleService {
     }
   }
 
-  // ✅ Fixed createRoom - Maps speaker to room description correctly
-  async createRoom(accessToken: string, scheduleId: string, data: NewScheduleData): Promise<BackendRoom | null> {
-    // ✅ Only create room if there's meaningful room data
-    if (!data.title && !data.location && !data.speaker) {
-      return null;
-    }
-
-    try {
-      const roomType = this.mapRoomType(data.scheduleType);
-
-      // ✅ Map speaker to description (as shown in the JSON structure)
-      let roomDescription = data.description || null;
-      if (data.speaker?.trim()) {
-        const moderatorText = `Moderator: ${data.speaker.trim()}`;
-        roomDescription = roomDescription 
-          ? `${roomDescription}. ${moderatorText}`
-          : moderatorText;
-      }
-
-      const roomPayload: any = {
-        name: data.title || 'Session Room',
-        identifier: null,
-        description: roomDescription,
-        type: roomType,
-        online_meeting_url: data.location?.startsWith('http') ? data.location : null,
-        schedule_id: scheduleId,
-      };
-
-      // Add track for PARALLEL rooms (required by backend)
-      if (roomType === 'PARALLEL' && data.speaker?.trim()) {
-        roomPayload.track = {
-          name: data.speaker.trim(),
-          description: `Track by ${data.speaker.trim()}`
-        };
-      }
-
-      const response = await this.makeRequest('/api/v1/room', {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(roomPayload)
-      });
-
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Room creation failed:', error.message);
-      return null; // Non-critical failure
-    }
-  }
-
-  // ✅ Simplified track creation - separate from room creation
-  async createTrackSeparate(accessToken: string, speakerName: string): Promise<any> {
-    if (!speakerName?.trim()) {
-      return null;
-    }
-
-    try {
-      const trackPayload = {
-        name: speakerName.trim(),
-        description: `Track by ${speakerName.trim()}`,
-      };
-
-      const trackResponse = await this.makeRequest('/api/v1/track', {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(trackPayload)
-      });
-
-      return trackResponse.data;
-    } catch (error: any) {
-      console.error('❌ Track creation failed:', error.message);
-      return null; // Non-critical failure
-    }
-  }
-
   private mapScheduleTypeToBackend(scheduleType?: string): 'TALK' | 'BREAK' | 'ONE_DAY_ACTIVITY' {
     switch (scheduleType?.toLowerCase()) {
       case 'break':
@@ -298,20 +217,6 @@ class ScheduleService {
       case 'panel':
       default: 
         return 'TALK';
-    }
-  }
-
-  private mapRoomType(scheduleType?: string): 'MAIN' | 'PARALLEL' {
-    switch (scheduleType?.toLowerCase()) {
-      case 'panel':
-      case 'workshop':
-        return 'PARALLEL';
-      case 'speech':
-      case 'reporting':
-      case 'break':
-      case 'activity':
-      default:
-        return 'MAIN';
     }
   }
 }
