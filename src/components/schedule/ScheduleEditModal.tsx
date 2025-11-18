@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { NewScheduleData, ScheduleItem } from "@/types/schedule";
-import { updateSchedule } from "@/services/ScheduleService";
+import type { UpdateScheduleData, ScheduleItem } from "@/types/schedule";
+import scheduleService from "@/services/ScheduleService"; 
 
 type Props = {
   open: boolean;
@@ -26,6 +26,7 @@ export default function ScheduleEditModal({
   const [scheduleType, setScheduleType] = useState("");
   const [dayNumber, setDayNumber] = useState<number | undefined>(1);
   const [dayTitle, setDayTitle] = useState<string | undefined>("");
+  const [isLoading, setIsLoading] = useState(false); // ✅ ADDED: Loading state
 
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -66,13 +67,14 @@ export default function ScheduleEditModal({
       return;
     }
 
-    // ensure item is available before proceeding
     if (!item) {
       alert("Item tidak tersedia.");
       return;
     }
 
-    const payload: Partial<NewScheduleData> = {
+    setIsLoading(true); // ✅ ADDED: Set loading state
+
+    const payload: UpdateScheduleData = {
       title,
       conference,
       date,
@@ -87,12 +89,14 @@ export default function ScheduleEditModal({
     };
 
     try {
-      const updated = await updateSchedule(item.id, payload);
+      const updated = await scheduleService.updateSchedule(item.id, payload); // ✅ FIXED: Use service method
       onSaved(updated);
       onClose();
     } catch (err: any) {
       console.error(err);
-      alert("Gagal menyimpan perubahan.");
+      alert("Gagal menyimpan perubahan: " + (err.message || "Unknown error"));
+    } finally {
+      setIsLoading(false); // ✅ ADDED: Reset loading state
     }
   }
 
@@ -110,7 +114,7 @@ export default function ScheduleEditModal({
       >
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-black">Edit Schedule</h3>
-          <button onClick={onClose} className="text-black">
+          <button onClick={onClose} className="text-black" disabled={isLoading}>
             ✕
           </button>
         </div>
@@ -122,6 +126,7 @@ export default function ScheduleEditModal({
               className="w-full rounded-md border px-3 py-2 text-sm text-black placeholder:text-gray-400"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              disabled={isLoading}
             />
 
             <label className="block text-sm text-black">Tanggal</label>
@@ -130,6 +135,7 @@ export default function ScheduleEditModal({
               className="w-full rounded-md border px-3 py-2 text-sm text-black"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              disabled={isLoading}
             />
 
             <div className="grid grid-cols-2 gap-3">
@@ -140,6 +146,7 @@ export default function ScheduleEditModal({
                   className="w-full rounded-md border px-3 py-2 text-sm text-black"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
               <div>
@@ -151,6 +158,7 @@ export default function ScheduleEditModal({
                   className="w-full rounded-md border px-3 py-2 text-sm text-black"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -160,6 +168,7 @@ export default function ScheduleEditModal({
               className="w-full rounded-md border px-3 py-2 text-sm text-black"
               value={speaker}
               onChange={(e) => setSpeaker(e.target.value)}
+              disabled={isLoading}
             />
           </div>
 
@@ -169,6 +178,7 @@ export default function ScheduleEditModal({
               className="w-full rounded-md border px-3 py-2 text-sm text-black"
               value={conference}
               onChange={(e) => setConference(e.target.value)}
+              disabled={isLoading}
             />
 
             <label className="block text-sm text-black">Lokasi/Link</label>
@@ -176,6 +186,7 @@ export default function ScheduleEditModal({
               className="w-full rounded-md border px-3 py-2 text-sm text-black"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              disabled={isLoading}
             />
 
             <label className="block text-sm text-black">Jenis Schedule</label>
@@ -183,6 +194,7 @@ export default function ScheduleEditModal({
               className="w-full rounded-md border px-3 py-2 text-sm text-black"
               value={scheduleType}
               onChange={(e) => setScheduleType(e.target.value)}
+              disabled={isLoading}
             />
 
             <div>
@@ -193,6 +205,7 @@ export default function ScheduleEditModal({
                 className="w-full rounded-md border px-3 py-2 text-sm text-black"
                 value={dayNumber ?? 1}
                 onChange={(e) => setDayNumber(Number(e.target.value))}
+                disabled={isLoading}
               />
             </div>
 
@@ -202,6 +215,7 @@ export default function ScheduleEditModal({
                 className="w-full rounded-md border px-3 py-2 text-sm text-black"
                 value={dayTitle ?? ""}
                 onChange={(e) => setDayTitle(e.target.value)}
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -211,14 +225,16 @@ export default function ScheduleEditModal({
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-md bg-gray-100 text-black border"
+            disabled={isLoading}
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 rounded-md bg-green-600 text-white"
+            className="px-4 py-2 rounded-md bg-green-600 text-white disabled:opacity-50"
+            disabled={isLoading}
           >
-            Save changes
+            {isLoading ? 'Saving...' : 'Save changes'}
           </button>
         </div>
       </div>

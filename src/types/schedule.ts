@@ -16,7 +16,7 @@ export interface BackendConferenceSchedule {
   created_at: string;
   updated_at: string;
   deleted_at?: string;
-  schedules?: BackendSchedule[]; // Make sure this is properly typed
+  schedules?: BackendSchedule[];
 }
 
 export interface BackendSchedule {
@@ -65,13 +65,14 @@ export interface BackendApiResponse<T> {
   errors?: any;
 }
 
-// Frontend processed types
-export interface ProcessedScheduleItem {
+// Frontend processed types - FIXED
+export interface ScheduleItem {
   id: string;
   title: string;
   description?: string;
   speaker?: string;
   location?: string;
+  conference?: string; // ✅ ADDED: Missing property
   date: string; // YYYY-MM-DD format
   startTime?: string;
   endTime?: string;
@@ -88,7 +89,7 @@ export interface DaySchedule {
   date: string; // YYYY-MM-DD
   dayNumber: number;
   dayTitle: string;
-  items: ProcessedScheduleItem[];
+  items: ScheduleItem[];
 }
 
 export interface ProcessedConferenceSchedule {
@@ -122,6 +123,9 @@ export type NewScheduleData = {
   dayNumber?: number;
   dayTitle?: string;
 };
+
+// ✅ ADDED: For update operations
+export type UpdateScheduleData = Partial<NewScheduleData>;
 
 // Alias for API response
 export type ScheduleApiResponse = BackendApiResponse<BackendConferenceSchedule[]>;

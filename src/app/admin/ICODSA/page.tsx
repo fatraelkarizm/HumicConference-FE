@@ -104,23 +104,7 @@ export default function ICICYTASchedulePage() {
         )}
         
         {/* Status indicators */}
-        <div className="mt-3 flex gap-2 flex-wrap">
-          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-            ✅ Live backend data
-          </div>
-          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-            📅 {schedule.days.length} days
-          </div>
-          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
-            🎯 {schedule.type}
-          </div>
-          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
-            📍 {schedule.onsiteLocation?.split(',')[0]}
-          </div>
-          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800">
-            📋 {schedule.days.reduce((total, day) => total + day.items.length, 0)} sessions
-          </div>
-        </div>
+       
         
         {/* Conference info */}
         <div className="mt-4 p-4 bg-gray-50 rounded-lg">
@@ -144,7 +128,7 @@ export default function ICICYTASchedulePage() {
       {/* Schedule Days */}
       {schedule.days.length === 0 ? (
         <div className="text-center py-8">
-          <div className="text-gray-400 text-6xl mb-4">📅</div>
+          <div className="text-gray-400 text-6xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-600 mb-2">No Schedule Items</h3>
           <p className="text-gray-500">Conference schedule items will appear here once they are added.</p>
         </div>

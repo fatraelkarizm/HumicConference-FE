@@ -92,7 +92,7 @@ export default function ICICYTASchedulePage() {
     return (
       <div className="container mx-auto px-4 py-6">
         <div className="text-center py-12">
-          <div className="text-gray-400 text-6xl mb-4">📅</div>
+          <div className="text-gray-400 text-6xl mb-4"></div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-2">No Schedule Available</h2>
           <p className="text-gray-600 mb-6">No conference schedule found for ICICYTA.</p>
           <button 
@@ -117,43 +117,24 @@ export default function ICICYTASchedulePage() {
           <p className="text-xl text-gray-600 mb-4">{schedule.description}</p>
         )}
         
-        {/* Status badges */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
-            ✅ Live backend data
-          </div>
-          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
-            📅 {schedule.days.length} {schedule.days.length === 1 ? 'day' : 'days'}
-          </div>
-          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
-            🎯 {schedule.type}
-          </div>
-          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-orange-100 text-orange-800">
-            📍 {schedule.onsiteLocation?.split(',')[0]}
-          </div>
-          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-indigo-100 text-indigo-800">
-            📋 {totalSessions} {totalSessions === 1 ? 'session' : 'sessions'}
-          </div>
-        </div>
-        
         {/* Conference info */}
         <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Conference Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <h3 className="text-lg font-semibold text-black mb-4">Conference Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-black">
             <div className="flex items-center gap-2">
-              <span className="font-semibold">📧 Contact:</span> 
+              <span className="font-semibold"> Contact:</span> 
               <span>{schedule.contactEmail}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold">🕐 Timezone:</span> 
+              <span className="font-semibold"> Timezone:</span> 
               <span>{schedule.timezone}</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="font-semibold">🏢 Onsite:</span> 
+              <span className="font-semibold"> Onsite:</span> 
               <span>{schedule.onsiteLocation}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold">💻 Online:</span> 
+              <span className="font-semibold"> Online:</span> 
               <span>{schedule.onlineLocation}</span>
             </div>
           </div>
@@ -163,7 +144,7 @@ export default function ICICYTASchedulePage() {
       {/* Schedule Content */}
       {schedule.days.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-gray-400 text-6xl mb-4">📅</div>
+          <div className="text-gray-400 text-6xl mb-4"></div>
           <h3 className="text-2xl font-semibold text-gray-600 mb-2">No Schedule Items</h3>
           <p className="text-gray-500 mb-6">Conference schedule items will appear here once they are added.</p>
           <button 
@@ -183,10 +164,10 @@ export default function ICICYTASchedulePage() {
                   <h2 className="text-2xl font-bold">{day.dayTitle}</h2>
                   <div className="flex items-center gap-3">
                     <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">
-                      📅 {day.date}
+                       {day.date}
                     </span>
                     <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">
-                      📋 {day.items.length} {day.items.length === 1 ? 'session' : 'sessions'}
+                       {day.items.length} {day.items.length === 1 ? 'session' : 'sessions'}
                     </span>
                   </div>
                 </div>
@@ -196,7 +177,7 @@ export default function ICICYTASchedulePage() {
               <div className="p-6">
                 {day.items.length === 0 ? (
                   <div className="text-center py-8 bg-gray-50 rounded-lg">
-                    <div className="text-gray-400 text-4xl mb-2">📋</div>
+                    <div className="text-gray-400 text-4xl mb-2"></div>
                     <p className="text-gray-500">No sessions scheduled for this day</p>
                   </div>
                 ) : (
@@ -220,7 +201,7 @@ export default function ICICYTASchedulePage() {
       {schedule.noShowPolicy && (
         <div className="mt-8 bg-blue-50 border-l-4 border-blue-400 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
-            📋 Important Policy
+             Important Policy
           </h3>
           <p className="text-blue-700 leading-relaxed">{schedule.noShowPolicy}</p>
         </div>

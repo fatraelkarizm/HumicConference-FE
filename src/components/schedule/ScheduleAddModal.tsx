@@ -14,7 +14,7 @@ type DayEntry = { dayNumber: number; dayTitle: string };
 
 const DAYS_STORAGE = "hc_schedule_days_v1";
 
-export default function ScheduleModal({ isOpen, onClose, onSave, initialData = null, mode = "create" }: Props) {
+export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData = null, mode = "create" }: Props) {
   const [title, setTitle] = useState("");
   const [conference, setConference] = useState("");
   const [date, setDate] = useState("");

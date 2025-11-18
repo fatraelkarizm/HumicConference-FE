@@ -2,159 +2,222 @@ import {
   BackendConferenceSchedule,
   BackendSchedule,
   BackendRoom,
-  BackendTrack,
   BackendApiResponse,
   ProcessedConferenceSchedule,
-  ProcessedScheduleItem,
-  DaySchedule
+  ScheduleItem,
+  DaySchedule,
+  NewScheduleData,
+  UpdateScheduleData
 } from '@/types/schedule';
 
+/**
+ * Service class for handling schedule-related operations
+ * Manages CRUD operations for conference schedules, rooms, and tracks
+ */
 class ScheduleService {
-  private baseUrl: string;
+  private readonly baseUrl: string;
 
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
   }
-  // Add this method to ScheduleService class
 
-  private createFallbackData(): ProcessedConferenceSchedule {
-    return {
-      id: 'fallback-icicyta',
-      name: 'ICICyTA 2024 Conference Program',
-      description: '17th - 19th December 2024 (Hybrid)',
-      year: '2024',
-      startDate: '2024-12-17',
-      endDate: '2024-12-19',
-      type: 'ICICYTA',
-      contactEmail: 'icicyta@telkomuniversity.ac.id',
-      timezone: 'Indonesian Time (WITA) (GMT+8)',
-      onsiteLocation: 'THE EVITEL RESORT UBUD, BALI, INDONESIA',
-      onlineLocation: 'ZOOM MEETING',
-      noShowPolicy: 'Please take note that IEEE has a strict policy on No-Show.',
-      days: [
-        {
-          date: '2024-12-17',
-          dayNumber: 1,
-          dayTitle: 'Day 1: 17 December',
-          items: [
-            {
-              id: 'fallback-1',
-              title: 'Registration',
-              description: 'Open Registration Onsite Day 1',
-              location: 'Main Room',
-              date: '2024-12-17',
-              startTime: '08:30',
-              endTime: '09:00',
-              timeDisplay: '08:30 - 09:00',
-              type: 'TALK',
-              scheduleType: 'MAIN'
-            },
-            {
-              id: 'fallback-2',
-              title: 'Opening Performance',
-              description: 'Live dance Tari Sekar Jagad',
-              location: 'Main Room',
-              date: '2024-12-17',
-              startTime: '09:00',
-              endTime: '09:10',
-              timeDisplay: '09:00 - 09:10',
-              type: 'TALK',
-              scheduleType: 'MAIN'
-            },
-            {
-              id: 'fallback-3',
-              title: 'Keynote Speech #1',
-              description: 'Prof. Kazutaka Shimada - Sentiment Analysis with Language Models',
-              location: 'Main Room',
-              date: '2024-12-17',
-              startTime: '09:30',
-              endTime: '10:30',
-              timeDisplay: '09:30 - 10:30',
-              type: 'TALK',
-              scheduleType: 'MAIN'
-            }
-          ]
-        },
-        {
-          date: '2024-12-18',
-          dayNumber: 2,
-          dayTitle: 'Day 2: 18 December',
-          items: [
-            {
-              id: 'fallback-4',
-              title: 'Coffee Break',
-              description: 'Networking and refreshments',
-              location: 'All Areas',
-              date: '2024-12-18',
-              startTime: '16:15',
-              endTime: '16:25',
-              timeDisplay: '16:15 - 16:25',
-              type: 'BREAK',
-              scheduleType: 'BREAK'
-            }
-          ]
-        },
-        {
-          date: '2024-12-19',
-          dayNumber: 3,
-          dayTitle: 'Day 3: 19 December',
-          items: [
-            {
-              id: 'fallback-5',
-              title: 'One Day Tour',
-              description: 'Botanical Garden -> Handara Gate -> Beratan Lake',
-              location: 'Tour Bus',
-              date: '2024-12-19',
-              timeDisplay: 'Full Day',
-              type: 'ONE_DAY_ACTIVITY',
-              scheduleType: 'ACTIVITY'
-            }
-          ]
-        }
-      ]
-    };
-  }
+  // ==================== PUBLIC METHODS ====================
 
-  // Update getConferenceSchedule method
+  /**
+   * Get conference schedule by type with fallback support
+   */
   async getConferenceSchedule(conferenceType: 'ICICYTA' | 'ICODSA'): Promise<ProcessedConferenceSchedule> {
     try {
-      console.log('🔍 Getting conference schedule for:', conferenceType);
+      console.log(`🔍 Fetching ${conferenceType} conference schedule`);
 
       const allSchedules = await this.getAllConferenceSchedules();
-      console.log('📊 Total conferences found:', allSchedules.length);
-
+      
       if (allSchedules.length === 0) {
-        console.log('⚠️ No data from backend, using fallback data');
+        console.log('⚠️ No backend data available, using fallback');
         return this.createFallbackData();
       }
 
       const matchingSchedules = allSchedules.filter(schedule => schedule.type === conferenceType);
-      console.log('📊 Matching conferences:', matchingSchedules.length);
-
+      
       if (matchingSchedules.length === 0) {
-        console.log('⚠️ No matching conference found, using fallback data');
+        console.log(`⚠️ No ${conferenceType} conference found, using fallback`);
         return this.createFallbackData();
       }
 
-      let selectedSchedule = matchingSchedules.find(schedule =>
+      const selectedSchedule = matchingSchedules.find(schedule => 
         schedule.schedules && schedule.schedules.length > 0
-      );
+      ) || matchingSchedules[0];
 
-      if (!selectedSchedule) {
-        console.log('⚠️ No schedule with items found, using fallback data');
-        return this.createFallbackData();
-      }
-
-      console.log('✅ Selected schedule:', selectedSchedule.name);
-      console.log('✅ Schedule items:', selectedSchedule.schedules?.length || 0);
-
-      return await this.processConferenceSchedule(selectedSchedule);
-
+      console.log(`✅ Selected: ${selectedSchedule.name} (${selectedSchedule.schedules?.length || 0} schedules)`);
+      
+      return this.processConferenceSchedule(selectedSchedule);
     } catch (error) {
-      console.error('❌ Error getting conference schedule, using fallback:', error);
+      console.error('❌ Error fetching conference schedule:', error);
       return this.createFallbackData();
     }
   }
+
+  /**
+   * Get all conference schedules from backend
+   */
+  async getAllConferenceSchedules(): Promise<BackendConferenceSchedule[]> {
+    const accessToken = await this.getAccessToken();
+    
+    if (!accessToken) {
+      throw new Error('Access token not available');
+    }
+
+    const response = await this.makeRequest(
+      `/api/v1/conference-schedule?include_relation[0]=schedules`,
+      {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      }
+    );
+
+    const schedules = Array.isArray(response.data) ? response.data : [];
+    
+    schedules.forEach(schedule => {
+      console.log(`📊 ${schedule.name} (${schedule.type}): ${schedule.schedules?.length || 0} schedules`);
+    });
+
+    return schedules;
+  }
+
+  /**
+   * Get user-specific conference schedule based on role
+   */
+  async getUserConferenceSchedule(): Promise<ProcessedConferenceSchedule | null> {
+    try {
+      const accessToken = await this.getAccessToken();
+      
+      if (!accessToken) {
+        throw new Error('Access token not available');
+      }
+
+      const userResponse = await this.makeRequest('/api/v1/auth/me', {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+
+      const user = userResponse.data;
+      const conferenceType = this.mapUserRoleToConference(user.role);
+
+      console.log(`👤 User: ${user.name} | Role: ${user.role} | Conference: ${conferenceType}`);
+
+      return this.getConferenceSchedule(conferenceType);
+    } catch (error) {
+      console.error('❌ Error getting user conference schedule:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create new schedule
+   */
+  async createSchedule(data: NewScheduleData): Promise<ScheduleItem> {
+    const accessToken = await this.getAccessToken();
+    
+    if (!accessToken) {
+      throw new Error('Access token not available');
+    }
+
+    // Get target conference
+    const targetConference = await this.findConferenceByType(data.conference);
+    
+    if (!targetConference) {
+      throw new Error(`${data.conference} conference not found. Please create conference first.`);
+    }
+
+    // Create schedule
+    const schedulePayload = this.buildSchedulePayload(data, targetConference.id);
+    console.log('🔍 Creating schedule:', schedulePayload);
+
+    const scheduleResponse = await this.makeRequest('/api/v1/schedule', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+      body: JSON.stringify(schedulePayload)
+    });
+
+    console.log('✅ Schedule created:', scheduleResponse.data);
+
+    // Create associated room if needed
+    if (data.title || data.speaker || data.location) {
+      await this.createRoom(scheduleResponse.data.id, data);
+    }
+
+    return this.mapBackendScheduleToItem(scheduleResponse.data, data);
+  }
+
+  /**
+   * Update existing schedule
+   */
+  async updateSchedule(id: string, data: UpdateScheduleData): Promise<ScheduleItem> {
+    const accessToken = await this.getAccessToken();
+    
+    if (!accessToken) {
+      throw new Error('Access token not available');
+    }
+
+    const updatePayload = this.buildUpdatePayload(data);
+    console.log('🔄 Updating schedule:', updatePayload);
+
+    const response = await this.makeRequest(`/api/v1/schedule/${id}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+      body: JSON.stringify(updatePayload)
+    });
+
+    console.log('✅ Schedule updated:', response.data);
+
+    return this.mapBackendScheduleToItem(response.data, data);
+  }
+
+  /**
+   * Delete schedule
+   */
+  async deleteSchedule(id: string): Promise<boolean> {
+    const accessToken = await this.getAccessToken();
+    
+    if (!accessToken) {
+      throw new Error('Access token not available');
+    }
+
+    console.log('🗑️ Deleting schedule:', id);
+
+    const response = await this.makeRequest(`/api/v1/schedule/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    const success = response.code === 200;
+    console.log(`${success ? '✅' : '❌'} Delete operation ${success ? 'successful' : 'failed'}`);
+    
+    return success;
+  }
+
+  /**
+   * Get detailed schedule item
+   */
+  async getScheduleItemDetail(scheduleId: string, roomId?: string): Promise<ScheduleItem | null> {
+    const allSchedules = await this.getAllConferenceSchedules();
+
+    for (const conference of allSchedules) {
+      if (!conference.schedules) continue;
+
+      for (const schedule of conference.schedules) {
+        if (schedule.id === scheduleId) {
+          return this.extractScheduleItem(schedule, roomId);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  // ==================== PRIVATE HELPER METHODS ====================
+
+  /**
+   * Get access token from auth API
+   */
   private async getAccessToken(): Promise<string | null> {
     try {
       const response = await fetch('/api/auth/refresh', {
@@ -162,17 +225,417 @@ class ScheduleService {
         credentials: 'include',
       });
 
-      if (!response.ok) {
-        return null;
-      }
+      if (!response.ok) return null;
 
       const result = await response.json();
       return result.data?.accessToken || null;
     } catch (error) {
+      console.error('Failed to get access token:', error);
       return null;
     }
   }
 
+  /**
+   * Generic HTTP request handler
+   */
+  private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<BackendApiResponse<any>> {
+    const url = `${this.baseUrl}${endpoint}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers
+      },
+      credentials: 'include',
+      ...options
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.code !== 200) {
+      throw new Error(result.message || 'Request failed');
+    }
+
+    return result;
+  }
+
+  /**
+   * Find conference by type
+   */
+  private async findConferenceByType(conferenceType?: string): Promise<BackendConferenceSchedule | null> {
+    const allSchedules = await this.getAllConferenceSchedules();
+    const type = conferenceType === 'ICICYTA' ? 'ICICYTA' : 'ICODSA';
+    return allSchedules.find(conf => conf.type === type) || null;
+  }
+
+  /**
+   * Map user role to conference type
+   */
+  private mapUserRoleToConference(role: string): 'ICICYTA' | 'ICODSA' {
+    if (role === 'ADMIN_ICICYTA') return 'ICICYTA';
+    if (role === 'ADMIN_ICODSA') return 'ICODSA';
+    return 'ICICYTA'; // Default fallback
+  }
+
+  /**
+   * Map frontend schedule type to backend enum
+   */
+  private mapScheduleTypeToBackend(scheduleType?: string): 'TALK' | 'BREAK' | 'ONE_DAY_ACTIVITY' {
+    switch (scheduleType) {
+      case 'BREAK': return 'BREAK';
+      case 'ACTIVITY':
+      case 'WORKSHOP':
+      case 'ONE_DAY_ACTIVITY': return 'ONE_DAY_ACTIVITY';
+      default: return 'TALK';
+    }
+  }
+
+  /**
+   * Build schedule creation payload
+   */
+  private buildSchedulePayload(data: NewScheduleData, conferenceId: string) {
+    return {
+      date: data.date,
+      start_time: data.startTime,
+      end_time: data.endTime,
+      type: this.mapScheduleTypeToBackend(data.scheduleType),
+      notes: data.description || null,
+      conference_schedule_id: conferenceId,
+    };
+  }
+
+  /**
+   * Build schedule update payload
+   */
+  private buildUpdatePayload(data: UpdateScheduleData) {
+    const payload: any = {};
+    
+    if (data.date) payload.date = data.date;
+    if (data.startTime) payload.start_time = data.startTime;
+    if (data.endTime) payload.end_time = data.endTime;
+    if (data.description) payload.notes = data.description;
+
+    if (data.title || data.speaker || data.location) {
+      payload.rooms = [{
+        name: data.title,
+        description: data.description,
+        start_time: data.startTime,
+        end_time: data.endTime,
+        track: data.speaker ? { name: data.speaker } : undefined
+      }];
+    }
+
+    return payload;
+  }
+
+  /**
+   * Create room for schedule
+   */
+  private async createRoom(scheduleId: string, data: NewScheduleData): Promise<void> {
+    try {
+      const accessToken = await this.getAccessToken();
+      if (!accessToken) return;
+
+      const roomPayload = {
+        name: data.title,
+        identifier: `room-${Date.now()}`,
+        description: data.description || null,
+        type: data.scheduleType === 'PARALLEL' ? 'PARALLEL' : 'MAIN',
+        start_time: data.startTime,
+        end_time: data.endTime,
+        schedule_id: scheduleId,
+      };
+
+      console.log('🏢 Creating room:', roomPayload);
+
+      const response = await this.makeRequest('/api/v1/room', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify(roomPayload)
+      });
+
+      console.log('✅ Room created:', response.data);
+
+      // Create track if speaker provided
+      if (data.speaker && response.data?.id) {
+        await this.createTrack(response.data.id, data.speaker);
+      }
+    } catch (error) {
+      console.warn('⚠️ Room creation failed (schedule still created):', error);
+    }
+  }
+
+  /**
+   * Create track for speaker
+   */
+  private async createTrack(roomId: string, speakerName: string): Promise<void> {
+    try {
+      const accessToken = await this.getAccessToken();
+      if (!accessToken) return;
+
+      const trackPayload = {
+        name: speakerName,
+        description: `Track by ${speakerName}`,
+      };
+
+      console.log('🎯 Creating track:', trackPayload);
+
+      await this.makeRequest('/api/v1/track', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify(trackPayload)
+      });
+
+      console.log('✅ Track created');
+    } catch (error) {
+      console.warn('⚠️ Track creation failed:', error);
+    }
+  }
+
+  /**
+   * Map backend schedule to frontend item
+   */
+  private mapBackendScheduleToItem(schedule: BackendSchedule, data: Partial<NewScheduleData>): ScheduleItem {
+    const room = schedule.rooms?.[0];
+    
+    return {
+      id: schedule.id,
+      title: data.title || room?.name || 'Schedule Item',
+      description: data.description,
+      speaker: data.speaker || room?.track?.name,
+      location: data.location || this.getLocationFromRoom(room),
+      conference: data.conference,
+      date: this.formatDate(schedule.date),
+      startTime: data.startTime || schedule.start_time,
+      endTime: data.endTime || schedule.end_time,
+      timeDisplay: this.createTimeDisplay(
+        data.startTime || schedule.start_time,
+        data.endTime || schedule.end_time
+      ),
+      type: schedule.type,
+      scheduleType: data.scheduleType || room?.type,
+      dayNumber: data.dayNumber,
+      dayTitle: data.dayTitle,
+      rooms: schedule.rooms,
+      track: room?.track
+    };
+  }
+
+  /**
+   * Extract schedule item from backend data
+   */
+  private extractScheduleItem(schedule: BackendSchedule, roomId?: string): ScheduleItem | null {
+    if (roomId && schedule.rooms) {
+      const room = schedule.rooms.find(r => r.id === roomId);
+      if (!room) return null;
+
+      return {
+        id: `${schedule.id}-${room.id}`,
+        title: room.name || room.identifier || 'Schedule Item',
+        description: room.description,
+        speaker: room.track?.name,
+        location: this.getLocationFromRoom(room),
+        date: this.formatDate(schedule.date),
+        startTime: room.start_time || schedule.start_time,
+        endTime: room.end_time || schedule.end_time,
+        timeDisplay: this.createTimeDisplay(
+          room.start_time || schedule.start_time,
+          room.end_time || schedule.end_time
+        ),
+        type: schedule.type,
+        scheduleType: room.type,
+        rooms: [room],
+        track: room.track,
+      };
+    }
+
+    return {
+      id: schedule.id,
+      title: this.getScheduleTitle(schedule.type, schedule.notes),
+      description: schedule.notes,
+      location: 'All Areas',
+      date: this.formatDate(schedule.date),
+      startTime: schedule.start_time,
+      endTime: schedule.end_time,
+      timeDisplay: this.createTimeDisplay(schedule.start_time, schedule.end_time),
+      type: schedule.type,
+      scheduleType: schedule.type,
+    };
+  }
+
+  /**
+   * Get location string from room data
+   */
+  private getLocationFromRoom(room?: BackendRoom): string {
+    if (!room) return 'All Areas';
+    return room.type === 'MAIN' ? 'Main Room' : `${room.name} (Online)`;
+  }
+
+  /**
+   * Get schedule title based on type and notes
+   */
+  private getScheduleTitle(type: string, notes?: string): string {
+    switch (type) {
+      case 'BREAK': return notes?.includes('Coffee') ? 'Coffee Break' : 'Break';
+      case 'ONE_DAY_ACTIVITY': return notes?.includes('Tour') ? 'One Day Tour' : 'Activity';
+      case 'TALK': return 'Conference Session';
+      default: return 'Schedule Item';
+    }
+  }
+
+  /**
+   * Process conference schedule data
+   */
+  private async processConferenceSchedule(data: BackendConferenceSchedule): Promise<ProcessedConferenceSchedule> {
+    const schedules = data.schedules || [];
+    
+    console.log(`🔍 Processing ${data.name} (${schedules.length} schedules)`);
+
+    if (schedules.length === 0) {
+      return this.buildEmptyConference(data);
+    }
+
+    const schedulesByDate = this.groupSchedulesByDate(schedules);
+    const days = this.buildDaysFromSchedules(schedulesByDate);
+
+    const result: ProcessedConferenceSchedule = {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      year: data.year,
+      startDate: this.formatDate(data.start_date),
+      endDate: this.formatDate(data.end_date),
+      type: data.type,
+      contactEmail: data.contact_email,
+      timezone: data.timezone_iana,
+      onsiteLocation: data.onsite_presentation,
+      onlineLocation: data.online_presentation,
+      notes: data.notes,
+      noShowPolicy: data.no_show_policy,
+      days,
+    };
+
+    console.log(`✅ Processed: ${result.name} (${result.days.length} days, ${result.days.reduce((total, day) => total + day.items.length, 0)} sessions)`);
+    
+    return result;
+  }
+
+  /**
+   * Build empty conference structure
+   */
+  private buildEmptyConference(data: BackendConferenceSchedule): ProcessedConferenceSchedule {
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      year: data.year,
+      startDate: this.formatDate(data.start_date),
+      endDate: this.formatDate(data.end_date),
+      type: data.type,
+      contactEmail: data.contact_email,
+      timezone: data.timezone_iana,
+      onsiteLocation: data.onsite_presentation,
+      onlineLocation: data.online_presentation,
+      notes: data.notes,
+      noShowPolicy: data.no_show_policy,
+      days: [],
+    };
+  }
+
+  /**
+   * Group schedules by date
+   */
+  private groupSchedulesByDate(schedules: BackendSchedule[]): Map<string, ScheduleItem[]> {
+    const schedulesByDate = new Map<string, ScheduleItem[]>();
+
+    schedules.forEach(schedule => {
+      const formattedDate = this.formatDate(schedule.date);
+      
+      if (!schedulesByDate.has(formattedDate)) {
+        schedulesByDate.set(formattedDate, []);
+      }
+
+      const items = this.createScheduleItems(schedule, formattedDate);
+      schedulesByDate.get(formattedDate)!.push(...items);
+    });
+
+    return schedulesByDate;
+  }
+
+  /**
+   * Create schedule items from backend schedule
+   */
+  private createScheduleItems(schedule: BackendSchedule, formattedDate: string): ScheduleItem[] {
+    if (schedule.rooms && schedule.rooms.length > 0) {
+      return schedule.rooms.map(room => ({
+        id: `${schedule.id}-${room.id}`,
+        title: room.name || room.identifier || 'Schedule Item',
+        description: room.description,
+        speaker: room.track?.name,
+        location: this.getLocationFromRoom(room),
+        date: formattedDate,
+        startTime: room.start_time || schedule.start_time,
+        endTime: room.end_time || schedule.end_time,
+        timeDisplay: this.createTimeDisplay(
+          room.start_time || schedule.start_time,
+          room.end_time || schedule.end_time
+        ),
+        type: schedule.type,
+        scheduleType: room.type,
+        rooms: [room],
+        track: room.track,
+      }));
+    }
+
+    return [{
+      id: schedule.id,
+      title: this.getScheduleTitle(schedule.type, schedule.notes),
+      description: schedule.notes,
+      location: 'All Areas',
+      date: formattedDate,
+      startTime: schedule.start_time,
+      endTime: schedule.end_time,
+      timeDisplay: this.createTimeDisplay(schedule.start_time, schedule.end_time),
+      type: schedule.type,
+      scheduleType: schedule.type,
+    }];
+  }
+
+  /**
+   * Build days structure from grouped schedules
+   */
+  private buildDaysFromSchedules(schedulesByDate: Map<string, ScheduleItem[]>): DaySchedule[] {
+    const sortedDates = Array.from(schedulesByDate.keys()).sort();
+    
+    return sortedDates.map((date, index) => {
+      const items = schedulesByDate.get(date)!;
+      
+      // Sort items by time
+      items.sort((a, b) => {
+        if (!a.startTime && !b.startTime) return 0;
+        if (!a.startTime) return 1;
+        if (!b.startTime) return -1;
+        return a.startTime.localeCompare(b.startTime);
+      });
+
+      return {
+        date,
+        dayNumber: index + 1,
+        dayTitle: this.generateDayTitle(date, index + 1),
+        items,
+      };
+    });
+  }
+
+  /**
+   * Utility methods
+   */
   private formatDate(isoString: string): string {
     try {
       const date = new Date(isoString);
@@ -181,7 +644,7 @@ class ScheduleService {
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     } catch (error) {
-      console.error('Date formatting error:', error, 'Input:', isoString);
+      console.error('Date formatting error:', error);
       return isoString.split('T')[0];
     }
   }
@@ -211,357 +674,71 @@ class ScheduleService {
     return `${startTime} - ${endTime}`;
   }
 
-  private getScheduleTitle(type: string, notes?: string): string {
-    switch (type) {
-      case 'BREAK':
-        return notes?.includes('Coffee') ? 'Coffee Break' : 'Break';
-      case 'ONE_DAY_ACTIVITY':
-        return notes?.includes('Tour') ? 'One Day Tour' : 'Activity';
-      case 'TALK':
-        return 'Conference Session';
-      default:
-        return 'Schedule Item';
-    }
-  }
-
-  async getAllConferenceSchedules(): Promise<BackendConferenceSchedule[]> {
-    try {
-      const accessToken = await this.getAccessToken();
-
-      if (!accessToken) {
-        throw new Error('Access token not available');
-      }
-
-      const response = await fetch(`${this.baseUrl}/api/v1/conference-schedule?include_relation[0]=schedules`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
-
-      const result: BackendApiResponse<BackendConferenceSchedule[]> = await response.json();
-
-      if (result.code !== 200) {
-        throw new Error(result.message || 'Failed to fetch conference schedules');
-      }
-
-      const schedules = Array.isArray(result.data) ? result.data : [];
-
-      schedules.forEach(schedule => {
-        console.log(`📊   - ${schedule.name} (${schedule.type}): ${schedule.schedules?.length || 0} schedules`);
-      });
-
-      return schedules;
-    } catch (error) {
-      console.error('❌ Error fetching conference schedules:', error);
-      throw error;
-    }
-  }
-
-  private async processConferenceSchedule(data: BackendConferenceSchedule): Promise<ProcessedConferenceSchedule> {
-    const schedules: BackendSchedule[] = data.schedules || [];
-
-    console.log('🔍 DEBUG: Processing conference schedule');
-    console.log('📋 Conference:', data.name, '(ID:', data.id + ')');
-    console.log('📋 Raw schedules count:', schedules.length);
-
-    if (!schedules || schedules.length === 0) {
-      console.log('⚠️ No schedules found in data');
-      return {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        year: data.year,
-        startDate: this.formatDate(data.start_date),
-        endDate: this.formatDate(data.end_date),
-        type: data.type,
-        contactEmail: data.contact_email,
-        timezone: data.timezone_iana,
-        onsiteLocation: data.onsite_presentation,
-        onlineLocation: data.online_presentation,
-        notes: data.notes,
-        noShowPolicy: data.no_show_policy,
-        days: [],
-      };
-    }
-
-    const schedulesByDate = new Map<string, ProcessedScheduleItem[]>();
-    let totalItemsCreated = 0;
-
-    schedules.forEach((schedule: BackendSchedule, index: number) => {
-      console.log(`\n🔍 Processing schedule ${index + 1}/${schedules.length}:`);
-      console.log('  - ID:', schedule.id);
-      console.log('  - Date:', schedule.date);
-      console.log('  - Type:', schedule.type);
-      console.log('  - Start:', schedule.start_time);
-      console.log('  - End:', schedule.end_time);
-      console.log('  - Rooms:', schedule.rooms?.length || 0);
-
-      const formattedDate = this.formatDate(schedule.date);
-      console.log('  - Formatted date:', formattedDate);
-
-      if (!schedulesByDate.has(formattedDate)) {
-        schedulesByDate.set(formattedDate, []);
-        console.log('  ✅ Created new date group:', formattedDate);
-      }
-
-      if (schedule.rooms && schedule.rooms.length > 0) {
-        console.log(`  🏢 Processing ${schedule.rooms.length} rooms:`);
-
-        schedule.rooms.forEach((room: BackendRoom, roomIndex: number) => {
-          console.log(`    Room ${roomIndex + 1}: ${room.name} (${room.type})`);
-
-          const item: ProcessedScheduleItem = {
-            id: `${schedule.id}-${room.id}`,
-            title: room.name || room.identifier || 'Schedule Item',
-            description: room.description,
-            speaker: room.track?.name,
-            location: room.type === 'MAIN' ? 'Main Room' : `${room.name} (Online)`,
-            date: formattedDate,
-            startTime: room.start_time || schedule.start_time,
-            endTime: room.end_time || schedule.end_time,
-            timeDisplay: this.createTimeDisplay(
-              room.start_time || schedule.start_time,
-              room.end_time || schedule.end_time
-            ),
-            type: schedule.type,
-            scheduleType: room.type,
-            rooms: [room],
-            track: room.track,
-          };
-
-          console.log(`    ✅ Created item: ${item.title} (${item.timeDisplay})`);
-          schedulesByDate.get(formattedDate)!.push(item);
-          totalItemsCreated++;
-        });
-      } else {
-        console.log('  📋 Processing schedule without rooms');
-
-        const item: ProcessedScheduleItem = {
-          id: schedule.id,
-          title: this.getScheduleTitle(schedule.type, schedule.notes),
-          description: schedule.notes,
-          location: 'All Areas',
-          date: formattedDate,
-          startTime: schedule.start_time,
-          endTime: schedule.end_time,
-          timeDisplay: this.createTimeDisplay(schedule.start_time, schedule.end_time),
-          type: schedule.type,
-          scheduleType: schedule.type,
-        };
-
-        console.log(`  ✅ Created item: ${item.title} (${item.timeDisplay})`);
-        schedulesByDate.get(formattedDate)!.push(item);
-        totalItemsCreated++;
-      }
-    });
-
-    console.log('\n📊 Summary after processing:');
-    console.log('📊 Total items created:', totalItemsCreated);
-    console.log('📊 Dates found:', Array.from(schedulesByDate.keys()));
-
-    const days: DaySchedule[] = [];
-    const sortedDates = Array.from(schedulesByDate.keys()).sort();
-
-    console.log('\n📅 Creating days from sorted dates:', sortedDates);
-
-    sortedDates.forEach((date, index) => {
-      const items = schedulesByDate.get(date)!;
-      console.log(`📅 Day ${index + 1} - ${date}: ${items.length} items`);
-
-      items.sort((a, b) => {
-        if (!a.startTime && !b.startTime) return 0;
-        if (!a.startTime) return 1;
-        if (!b.startTime) return -1;
-        return a.startTime.localeCompare(b.startTime);
-      });
-
-      const daySchedule: DaySchedule = {
-        date,
-        dayNumber: index + 1,
-        dayTitle: this.generateDayTitle(date, index + 1),
-        items,
-      };
-
-      console.log(`  ✅ Created: ${daySchedule.dayTitle} with ${daySchedule.items.length} items`);
-      days.push(daySchedule);
-    });
-
-    const result: ProcessedConferenceSchedule = {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      year: data.year,
-      startDate: this.formatDate(data.start_date),
-      endDate: this.formatDate(data.end_date),
-      type: data.type,
-      contactEmail: data.contact_email,
-      timezone: data.timezone_iana,
-      onsiteLocation: data.onsite_presentation,
-      onlineLocation: data.online_presentation,
-      notes: data.notes,
-      noShowPolicy: data.no_show_policy,
-      days,
-    };
-
-    console.log('\n🎯 FINAL RESULT:');
-    console.log('🎯 Conference:', result.name);
-    console.log('🎯 Days count:', result.days.length);
-    console.log('🎯 Total sessions:', result.days.reduce((total, day) => total + day.items.length, 0));
-
-    return result;
-  }
-
-  // async getConferenceSchedule(conferenceType: 'ICICYTA' | 'ICODSA'): Promise<ProcessedConferenceSchedule> {
-  //   try {
-  //     console.log('🔍 Getting conference schedule for:', conferenceType);
-
-  //     const allSchedules = await this.getAllConferenceSchedules();
-  //     console.log('📊 Total conferences found:', allSchedules.length);
-
-  //     const matchingSchedules = allSchedules.filter(schedule => schedule.type === conferenceType);
-  //     console.log('📊 Matching conferences:', matchingSchedules.length);
-
-  //     if (matchingSchedules.length === 0) {
-  //       throw new Error(`No conference schedule found for type: ${conferenceType}. Available: ${allSchedules.map(s => s.type).join(', ')}`);
-  //     }
-
-  //     let selectedSchedule = matchingSchedules.find(schedule =>
-  //       schedule.schedules && schedule.schedules.length > 0
-  //     );
-
-  //     if (!selectedSchedule) {
-  //       selectedSchedule = matchingSchedules[0];
-  //       console.log('⚠️ No schedule with items found, using first match');
-  //     }
-
-  //     console.log('✅ Selected schedule:', selectedSchedule.name);
-  //     console.log('✅ Schedule items:', selectedSchedule.schedules?.length || 0);
-
-  //     return await this.processConferenceSchedule(selectedSchedule);
-
-  //   } catch (error) {
-  //     console.error('❌ Error getting conference schedule:', error);
-  //     throw error;
-  //   }
-  // }
-
-  async getUserConferenceSchedule(): Promise<ProcessedConferenceSchedule | null> {
-    try {
-      const accessToken = await this.getAccessToken();
-
-      if (!accessToken) {
-        throw new Error('Access token not available');
-      }
-
-      const userResponse = await fetch(`${this.baseUrl}/api/v1/auth/me`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to get user data');
-      }
-
-      const userResult = await userResponse.json();
-      const user = userResult.data;
-
-      let conferenceType: 'ICICYTA' | 'ICODSA';
-
-      if (user.role === 'ADMIN_ICICYTA') {
-        conferenceType = 'ICICYTA';
-      } else if (user.role === 'ADMIN_ICODSA') {
-        conferenceType = 'ICODSA';
-      } else {
-        conferenceType = 'ICICYTA';
-      }
-
-      console.log('👤 User:', user.name, '| Role:', user.role, '| Conference:', conferenceType);
-
-      return await this.getConferenceSchedule(conferenceType);
-    } catch (error) {
-      console.error('❌ Error getting user conference schedule:', error);
-      return null;
-    }
-  }
-
-  async getScheduleItemDetail(scheduleId: string, roomId?: string): Promise<ProcessedScheduleItem | null> {
-    try {
-      const allSchedules = await this.getAllConferenceSchedules();
-
-      for (const conference of allSchedules) {
-        if (conference.schedules) {
-          for (const schedule of conference.schedules) {
-            if (schedule.id === scheduleId) {
-              if (roomId && schedule.rooms) {
-                const room = schedule.rooms.find(r => r.id === roomId);
-                if (room) {
-                  return {
-                    id: `${schedule.id}-${room.id}`,
-                    title: room.name || room.identifier || 'Schedule Item',
-                    description: room.description,
-                    speaker: room.track?.name,
-                    location: room.type === 'MAIN' ? 'Main Room' : `${room.name} (Online)`,
-                    date: this.formatDate(schedule.date),
-                    startTime: room.start_time || schedule.start_time,
-                    endTime: room.end_time || schedule.end_time,
-                    timeDisplay: this.createTimeDisplay(
-                      room.start_time || schedule.start_time,
-                      room.end_time || schedule.end_time
-                    ),
-                    type: schedule.type,
-                    scheduleType: room.type,
-                    rooms: [room],
-                    track: room.track,
-                  };
-                }
-              } else {
-                return {
-                  id: schedule.id,
-                  title: this.getScheduleTitle(schedule.type, schedule.notes),
-                  description: schedule.notes,
-                  location: 'All Areas',
-                  date: this.formatDate(schedule.date),
-                  startTime: schedule.start_time,
-                  endTime: schedule.end_time,
-                  timeDisplay: this.createTimeDisplay(schedule.start_time, schedule.end_time),
-                  type: schedule.type,
-                  scheduleType: schedule.type,
-                };
-              }
+  /**
+   * Create fallback data for when backend is unavailable
+   */
+  private createFallbackData(): ProcessedConferenceSchedule {
+    return {
+      id: 'fallback-conference',
+      name: 'Conference Schedule',
+      description: 'ICICYTA',
+      year: '2024',
+      startDate: '2024-12-17',
+      endDate: '2024-12-19',
+      type: 'ICICYTA',
+      contactEmail: 'contact@conference.com',
+      timezone: 'GMT+8',
+      onsiteLocation: 'Conference Center',
+      onlineLocation: 'Virtual Meeting',
+      noShowPolicy: 'Please attend scheduled sessions',
+      days: [
+        {
+          date: '2024-12-17',
+          dayNumber: 1,
+          dayTitle: 'Day 1: 17 December',
+          items: [
+            {
+              id: 'demo-1',
+              title: 'Registration & Opening',
+              description: 'Conference registration and opening ceremony',
+              location: 'Main Hall',
+              date: '2024-12-17',
+              startTime: '08:30',
+              endTime: '09:30',
+              timeDisplay: '08:30 - 09:30',
+              type: 'TALK',
+              scheduleType: 'MAIN'
             }
-          }
+          ]
         }
-      }
-
-      return null;
-    } catch (error) {
-      throw error;
-    }
+      ]
+    };
   }
 }
+
+// ==================== EXPORT ====================
 
 const scheduleService = new ScheduleService();
 export default scheduleService;
 
-export const getConferenceSchedule = scheduleService.getConferenceSchedule.bind(scheduleService);
-export const getAllConferenceSchedules = scheduleService.getAllConferenceSchedules.bind(scheduleService);
-export const getUserConferenceSchedule = scheduleService.getUserConferenceSchedule.bind(scheduleService);
-export const getScheduleItemDetail = scheduleService.getScheduleItemDetail.bind(scheduleService);
+// Export bound methods for direct usage
+export const {
+  getConferenceSchedule,
+  getAllConferenceSchedules,
+  getUserConferenceSchedule,
+  getScheduleItemDetail,
+  createSchedule,
+  updateSchedule,
+  deleteSchedule
+} = {
+  getConferenceSchedule: scheduleService.getConferenceSchedule.bind(scheduleService),
+  getAllConferenceSchedules: scheduleService.getAllConferenceSchedules.bind(scheduleService),
+  getUserConferenceSchedule: scheduleService.getUserConferenceSchedule.bind(scheduleService),
+  getScheduleItemDetail: scheduleService.getScheduleItemDetail.bind(scheduleService),
+  createSchedule: scheduleService.createSchedule.bind(scheduleService),
+  updateSchedule: scheduleService.updateSchedule.bind(scheduleService),
+  deleteSchedule: scheduleService.deleteSchedule.bind(scheduleService)
+};
 
-export const getSchedules = scheduleService.getAllConferenceSchedules.bind(scheduleService);
-export const createSchedule = async () => { throw new Error('Not implemented yet'); };
-export const updateSchedule = async () => { throw new Error('Not implemented yet'); };
-export const deleteSchedule = async () => { throw new Error('Not implemented yet'); };
+// Legacy aliases
+export const getSchedules = getAllConferenceSchedules;
