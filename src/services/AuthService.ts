@@ -5,7 +5,6 @@ class AuthService {
 
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
-    console.log('AuthService initialized with baseUrl:', this.baseUrl);
   }
 
   async login(loginData: LoginPayload): Promise<LoginResponse> {
@@ -13,11 +12,11 @@ class AuthService {
       if (!loginData || typeof loginData !== 'object') {
         throw new Error('Invalid login data');
       }
-      
+
       if (!loginData.email || typeof loginData.email !== 'string') {
         throw new Error('Email is required and must be a string');
       }
-      
+
       if (!loginData.password || typeof loginData.password !== 'string') {
         throw new Error('Password is required and must be a string');
       }
@@ -27,15 +26,9 @@ class AuthService {
         password: loginData.password
       };
 
-      console.log('Attempting login with:', { 
-        email: cleanLoginData.email, 
-        password: '***'
-      });
-      
       // HIT API ROUTE INSTEAD OF DIRECT BACKEND
       const loginUrl = '/api/auth/login';
-      console.log('Login URL:', loginUrl);
-      
+
       const response = await fetch(loginUrl, {
         method: 'POST',
         headers: {
@@ -46,26 +39,24 @@ class AuthService {
         credentials: 'include',
       });
 
-      console.log('Login response status:', response.status);
 
       const result = await response.json();
-      console.log('Login response data:', result);
 
       if (!response.ok) {
         if (result.errors && result.errors.validation) {
           const validationErrors = result.errors.validation;
           const errorMessages = [];
-          
+
           if (validationErrors.email) {
             errorMessages.push(...validationErrors.email);
           }
           if (validationErrors.password) {
             errorMessages.push(...validationErrors.password);
           }
-          
+
           throw new Error(errorMessages.join(', ') || result.message);
         }
-        
+
         throw new Error(result.message || `HTTP Error: ${response.status}`);
       }
 
@@ -77,7 +68,6 @@ class AuthService {
         throw new Error('No data received from server');
       }
 
-      console.log('Backend response structure:', result.data);
 
       // Now access token should be in result.data.accessToken (thanks to API route)
       const userData = {
@@ -93,14 +83,8 @@ class AuthService {
         banned_at: result.data.banned_at,
         last_login: result.data.last_login,
       };
-      
+
       const accessToken = result.data.accessToken;
-      
-      console.log('Extracted data:', { 
-        user: userData ? 'exists' : 'missing',
-        accessToken: accessToken ? 'exists' : 'missing',
-        note: 'refresh_token handled by HttpOnly cookies'
-      });
 
       if (!accessToken) {
         throw new Error('No access token received from server');
@@ -115,9 +99,7 @@ class AuthService {
               credentials: 'include'
             });
             const checkResult = await checkResponse.json();
-            console.log('Refresh token check after login:', checkResult);
           } catch (error) {
-            console.error('Error checking refresh token after login:', error);
           }
         }, 500);
       }
@@ -128,7 +110,6 @@ class AuthService {
         refreshToken: 'httponly-cookie',
       };
     } catch (error: any) {
-      console.error('Login error:', error);
       throw error;
     }
   }
@@ -151,42 +132,33 @@ class AuthService {
 
   async refreshAccessToken(): Promise<string | null> {
     try {
-      console.log('Attempting to refresh access token...');
-      
+
       const response = await fetch('/api/auth/refresh', {
         method: 'POST',
         credentials: 'include',
       });
 
       if (!response.ok) {
-        console.log('Refresh failed with status:', response.status);
         return null;
       }
 
       const result = await response.json();
-      console.log('Full refresh response:', result);
-      
+
       if (result.code !== 200) {
-        console.log('Refresh failed with code:', result.code);
         return null;
       }
 
       // Access token sekarang ada di result.data.accessToken (thanks to API route fix)
       let accessToken = null;
-      
+
       if (result.data && result.data.accessToken) {
         accessToken = result.data.accessToken;
-        console.log('Found access token in response data');
       } else {
-        console.log('No access token found in response');
-        console.log('Response structure:', result);
         return null;
       }
 
-      console.log('Token refreshed successfully');
       return accessToken;
     } catch (error) {
-      console.error('Refresh token error:', error);
       return null;
     }
   }
@@ -204,20 +176,17 @@ class AuthService {
       });
 
       if (!response.ok) {
-        console.log('Get current user failed with status:', response.status);
         return null;
       }
 
       const result = await response.json();
-      
+
       if (result.code !== 200) {
-        console.log('Get current user failed with code:', result.code);
         return null;
       }
 
       return result.data;
     } catch (error) {
-      console.error('Get current user error:', error);
       return null;
     }
   }
@@ -225,7 +194,7 @@ class AuthService {
   async serverSideAuthCheck(request: Request): Promise<{ isAuthenticated: boolean; user: User | null; accessToken: string | null }> {
     try {
       const refreshToken = this.getRefreshTokenFromCookies(request);
-      
+
       if (!refreshToken) {
         return { isAuthenticated: false, user: null, accessToken: null };
       }
@@ -246,14 +215,14 @@ class AuthService {
       }
 
       const refreshResult = await response.json();
-      
+
       if (refreshResult.code !== 200) {
         return { isAuthenticated: false, user: null, accessToken: null };
       }
 
       const accessToken = refreshResult.data.accessToken;
       const user = await this.getCurrentUser(accessToken);
-      
+
       return {
         isAuthenticated: !!user,
         user,

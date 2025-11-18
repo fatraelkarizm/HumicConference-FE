@@ -1,4 +1,3 @@
-// =================== BACKEND SCHEDULE TYPES ===================
 export interface BackendSchedule {
   id: string;
   date: string; // ISO string
@@ -12,12 +11,15 @@ export interface BackendSchedule {
   rooms?: BackendRoom[];
 }
 
-// ✅ FIX: Import types properly
+// Import types from other modules
 import type { BackendRoom } from './room';
 import type { BackendTrack } from './track';
 import type { BackendApiResponse } from './api';
 
-// =================== FRONTEND SCHEDULE TYPES ===================
+export type { BackendRoom } from './room';
+export type { BackendTrack } from './track';
+export type { BackendConferenceSchedule, ProcessedConferenceSchedule } from './conferenceSchedule';
+
 export interface ScheduleItem {
   id: string;
   title: string;
@@ -42,19 +44,18 @@ export interface ScheduleItem {
 }
 
 export interface DaySchedule {
-  date: string; // YYYY-MM-DD
+  date: string;
   dayNumber: number;
   dayTitle: string;
   items: ScheduleItem[];
 }
 
-// =================== FORM DATA TYPES ===================
 export type NewScheduleData = {
   title: string;
   conference: string;
-  date: string; // YYYY-MM-DD
-  startTime: string; // HH:MM
-  endTime: string; // HH:MM
+  date: string;
+  startTime: string;
+  endTime: string;
   speaker?: string;
   description?: string;
   location?: string;

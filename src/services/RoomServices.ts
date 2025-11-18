@@ -58,7 +58,7 @@ class RoomService {
   }
 
   async getAllRooms(accessToken: string, scheduleId?: string): Promise<BackendRoom[]> {
-    const queryParam = scheduleId ? `?schedule_id=${scheduleId}` : '';
+    const queryParam = scheduleId ? `?filter[schedule_id]=${scheduleId}` : '';
     const response = await this.makeRequest(
       `/api/v1/room${queryParam}`,
       {

@@ -234,10 +234,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           try {
             const newToken = await refreshToken();
             if (newToken) {
-              console.log('✅ Auth restored from refresh token');
             }
           } catch (error) {
-            console.error('Auth restoration failed:', error);
           } finally {
             setLoading(false);
           }
