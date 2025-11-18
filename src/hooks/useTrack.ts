@@ -29,7 +29,6 @@ export const useTrack = () => {
       setTracks(tracksData);
 
     } catch (err: any) {
-      console.error('❌ Failed to load tracks:', err.message);
       setError(err.message || 'Failed to load tracks');
     } finally {
       setLoading(false);

@@ -87,7 +87,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     setLoading(true);
     
     try {
-      console.log('🔄 Starting logout process...');
       
       // Step 1: Try to call backend logout endpoint (jika ada)
       // Tapi kalau ga ada API, skip aja
@@ -101,16 +100,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         });
         
         if (response.ok) {
-          console.log('✅ Backend logout successful');
         } else {
-          console.log('⚠️ Backend logout failed, continuing with client cleanup');
         }
       } catch (apiError) {
-        console.log('⚠️ No logout API available, continuing with client cleanup');
       }
 
       // Step 2: Clear all client-side auth state
-      console.log('🧹 Clearing client-side authentication state...');
       setUser(null);
       setAccessToken(null);
 
@@ -128,9 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           sessionStorage.removeItem('refreshToken');
           sessionStorage.removeItem('user');
           
-          console.log('✅ Browser storage cleared');
         } catch (storageError) {
-          console.error('Storage clear error:', storageError);
         }
       }
 
@@ -140,15 +133,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           method: 'POST',
           credentials: 'include',
         });
-        console.log('✅ Cookies cleared');
       } catch (cookieError) {
-        console.log('⚠️ Cookie clear endpoint not available');
       }
 
-      console.log('✅ Logout completed successfully');
       
     } catch (error) {
-      console.error('❌ Logout error:', error);
       // Even if there's an error, still clear client state
       setUser(null);
       setAccessToken(null);
@@ -157,7 +146,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       
       // Step 5: Redirect to login page
       if (typeof window !== 'undefined') {
-        console.log('🔄 Redirecting to login page...');
         
         // Clear the current page from history
         window.history.replaceState(null, '', '/login');
@@ -255,7 +243,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (!loading && user) {
       const canAccess = canAccessCurrentRoute();
       if (!canAccess) {
-        console.log('❌ User cannot access current route');
       }
     }
   }, [user, loading, canAccessCurrentRoute]);
@@ -268,7 +255,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       try {
         await refreshToken();
       } catch (error) {
-        console.error('Token refresh failed:', error);
         // If refresh fails, logout user
         await logout();
       }

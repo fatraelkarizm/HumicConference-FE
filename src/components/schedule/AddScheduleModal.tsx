@@ -85,10 +85,11 @@ export default function AddScheduleModal({ isOpen, onClose, conferenceId }: Prop
             description: formData.speaker ? `Moderator: ${formData.speaker}` : formData.description,
             type: formData.scheduleType === 'PANEL' ? 'PARALLEL' : 'MAIN',
             onlineMeetingUrl: formData.location?.startsWith('http') ? formData.location : undefined,
-            scheduleId: result.id
+            scheduleId: result.id,
+            startTime: '',
+            endTime: ''
           });
         } catch (roomError) {
-          console.warn('Room creation failed (non-critical):', roomError);
         }
       }
 
@@ -96,7 +97,6 @@ export default function AddScheduleModal({ isOpen, onClose, conferenceId }: Prop
       onClose();
       
     } catch (error: any) {
-      console.error('Failed to create schedule:', error);
       toast.error(error.message || 'Failed to create schedule');
     } finally {
       setLoading(false);

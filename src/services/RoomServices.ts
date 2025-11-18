@@ -23,14 +23,13 @@ class RoomService {
       const result = await response.json();
       return result.data?.accessToken || null;
     } catch (error) {
-      console.error('❌ Failed to get access token:', error);
       return null;
     }
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<BackendApiResponse<any>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -43,14 +42,12 @@ class RoomService {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`❌ HTTP ${response.status} on ${endpoint}:`, errorText);
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
     const result = await response.json();
-    
+
     if (result.code && result.code >= 400) {
-      console.error(`❌ Backend error on ${endpoint}:`, result);
       throw new Error(result.message || `Request failed with code ${result.code}`);
     }
 
@@ -80,20 +77,28 @@ class RoomService {
     return response.data;
   }
 
-  async createRoom(accessToken: string, data: NewRoomData): Promise<BackendRoom> {
-    const roomPayload = {
+  async createRoom(accessToken: string, data: any): Promise<BackendRoom> {
+    const roomPayload: any = {
       name: data.name,
       identifier: data.identifier || null,
       description: data.description || null,
-      type: data.type, // 'MAIN' | 'PARALLEL'
+      type: data.type,
       online_meeting_url: data.onlineMeetingUrl || null,
-      schedule_id: data.scheduleId,
-      track_id: data.trackId || null,
+      start_time: data.startTime,
+      end_time: data.endTime,
+      schedule_id: data.scheduleId
     };
+
+    // ✅ Handle different track formats
+    if (data.track) {
+      roomPayload.track = data.track;
+    } else if (data.trackId) {
+      roomPayload.track_id = data.trackId;
+    }
 
     const response = await this.makeRequest('/api/v1/room', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
@@ -105,7 +110,7 @@ class RoomService {
 
   async updateRoom(accessToken: string, roomId: string, data: UpdateRoomData): Promise<BackendRoom> {
     const updatePayload: any = {};
-    
+
     if (data.name) updatePayload.name = data.name;
     if (data.identifier !== undefined) updatePayload.identifier = data.identifier;
     if (data.description !== undefined) updatePayload.description = data.description;
@@ -115,7 +120,7 @@ class RoomService {
 
     const response = await this.makeRequest(`/api/v1/room/${roomId}`, {
       method: 'PUT',
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
@@ -134,7 +139,6 @@ class RoomService {
 
       return response.code === 200 || response.status === 'OK';
     } catch (error: any) {
-      console.error('❌ Delete room failed for ID:', roomId, error.message);
       throw error;
     }
   }

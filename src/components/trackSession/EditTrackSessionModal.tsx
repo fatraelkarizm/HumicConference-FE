@@ -116,7 +116,6 @@ export default function EditTrackSessionModal({ isOpen, onClose, session }: Prop
       onClose();
       
     } catch (error: any) {
-      console.error('Failed to update track session:', error);
       toast.error(error.message || 'Failed to update track session');
     } finally {
       setLoading(false);

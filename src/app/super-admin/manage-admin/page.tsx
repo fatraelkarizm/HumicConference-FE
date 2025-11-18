@@ -34,7 +34,6 @@ export default function ManageAdminPage() {
     setError(null);
     try {
       const list = await AdminService.getAdmins();
-      console.log('Loaded admins:', list);
       
       // Filter hanya admin users (exclude SUPER_ADMIN) - UPDATED ICODSA
       const adminUsers = list.filter(admin => 
@@ -52,7 +51,6 @@ export default function ManageAdminPage() {
       
       setAdmins(normalized);
     } catch (err: any) {
-      console.error('Failed to load admins:', err);
       setError(err.message || 'Failed to load admins');
       setAdmins([]);
     } finally {
@@ -86,7 +84,6 @@ export default function ManageAdminPage() {
       setError(null);
       
       if (modalMode === "create") {
-        console.log('Creating admin with payload:', payload);
         const created = await AdminService.createAdmin(payload);
         
         const newRow: AdminRow = {
@@ -100,9 +97,7 @@ export default function ManageAdminPage() {
         };
         
         setAdmins((prev) => [newRow, ...prev]);
-        console.log('Admin created successfully:', created);
       } else if (modalMode === "edit" && id) {
-        console.log('Updating admin with payload:', payload);
         const updated = await AdminService.updateAdmin(id, payload);
         
         setAdmins((prev) =>
@@ -117,10 +112,8 @@ export default function ManageAdminPage() {
               : p
           )
         );
-        console.log('Admin updated successfully:', updated);
       }
     } catch (err: any) {
-      console.error('Failed to save admin:', err);
       setError(err.message || 'Failed to save admin');
       throw err;
     }
@@ -129,13 +122,10 @@ export default function ManageAdminPage() {
   async function handleDelete(id: string) {
     try {
       setError(null);
-      console.log('Deleting admin with ID:', id);
       
       await AdminService.deleteAdmin(id);
       setAdmins((prev) => prev.filter((p) => p.id !== id));
-      console.log('Admin deleted successfully');
     } catch (err: any) {
-      console.error('Failed to delete admin:', err);
       setError(err.message || 'Failed to delete admin');
     }
   }

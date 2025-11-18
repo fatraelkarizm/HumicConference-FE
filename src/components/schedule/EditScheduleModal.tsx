@@ -76,7 +76,6 @@ export default function EditScheduleModal({ isOpen, onClose, schedule }: Props) 
       onClose();
       
     } catch (error: any) {
-      console.error('Failed to update schedule:', error);
       toast.error(error.message || 'Failed to update schedule');
     } finally {
       setLoading(false);

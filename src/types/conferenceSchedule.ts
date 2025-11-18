@@ -21,6 +21,7 @@ export interface BackendConferenceSchedule {
   updated_at: string;
   deleted_at?: string;
   schedules?: BackendSchedule[];
+  track_id?: string;
 }
 
 // =================== FRONTEND PROCESSED TYPES ===================

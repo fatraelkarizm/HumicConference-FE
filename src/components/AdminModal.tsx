@@ -88,7 +88,6 @@ export default function AdminModal({ open, onClose, onSave, initialData = null, 
       }
     }
 
-    console.log('AdminModal submitting with role:', role); // Debug log
 
     onSave({ fullName: fullName.trim(), email: email.trim(), password: password || undefined, role }, initialData?.id);
     onClose();

@@ -29,7 +29,6 @@ export const useRoom = (scheduleId?: string) => {
       setRooms(roomsData);
 
     } catch (err: any) {
-      console.error('❌ Failed to load rooms:', err.message);
       setError(err.message || 'Failed to load rooms');
     } finally {
       setLoading(false);
@@ -51,7 +50,17 @@ export const useRoom = (scheduleId?: string) => {
 };
 
 export const useRoomActions = () => {
-  const createRoom = async (data: NewRoomData): Promise<BackendRoom> => {
+  const createRoom = async (data: NewRoomData & {
+    startTime: string;
+    endTime: string;
+    track?: {
+      id: string;
+      name: string;
+      description: string;
+      category: string;
+      conference_schedule_id: string;
+    };
+  }): Promise<BackendRoom> => {
     const accessToken = await roomService.getAccessToken();
     if (!accessToken) {
       throw new Error('Access token not available');
@@ -94,7 +103,6 @@ export const useRoomActions = () => {
     getRoomById
   };
 };
-
 // Specialized hook for rooms within a specific schedule
 export const useScheduleRooms = (scheduleId: string) => {
   const [rooms, setRooms] = useState<BackendRoom[]>([]);

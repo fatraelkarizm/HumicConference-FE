@@ -29,7 +29,6 @@ export const useTrackSession = (trackId?: string) => {
       setTrackSessions(sessionsData);
 
     } catch (err: any) {
-      console.error('❌ Failed to load track sessions:', err.message);
       setError(err.message || 'Failed to load track sessions');
     } finally {
       setLoading(false);

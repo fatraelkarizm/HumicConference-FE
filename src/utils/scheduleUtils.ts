@@ -258,7 +258,6 @@ export class ScheduleProcessor {
 
       return `${year}-${month}-${day}`;
     } catch (error) {
-      console.error('Date formatting error:', error);
       // ✅ FIX: Safer fallback
       return isoString.includes('T') ? isoString.split('T')[0] : isoString;
     }
@@ -280,7 +279,6 @@ export class ScheduleProcessor {
 
       return `${weekday}, ${day} ${month}`;
     } catch (error) {
-      console.error('Day title generation error:', error);
       return `Day ${dayNumber}: ${date}`;
     }
   }
@@ -336,7 +334,6 @@ export const findConferenceByType = (
   const found = conferences.find((conf: BackendConferenceSchedule) => conf.type === targetType);
 
   if (found) {
-    console.log('✅ Found conference:', found.name, 'ID:', found.id, 'Type:', found.type);
   } else {
   }
 

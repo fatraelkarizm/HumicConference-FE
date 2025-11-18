@@ -25,11 +25,9 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      console.log('Submitting login with:', { email, password: '***' });
       await login(email, password);
       // Redirect will be handled automatically by AuthContext based on role
     } catch (err: any) {
-      console.log('Login failed:', err);
       setError(err.message);
     } finally {
       setLoading(false);

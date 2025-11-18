@@ -22,7 +22,6 @@ class AdminService {
       const result = await response.json();
       return result.data?.accessToken || null;
     } catch (error) {
-      console.error('Failed to get access token:', error);
       return null;
     }
   }
@@ -31,13 +30,13 @@ class AdminService {
   private normalizeRole(role: string): 'ADMIN_ICICYTA' | 'ADMIN_ICODSA' {
     // Handle different role formats from frontend
     const roleStr = role.toUpperCase().replace(/\s+/g, '_');
-    
+
     if (roleStr.includes('ICICYTA') || roleStr.includes('ICICyTA')) {
       return 'ADMIN_ICICYTA';
     } else if (roleStr.includes('ICODSA') || roleStr.includes('ICoDSA')) { // FIXED: ICODSA
       return 'ADMIN_ICODSA';
     }
-    
+
     // Default fallback
     return roleStr as 'ADMIN_ICICYTA' | 'ADMIN_ICODSA';
   }
@@ -46,7 +45,7 @@ class AdminService {
   async getAdmins(): Promise<Admin[]> {
     try {
       const accessToken = await this.getAccessToken();
-      
+
       if (!accessToken) {
         throw new Error('Access token not available');
       }
@@ -66,7 +65,7 @@ class AdminService {
       }
 
       const result: ApiResponse<Admin[]> = await response.json();
-      
+
       if (result.code !== 200) {
         throw new Error(result.message || 'Failed to fetch admins');
       }
@@ -88,7 +87,6 @@ class AdminService {
 
       return admins;
     } catch (error) {
-      console.error('Get admins error:', error);
       throw error;
     }
   }
@@ -97,14 +95,14 @@ class AdminService {
   async createAdmin(payload: { fullName: string; email: string; password?: string; role: string }): Promise<Admin> {
     try {
       const accessToken = await this.getAccessToken();
-      
+
       if (!accessToken) {
         throw new Error('Access token not available');
       }
 
       // Normalize role value
       const normalizedRole = this.normalizeRole(payload.role);
-      
+
       // Map frontend payload to backend format
       const backendPayload: CreateAdminPayload = {
         name: payload.fullName,
@@ -114,11 +112,6 @@ class AdminService {
         role: normalizedRole,
       };
 
-      console.log('Creating admin with normalized payload:', { 
-        ...backendPayload, 
-        password: '***', 
-        password_confirmation: '***' 
-      });
 
       const response = await fetch(`${this.baseUrl}/api/v1/user`, {
         method: 'POST',
@@ -131,25 +124,23 @@ class AdminService {
         credentials: 'include',
       });
 
-      console.log('Create admin response status:', response.status);
 
       if (!response.ok) {
         let errorMessage = `HTTP Error: ${response.status}`;
         try {
           const errorData = await response.json();
-          console.log('Create admin error response:', errorData);
-          
+
           // Handle validation errors
           if (errorData.errors && errorData.errors.validation) {
             const validationErrors = [];
             const validation = errorData.errors.validation;
-            
+
             for (const field in validation) {
               if (validation[field] && Array.isArray(validation[field])) {
                 validationErrors.push(...validation[field]);
               }
             }
-            
+
             if (validationErrors.length > 0) {
               errorMessage = validationErrors.join(', ');
             }
@@ -157,15 +148,13 @@ class AdminService {
             errorMessage = errorData.message;
           }
         } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
         }
-        
+
         throw new Error(errorMessage);
       }
 
       const result: ApiResponse<any> = await response.json();
-      console.log('Create admin success response:', result);
-      
+
       if (result.code !== 201 && result.code !== 200) {
         throw new Error(result.message || 'Failed to create admin');
       }
@@ -187,7 +176,6 @@ class AdminService {
 
       return admin;
     } catch (error) {
-      console.error('Create admin error:', error);
       throw error;
     }
   }
@@ -196,7 +184,7 @@ class AdminService {
   async updateAdmin(id: string, payload: { fullName: string; email: string; password?: string; role: string }): Promise<Admin> {
     try {
       const accessToken = await this.getAccessToken();
-      
+
       if (!accessToken) {
         throw new Error('Access token not available');
       }
@@ -217,11 +205,7 @@ class AdminService {
         backendPayload.password_confirmation = payload.password;
       }
 
-      console.log('Updating admin with normalized payload:', { 
-        ...backendPayload, 
-        password: '***', 
-        password_confirmation: '***' 
-      });
+
 
       const response = await fetch(`${this.baseUrl}/api/v1/user/${id}`, {
         method: 'PATCH',
@@ -238,18 +222,17 @@ class AdminService {
         let errorMessage = `HTTP Error: ${response.status}`;
         try {
           const errorData = await response.json();
-          console.log('Update admin error response:', errorData);
-          
+
           if (errorData.errors && errorData.errors.validation) {
             const validationErrors = [];
             const validation = errorData.errors.validation;
-            
+
             for (const field in validation) {
               if (validation[field] && Array.isArray(validation[field])) {
                 validationErrors.push(...validation[field]);
               }
             }
-            
+
             if (validationErrors.length > 0) {
               errorMessage = validationErrors.join(', ');
             }
@@ -257,14 +240,13 @@ class AdminService {
             errorMessage = errorData.message;
           }
         } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
         }
-        
+
         throw new Error(errorMessage);
       }
 
       const result: ApiResponse<any> = await response.json();
-      
+
       if (result.code !== 200) {
         throw new Error(result.message || 'Failed to update admin');
       }
@@ -286,7 +268,6 @@ class AdminService {
 
       return admin;
     } catch (error) {
-      console.error('Update admin error:', error);
       throw error;
     }
   }
@@ -295,7 +276,7 @@ class AdminService {
   async deleteAdmin(id: string): Promise<void> {
     try {
       const accessToken = await this.getAccessToken();
-      
+
       if (!accessToken) {
         throw new Error('Access token not available');
       }
@@ -314,27 +295,23 @@ class AdminService {
         let errorMessage = `HTTP Error: ${response.status}`;
         try {
           const errorData = await response.json();
-          console.log('Delete admin error response:', errorData);
-          
+
           if (errorData.message) {
             errorMessage = errorData.message;
           }
         } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
         }
-        
+
         throw new Error(errorMessage);
       }
 
       const result: ApiResponse<any> = await response.json();
-      
+
       if (result.code !== 200) {
         throw new Error(result.message || 'Failed to delete admin');
       }
 
-      console.log('Admin deleted successfully');
     } catch (error) {
-      console.error('Delete admin error:', error);
       throw error;
     }
   }
@@ -343,7 +320,7 @@ class AdminService {
   async getAdminById(id: string): Promise<Admin> {
     try {
       const accessToken = await this.getAccessToken();
-      
+
       if (!accessToken) {
         throw new Error('Access token not available');
       }
@@ -363,7 +340,7 @@ class AdminService {
       }
 
       const result: ApiResponse<any> = await response.json();
-      
+
       if (result.code !== 200) {
         throw new Error(result.message || 'Failed to fetch admin');
       }
@@ -385,7 +362,6 @@ class AdminService {
 
       return admin;
     } catch (error) {
-      console.error('Get admin by ID error:', error);
       throw error;
     }
   }

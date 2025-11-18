@@ -77,7 +77,6 @@ export const useSchedule = () => {
       setScheduleItems(allItems);
 
     } catch (err: any) {
-      console.error('❌ Failed to load schedules:', err.message);
       setError(err.message || 'Failed to load schedules');
     } finally {
       setLoading(false);

@@ -108,7 +108,6 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         await logout();
         // AuthContext akan handle redirect ke login
       } catch (error) {
-        console.error('Logout failed:', error);
         alert('Logout failed. Please try again.');
       }
     }

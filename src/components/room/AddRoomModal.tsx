@@ -78,12 +78,16 @@ export default function AddRoomModal({ isOpen, onClose, scheduleId }: Props) {
         trackId: formData.trackId || undefined
       };
 
-      await createRoom(roomData);
+      // createRoom expects scheduling fields; provide defaults so the argument matches the required type
+      await createRoom({
+        ...roomData,
+        startTime: '',
+        endTime: ''
+      });
       toast.success('Room created successfully!');
       onClose();
       
     } catch (error: any) {
-      console.error('Failed to create room:', error);
       toast.error(error.message || 'Failed to create room');
     } finally {
       setLoading(false);

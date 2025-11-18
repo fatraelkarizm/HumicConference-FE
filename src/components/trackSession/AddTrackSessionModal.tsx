@@ -101,7 +101,6 @@ export default function AddTrackSessionModal({ isOpen, onClose }: Props) {
       onClose();
       
     } catch (error: any) {
-      console.error('Failed to create track session:', error);
       toast.error(error.message || 'Failed to create track session');
     } finally {
       setLoading(false);

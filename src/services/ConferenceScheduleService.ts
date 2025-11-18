@@ -23,7 +23,6 @@ class ConferenceScheduleService {
       const result = await response.json();
       return result.data?.accessToken || null;
     } catch (error) {
-      console.error('❌ Failed to get access token:', error);
       return null;
     }
   }
@@ -43,14 +42,12 @@ class ConferenceScheduleService {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`❌ HTTP ${response.status} on ${endpoint}:`, errorText);
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
     const result = await response.json();
     
     if (result.code && result.code >= 400) {
-      console.error(`❌ Backend error on ${endpoint}:`, result);
       throw new Error(result.message || `Request failed with code ${result.code}`);
     }
 
@@ -146,7 +143,6 @@ class ConferenceScheduleService {
 
       return response.code === 200 || response.status === 'OK';
     } catch (error: any) {
-      console.error('❌ Delete conference schedule failed for ID:', conferenceId, error.message);
       throw error;
     }
   }

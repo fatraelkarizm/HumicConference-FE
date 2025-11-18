@@ -342,7 +342,7 @@ export default function ICICyTAAdminPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-6">
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
@@ -371,7 +371,7 @@ export default function ICICyTAAdminPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-full mx-auto py-8">
         <Tabs defaultValue="settings" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="settings">Schedule Overview</TabsTrigger>
@@ -896,19 +896,12 @@ export default function ICICyTAAdminPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setActiveModal("add-room")}
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Add Room
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
                     onClick={() => setActiveModal("add-track-session")}
                   >
                     <Users className="w-4 h-4 mr-2" />
                     Add Session
                   </Button>
+                  
                 </div>
               </CardHeader>
               <CardContent>
