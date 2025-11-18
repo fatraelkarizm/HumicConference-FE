@@ -83,6 +83,10 @@ export interface ScheduleItem {
   dayTitle?: string;
   rooms?: BackendRoom[];
   track?: BackendTrack;
+  moderator?: string;
+  roomName?: string;
+  roomIdentifier?: string;
+  onlineUrl?: string;
 }
 
 export interface DaySchedule {

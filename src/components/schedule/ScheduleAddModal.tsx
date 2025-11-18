@@ -4,7 +4,6 @@ import type { NewScheduleData, ScheduleItem } from "@/types/schedule";
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  // onSave will be called with (payload, id?) — parent decides create vs update
   onSave: (payload: NewScheduleData, id?: string) => Promise<void>;
   initialData?: ScheduleItem | null;
   mode?: "create" | "edit";
@@ -14,7 +13,13 @@ type DayEntry = { dayNumber: number; dayTitle: string };
 
 const DAYS_STORAGE = "hc_schedule_days_v1";
 
-export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData = null, mode = "create" }: Props) {
+export default function ScheduleAddModal({
+  isOpen,
+  onClose,
+  onSave,
+  initialData = null,
+  mode = "create",
+}: Props) {
   const [title, setTitle] = useState("");
   const [conference, setConference] = useState("");
   const [date, setDate] = useState("");
@@ -25,13 +30,11 @@ export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData 
   const [location, setLocation] = useState("");
   const [scheduleType, setScheduleType] = useState("");
 
-  // days persisted to localStorage so definitions survive reload
   const [days, setDays] = useState<DayEntry[]>(() => {
     try {
       const raw = localStorage.getItem(DAYS_STORAGE);
       if (raw) return JSON.parse(raw) as DayEntry[];
     } catch {}
-    // default Day 1..4
     return [
       { dayNumber: 1, dayTitle: "" },
       { dayNumber: 2, dayTitle: "" },
@@ -44,7 +47,6 @@ export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData 
   const modalRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // when initialData provided (edit), populate fields
     if (isOpen && initialData) {
       setTitle(initialData.title ?? "");
       setConference(initialData.conference ?? "");
@@ -56,21 +58,29 @@ export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData 
       setLocation(initialData.location ?? "");
       setScheduleType(initialData.scheduleType ?? "");
       setSelectedDayNumber(initialData.dayNumber ?? 1);
-      // set day title to match initialData.dayTitle if present
+      
       if (initialData.dayNumber && initialData.dayTitle) {
         setDays((prev) => {
           const exists = prev.find((d) => d.dayNumber === initialData.dayNumber);
           if (exists) {
-            return prev.map((d) => (d.dayNumber === initialData.dayNumber ? { ...d, dayTitle: initialData.dayTitle ?? "" } : d));
+            return prev.map((d) =>
+              d.dayNumber === initialData.dayNumber
+                ? { ...d, dayTitle: initialData.dayTitle ?? "" }
+                : d
+            );
           } else {
-            // add the day entry if not exist
-            return [...prev, { dayNumber: initialData.dayNumber!, dayTitle: initialData.dayTitle ?? "" }].sort((a, b) => a.dayNumber - b.dayNumber);
+            return [
+              ...prev,
+              {
+                dayNumber: initialData.dayNumber!,
+                dayTitle: initialData.dayTitle ?? "",
+              },
+            ].sort((a, b) => a.dayNumber - b.dayNumber);
           }
         });
       }
     }
 
-    // When open without initialData (create) reset fields
     if (isOpen && !initialData) {
       setTitle("");
       setConference("");
@@ -81,11 +91,10 @@ export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData 
       setDescription("");
       setLocation("");
       setScheduleType("");
-      setSelectedDayNumber((prev) => prev ?? 1);
+      setSelectedDayNumber(1);
     }
   }, [isOpen, initialData]);
 
-  // persist days when changed
   useEffect(() => {
     try {
       localStorage.setItem(DAYS_STORAGE, JSON.stringify(days));
@@ -117,17 +126,45 @@ export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData 
   }
 
   function updateDayTitle(dayNum: number, value: string) {
-    setDays((prev) => prev.map((d) => (d.dayNumber === dayNum ? { ...d, dayTitle: value } : d)));
+    setDays((prev) =>
+      prev.map((d) => (d.dayNumber === dayNum ? { ...d, dayTitle: value } : d))
+    );
   }
 
   async function handleSave() {
-    if (!title.trim() || !date || !startTime || !endTime) {
-      alert("Tolong isi minimal: Judul, Tanggal, Waktu mulai dan selesai.");
+    // ✅ Basic validation
+    if (!title.trim()) {
+      alert("Judul sesi harus diisi.");
       return;
     }
 
-    const dayEntry = days.find((d) => d.dayNumber === selectedDayNumber) ?? { dayNumber: selectedDayNumber, dayTitle: "" };
-    const normalizedDayTitle = dayEntry.dayTitle?.trim() ? `Day ${dayEntry.dayNumber}: ${dayEntry.dayTitle.trim()}` : `Day ${dayEntry.dayNumber}`;
+    if (!date) {
+      alert("Tanggal harus dipilih.");
+      return;
+    }
+
+    if (!startTime || !endTime) {
+      alert("Waktu mulai dan selesai harus diisi.");
+      return;
+    }
+
+    if (startTime >= endTime) {
+      alert("Waktu mulai harus lebih awal dari waktu selesai.");
+      return;
+    }
+
+    if (!conference) {
+      alert("Konferensi harus dipilih.");
+      return;
+    }
+
+    const dayEntry = days.find((d) => d.dayNumber === selectedDayNumber) ?? {
+      dayNumber: selectedDayNumber,
+      dayTitle: "",
+    };
+    const normalizedDayTitle = dayEntry.dayTitle?.trim()
+      ? `Day ${dayEntry.dayNumber}: ${dayEntry.dayTitle.trim()}`
+      : `Day ${dayEntry.dayNumber}`;
 
     const payload: NewScheduleData = {
       title: title.trim(),
@@ -135,16 +172,22 @@ export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData 
       date,
       startTime,
       endTime,
-      speaker,
-      description,
-      location,
-      scheduleType,
+      speaker: speaker.trim() || undefined,
+      description: description.trim() || undefined,
+      location: location.trim() || undefined,
+      scheduleType: scheduleType || "Speech", // ✅ Default to safe value
       dayNumber: dayEntry.dayNumber,
       dayTitle: normalizedDayTitle,
     };
 
-    await onSave(payload, initialData?.id);
-    onClose();
+    console.log("💾 Submitting payload:", payload);
+
+    try {
+      await onSave(payload, initialData?.id);
+    } catch (error) {
+      console.error("❌ Save failed in modal:", error);
+      // Error will be handled by parent component
+    }
   }
 
   return (
@@ -155,17 +198,26 @@ export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData 
       aria-modal="true"
       role="dialog"
     >
-      <div className="w-full max-w-4xl rounded-lg bg-white shadow-lg ring-1 ring-black/5" onMouseDown={(e) => e.stopPropagation()}>
+      <div
+        className="w-full max-w-4xl rounded-lg bg-white shadow-lg ring-1 ring-black/5"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b px-6 py-3">
-          <h3 className="text-lg font-medium text-black">{mode === "create" ? "Form Schedule Baru" : "Edit Schedule"}</h3>
-          <button onClick={onClose} className="text-black hover:text-gray-700 rounded p-1" aria-label="Close modal">
+          <h3 className="text-lg font-medium text-black">
+            {mode === "create" ? "Form Schedule Baru" : "Edit Schedule"}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-black hover:text-gray-700 rounded p-1"
+            aria-label="Close modal"
+          >
             ✕
           </button>
         </div>
 
         <div className="px-6 py-6">
-          {/* Days dropdown + add */}
-          <div className="mb-4">
+          {/* Days Section */}
+          <div className="mb-6">
             <div className="flex items-center gap-3">
               <div className="text-sm font-medium text-black">Days</div>
 
@@ -184,7 +236,7 @@ export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData 
               <button
                 type="button"
                 onClick={addDay}
-                className="inline-flex items-center justify-center ml-2 rounded-md bg-green-600 text-white px-3 py-1"
+                className="inline-flex items-center justify-center ml-2 rounded-md bg-green-600 text-white px-3 py-1 hover:bg-green-700"
                 title="Add Day"
               >
                 +
@@ -194,101 +246,162 @@ export default function ScheduleAddModal({ isOpen, onClose, onSave, initialData 
             <div className="mt-3">
               <label className="block text-sm text-black">Title untuk Day</label>
               <input
-                value={days.find((d) => d.dayNumber === selectedDayNumber)?.dayTitle ?? ""}
-                onChange={(e) => updateDayTitle(selectedDayNumber, e.target.value)}
+                value={
+                  days.find((d) => d.dayNumber === selectedDayNumber)?.dayTitle ?? ""
+                }
+                onChange={(e) =>
+                  updateDayTitle(selectedDayNumber, e.target.value)
+                }
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black placeholder:text-gray-400"
                 placeholder={`Judul untuk Day ${selectedDayNumber} (contoh: Opening Ceremony)`}
               />
-              <div className="text-xs text-gray-500 mt-1">Judul akan disimpan sebagai "Day {selectedDayNumber}: &lt;judul&gt;" saat disimpan.</div>
+              <div className="text-xs text-gray-500 mt-1">
+                Judul akan disimpan sebagai "Day {selectedDayNumber}: &lt;judul&gt;" saat disimpan.
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <label className="block text-sm text-black">Judul</label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-black placeholder:text-gray-400"
-                placeholder="Enter Judul"
-              />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Judul <span className="text-red-500">*</span>
+                </label>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black placeholder:text-gray-400"
+                  placeholder="Masukkan judul sesi"
+                />
+              </div>
 
-              <label className="block text-sm text-black mt-2">Tanggal</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-black"
-              />
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Tanggal <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+                />
+              </div>
 
-              <div className="grid grid-cols-2 gap-3 mt-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-black">Waktu mulai</label>
+                  <label className="block text-sm font-medium text-black mb-1">
+                    Waktu Mulai <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-black"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-black">Waktu selesai</label>
+                  <label className="block text-sm font-medium text-black mb-1">
+                    Waktu Selesai <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-black"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
                   />
                 </div>
               </div>
 
-              <label className="block text-sm text-black mt-2">Pembicara</label>
-              <input
-                value={speaker}
-                onChange={(e) => setSpeaker(e.target.value)}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-black placeholder:text-gray-400"
-                placeholder="Nama pembicara"
-              />
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Pembicara/Moderator
+                </label>
+                <input
+                  value={speaker}
+                  onChange={(e) => setSpeaker(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black placeholder:text-gray-400"
+                  placeholder="Nama pembicara (opsional)"
+                />
+              </div>
 
-              <label className="block text-sm text-black mt-2">Deskripsi</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-black placeholder:text-gray-400"
-                rows={4}
-              />
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Deskripsi
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black placeholder:text-gray-400"
+                  rows={3}
+                  placeholder="Deskripsi sesi (opsional)"
+                />
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <label className="block text-sm text-black">Konferensi</label>
-              <select value={conference} onChange={(e) => setConference(e.target.value)} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-black">
-                <option value="">Pilih Konferensi</option>
-                <option value="ICICyTA">ICICyTA</option>
-                <option value="ICoDSA">ICoDSA</option>
-              </select>
+            {/* Right Column */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Konferensi <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={conference}
+                  onChange={(e) => setConference(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+                >
+                  <option value="">Pilih Konferensi</option>
+                  <option value="ICICYTA">ICICyTA</option>
+                  <option value="ICODSA">ICoDSA</option>
+                </select>
+              </div>
 
-              <label className="block text-sm text-black mt-2">Jenis Schedule</label>
-              <select value={scheduleType} onChange={(e) => setScheduleType(e.target.value)} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-black">
-                <option value="">Pilih Jenis</option>
-                <option value="Reporting">Reporting</option>
-                <option value="Speech">Speech</option>
-                <option value="Workshop">Workshop</option>
-                <option value="Panel">Panel</option>
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Jenis Schedule
+                </label>
+                <select
+                  value={scheduleType}
+                  onChange={(e) => setScheduleType(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black"
+                >
+                  <option value="">Pilih Jenis (opsional)</option>
+                  <option value="Speech">Speech/Keynote</option>
+                  <option value="Reporting">Reporting/Presentation</option>
+                  <option value="Panel">Panel Discussion</option>
+                  <option value="Workshop">Workshop</option>
+                  <option value="Break">Coffee Break</option>
+                  <option value="Activity">Activity/Tour</option>
+                </select>
+                <div className="text-xs text-gray-500 mt-1">
+                  Default: Speech jika tidak dipilih
+                </div>
+              </div>
 
-              <label className="block text-sm text-black mt-2">Lokasi/Link</label>
-              <input
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-black placeholder:text-gray-400"
-                placeholder="Type your nama ruangan/link virtual"
-              />
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Lokasi/Link
+                </label>
+                <input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black placeholder:text-gray-400"
+                  placeholder="Nama ruangan atau link virtual (opsional)"
+                />
+              </div>
 
-              <div className="flex items-center gap-3 mt-6">
-                <button onClick={handleSave} className="flex-1 rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white">
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 pt-4">
+                <button
+                  onClick={handleSave}
+                  className="flex-1 rounded-md bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 transition-colors"
+                >
                   Save
                 </button>
-                <button onClick={onClose} className="flex-1 rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white">
+                <button
+                  onClick={onClose}
+                  className="flex-1 rounded-md bg-red-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors"
+                >
                   Cancel
                 </button>
               </div>

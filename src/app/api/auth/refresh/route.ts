@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('Backend refresh response status:', response.status);
 
     // DEBUG: Log semua headers dari backend
     console.log('Backend response headers:');
@@ -63,7 +62,6 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.log('Backend refresh error:', errorData);
       return NextResponse.json(
         { 
           code: response.status,
@@ -77,7 +75,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('Backend refresh response data:', data);
 
     // Extract access token dari Authorization header
     const authHeader = response.headers.get('authorization');
