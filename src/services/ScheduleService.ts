@@ -58,7 +58,6 @@ class ScheduleService {
     return result;
   }
 
-  // ✅ ADD: Get current user method
   async getCurrentUser(accessToken: string): Promise<any> {
     const response = await this.makeRequest('/api/v1/auth/me', {
       headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -67,7 +66,6 @@ class ScheduleService {
     return response.data;
   }
 
-  // ✅ ADD: Get all conference schedules method
   async getAllConferenceSchedules(accessToken: string): Promise<BackendConferenceSchedule[]> {
     const response = await this.makeRequest(
       `/api/v1/conference-schedule?include_relation[0]=schedules`,
@@ -79,10 +77,10 @@ class ScheduleService {
     return Array.isArray(response.data) ? response.data : [];
   }
 
-  async getAllSchedules(accessToken: string, conferenceScheduleId?: string): Promise<BackendSchedule[]> {
-    const queryParam = conferenceScheduleId ? `?conference_schedule_id=${conferenceScheduleId}` : '';
+  // ✅ FIX: Remove conference_schedule_id parameter since API doesn't accept it
+  async getAllSchedules(accessToken: string): Promise<BackendSchedule[]> {
     const response = await this.makeRequest(
-      `/api/v1/schedule${queryParam}`,
+      `/api/v1/schedule`, // No query parameters
       {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       }

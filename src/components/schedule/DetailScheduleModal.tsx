@@ -73,7 +73,7 @@ export default function DetailScheduleModal({ isOpen, onClose, schedule }: Props
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl">
             <Eye className="w-5 h-5 mr-2 text-blue-600" />

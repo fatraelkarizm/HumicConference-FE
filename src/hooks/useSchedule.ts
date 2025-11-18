@@ -11,7 +11,8 @@ import type {
   DaySchedule
 } from '@/types';
 
-export const useSchedule = (conferenceScheduleId?: string) => {
+// ✅ FIX: Remove conferenceScheduleId parameter since API doesn't support filtering
+export const useSchedule = () => {
   const { user, isAuthenticated } = useAuth();
   const [schedules, setSchedules] = useState<BackendSchedule[]>([]);
   const [processedSchedule, setProcessedSchedule] = useState<ProcessedConferenceSchedule | null>(null);
@@ -35,17 +36,11 @@ export const useSchedule = (conferenceScheduleId?: string) => {
         throw new Error('Access token not available');
       }
 
-      // If specific conference schedule ID provided
-      if (conferenceScheduleId) {
-        const schedulesData = await scheduleService.getAllSchedules(accessToken, conferenceScheduleId);
-        setSchedules(schedulesData);
-        return;
-      }
-
-      // Otherwise, load based on user role (legacy behavior)
-      const [currentUser, allConferences] = await Promise.all([
+      // ✅ FIX: Get all schedules without filtering, then process based on user role
+      const [currentUser, allConferences, allSchedules] = await Promise.all([
         scheduleService.getCurrentUser(accessToken),
-        scheduleService.getAllConferenceSchedules(accessToken)
+        scheduleService.getAllConferenceSchedules(accessToken),
+        scheduleService.getAllSchedules(accessToken) // No conference filtering
       ]);
 
       const conferenceType = mapUserRoleToConference(currentUser.role);
@@ -55,10 +50,22 @@ export const useSchedule = (conferenceScheduleId?: string) => {
         throw new Error(`No ${conferenceType} conference found`);
       }
 
-      const processed = ScheduleProcessor.processConferenceSchedule(targetConference);
+      // Filter schedules that belong to the target conference
+      const filteredSchedules = allSchedules.filter(
+        schedule => schedule.conference_schedule_id === targetConference.id
+      );
+      
+      setSchedules(filteredSchedules);
+
+      // Process conference schedule with filtered schedules
+      const conferenceWithFilteredSchedules = {
+        ...targetConference,
+        schedules: filteredSchedules
+      };
+
+      const processed = ScheduleProcessor.processConferenceSchedule(conferenceWithFilteredSchedules);
       setProcessedSchedule(processed);
 
-      // ✅ FIX: Add proper types for day and item
       const allItems = processed.days.flatMap((day: DaySchedule) =>
         day.items.map((item: ScheduleItem) => ({
           ...item,
@@ -75,7 +82,7 @@ export const useSchedule = (conferenceScheduleId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user, conferenceScheduleId]);
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     if (isAuthenticated && user) {

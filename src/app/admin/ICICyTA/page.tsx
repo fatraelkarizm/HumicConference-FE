@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useConferenceSchedule } from '@/hooks/useConferenceSchedule';
-import { useSchedule } from '@/hooks/useSchedule';
+import { useSchedule } from '@/hooks/useSchedule'; // ✅ FIX: Remove parameter
 import { useRoom } from '@/hooks/useRoom';
 import { useTrack } from '@/hooks/useTrack';
 import { useTrackSession } from '@/hooks/useTrackSession';
@@ -30,7 +30,7 @@ export default function ICICyTAAdminPage() {
 
   // Hooks
   const { conferences, loading: confLoading, error: confError } = useConferenceSchedule();
-  const { schedules, loading: scheduleLoading } = useSchedule(selectedConference?.id);
+  const { schedules, loading: scheduleLoading } = useSchedule(); // ✅ FIX: Remove conferenceId parameter
   const { rooms } = useRoom(selectedSchedule?.id);
   const { tracks } = useTrack();
   const { trackSessions } = useTrackSession();
@@ -109,60 +109,42 @@ export default function ICICyTAAdminPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="schedule" className="space-y-6">
+        <Tabs defaultValue="settings" className="space-y-6"> {/* ✅ FIX: Default to settings */}
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="schedule">Schedule Overview</TabsTrigger>
+            <TabsTrigger value="settings">Schedule Overview</TabsTrigger> {/* ✅ FIX: Swapped labels */}
             <TabsTrigger value="rooms">Room Management</TabsTrigger>
             <TabsTrigger value="tracks">Track Sessions</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="schedule">Schedule Table</TabsTrigger> {/* ✅ FIX: Swapped labels */}
           </TabsList>
 
-          {/* Schedule Overview Tab */}
-          <TabsContent value="schedule" className="space-y-6">
+          {/* ✅ FIX: Schedule Overview Tab (now shows conference info) */}
+          <TabsContent value="settings" className="space-y-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-semibold">Conference Schedule</CardTitle>
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setActiveModal('add-room')}
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Add Room
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setActiveModal('add-track-session')}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Add Session
-                  </Button>
-                </div>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  Conference Overview
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <ConferenceScheduleTable 
-                  conference={selectedConference}
-                  schedules={schedules}
-                  onScheduleSelect={handleScheduleSelect}
-                  onScheduleEdit={(schedule) => {
-                    setSelectedSchedule(schedule);
-                    setActiveModal('edit-schedule');
-                  }}
-                  onScheduleDetail={(schedule) => {
-                    setSelectedSchedule(schedule);
-                    setActiveModal('detail-schedule');
-                  }}
-                  onRoomEdit={(room) => {
-                    setSelectedRoom(room);
-                    setActiveModal('edit-room');
-                  }}
-                  onRoomDetail={(room) => {
-                    setSelectedRoom(room);
-                    setActiveModal('detail-room');
-                  }}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-medium mb-3">General Information</h3>
+                    <div className="space-y-2 text-sm">
+                      <div><span className="font-medium">Year:</span> {selectedConference.year}</div>
+                      <div><span className="font-medium">Type:</span> {selectedConference.type}</div>
+                      <div><span className="font-medium">Contact:</span> {selectedConference.contact_email}</div>
+                      <div><span className="font-medium">Timezone:</span> {selectedConference.timezone_iana}</div>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-3">Presentation Locations</h3>
+                    <div className="space-y-2 text-sm">
+                      <div><span className="font-medium">Onsite:</span> {selectedConference.onsite_presentation}</div>
+                      <div><span className="font-medium">Online:</span> {selectedConference.online_presentation}</div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -262,41 +244,59 @@ export default function ICICyTAAdminPage() {
             </Card>
           </TabsContent>
 
-          {/* Settings Tab */}
-          <TabsContent value="settings">
+          {/* ✅ FIX: Schedule Table Tab (now shows the actual table) */}
+          <TabsContent value="schedule" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="w-5 h-5 mr-2" />
-                  Conference Settings
-                </CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-xl font-semibold">Conference Schedule Table</CardTitle>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setActiveModal('add-room')}
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Add Room
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setActiveModal('add-track-session')}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Add Session
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-medium mb-3">General Information</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Year:</span> {selectedConference.year}</div>
-                      <div><span className="font-medium">Type:</span> {selectedConference.type}</div>
-                      <div><span className="font-medium">Contact:</span> {selectedConference.contact_email}</div>
-                      <div><span className="font-medium">Timezone:</span> {selectedConference.timezone_iana}</div>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-3">Presentation Locations</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Onsite:</span> {selectedConference.onsite_presentation}</div>
-                      <div><span className="font-medium">Online:</span> {selectedConference.online_presentation}</div>
-                    </div>
-                  </div>
-                </div>
+                <ConferenceScheduleTable 
+                  conference={selectedConference}
+                  schedules={schedules}
+                  onScheduleSelect={handleScheduleSelect}
+                  onScheduleEdit={(schedule) => {
+                    setSelectedSchedule(schedule);
+                    setActiveModal('edit-schedule');
+                  }}
+                  onScheduleDetail={(schedule) => {
+                    setSelectedSchedule(schedule);
+                    setActiveModal('detail-schedule');
+                  }}
+                  onRoomEdit={(room) => {
+                    setSelectedRoom(room);
+                    setActiveModal('edit-room');
+                  }}
+                  onRoomDetail={(room) => {
+                    setSelectedRoom(room);
+                    setActiveModal('detail-room');
+                  }}
+                />
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Modals */}
+      {/* Modals - ✅ FIX: Make modals bigger */}
       {activeModal === 'add-schedule' && (
         <AddScheduleModal 
           isOpen={true}
