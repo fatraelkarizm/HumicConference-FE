@@ -2,49 +2,59 @@
 
 import { useState, useEffect } from 'react';
 import { useScheduleActions } from '@/hooks/useSchedule';
+import { useRoomActions } from '@/hooks/useRoom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Edit2, CalendarDays, Clock, User, FileText } from 'lucide-react';
+import { Edit2, CalendarDays, Clock, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { BackendSchedule, UpdateScheduleData } from '@/types/schedule';
+import type { BackendRoom } from '@/types/room';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   schedule: BackendSchedule;
+  onUpdated?: () => void; // optional callback so parent can refetch
 }
 
-export default function EditScheduleModal({ isOpen, onClose, schedule }: Props) {
-  const [formData, setFormData] = useState<UpdateScheduleData>({
+export default function EditScheduleModal({ isOpen, onClose, schedule, onUpdated }: Props) {
+  const [formData, setFormData] = useState({
     title: '',
     date: '',
     startTime: '',
     endTime: '',
-    description: '',
-    scheduleType: 'TALK'
+    scheduleType: 'TALK',
+    mainRoomId: '' as string | null,
+    roomName: '',
+    roomDescription: '',
+    roomOnlineUrl: ''
   });
   const [loading, setLoading] = useState(false);
 
   const { updateSchedule } = useScheduleActions();
+  const { updateRoom, createRoom } = useRoomActions();
 
-  // Initialize form data from schedule
+  // Initialize form data from schedule and main room
   useEffect(() => {
-    if (schedule) {
-      const mainRoom = schedule.rooms?.find(room => room.type === 'MAIN');
-      
-      setFormData({
-        title: mainRoom?.name || 'Schedule Item',
-        date: schedule.date.split('T')[0],
-        startTime: schedule.start_time || '',
-        endTime: schedule.end_time || '',
-        description: schedule.notes || '',
-        scheduleType: mapBackendTypeToFrontend(schedule.type)
-      });
-    }
+    if (!schedule) return;
+
+    const mainRoom = (schedule.rooms || []).find((r: BackendRoom) => r.type === 'MAIN') || null;
+
+    setFormData({
+      title: mainRoom?.name || 'Schedule Item',
+      date: schedule.date?.split('T')[0] || '',
+      startTime: schedule.start_time || '',
+      endTime: schedule.end_time || '',
+      scheduleType: mapBackendTypeToFrontend(schedule.type),
+      mainRoomId: mainRoom?.id || null,
+      roomName: mainRoom?.name || '',
+      roomDescription: mainRoom?.description || schedule.notes || '',
+      roomOnlineUrl: mainRoom?.online_meeting_url || ''
+    });
   }, [schedule]);
 
   const scheduleTypes = [
@@ -55,38 +65,110 @@ export default function EditScheduleModal({ isOpen, onClose, schedule }: Props) 
     { value: 'REPORTING', label: 'Reporting', icon: '📊' }
   ];
 
+  const handleInputChange = (key: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  // normalize to HH:mm
+  const normalizeTime = (time?: string) => {
+    if (!time) return undefined;
+    const t = time.replace(/\./g, ':');
+    return t.length > 5 ? t.substring(0, 5) : t;
+  };
+
+  // Try create room, retry with lightweight track object if backend requires track
+  const createRoomWithFallback = async (payload: any) => {
+    try {
+      return await createRoom(payload);
+    } catch (err: any) {
+      const errText = (err?.data && JSON.stringify(err.data)) || err?.message || String(err);
+      if (errText.toLowerCase().includes('track')) {
+        // try minimal track object
+        const payloadWithTrack = {
+          ...payload,
+          track: {
+            name: `Track for ${payload.name}`,
+            description: payload.description || ''
+          }
+        };
+        return await createRoom(payloadWithTrack);
+      }
+      throw err;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Validate required fields
-      if (formData.title && !formData.title.trim()) {
-        toast.error('Title cannot be empty');
-        return;
-      }
-
+      // validation
       if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
         toast.error('Start time must be before end time');
+        setLoading(false);
         return;
       }
 
-      await updateSchedule(schedule.id, formData);
-      toast.success('Schedule updated successfully!');
+      // 1) Update schedule (only fields backend accepts) - do NOT send start/end times
+      // Times belong to the room child; sending them to schedule will update the parent.
+      const schedulePayload: UpdateScheduleData = {
+        date: formData.date || undefined,
+        // We intentionally don't send start/end here so child room retains time fields
+        // We intentionally don't send title (backend doesn't accept it)
+        description: undefined,
+        scheduleType: formData.scheduleType || undefined
+      };
+
+      await updateSchedule(schedule.id, schedulePayload);
+
+      // 2) Update existing MAIN room or create one
+      const roomPayloadForUpdate: any = {};
+      if (formData.roomName !== undefined) roomPayloadForUpdate.name = formData.roomName;
+      if (formData.roomDescription !== undefined) roomPayloadForUpdate.description = formData.roomDescription;
+      if (formData.roomOnlineUrl !== undefined) roomPayloadForUpdate.online_meeting_url = formData.roomOnlineUrl || null;
+      if (formData.startTime) roomPayloadForUpdate.start_time = normalizeTime(formData.startTime);
+      if (formData.endTime) roomPayloadForUpdate.end_time = normalizeTime(formData.endTime);
+
+      if (formData.mainRoomId) {
+        // Update existing main room. Wrap in try/catch to surface errors but not block schedule update.
+        try {
+          await updateRoom(formData.mainRoomId, roomPayloadForUpdate);
+        } catch (roomUpdateErr: any) {
+          // If update fails (validation), attempt create fallback (rare if mainRoomId exists)
+          const serverMsg = roomUpdateErr?.data?.message || roomUpdateErr?.message || String(roomUpdateErr);
+          toast.error(`Main room update failed: ${serverMsg}`);
+        }
+      } else {
+        // create main room and attach to schedule
+        const createPayload = {
+          name: formData.roomName || 'Main Room',
+          identifier: null,
+          description: formData.roomDescription || '',
+          type: 'MAIN',
+          online_meeting_url: formData.roomOnlineUrl || null,
+          // Normalize times for backend if needed by room (some backends require null/omit)
+          start_time: normalizeTime(formData.startTime) || null,
+          end_time: normalizeTime(formData.endTime) || null,
+          schedule_id: schedule.id
+        };
+
+        try {
+          await createRoomWithFallback(createPayload);
+        } catch (createErr: any) {
+          const serverMsg = createErr?.data?.message || createErr?.message || String(createErr);
+          toast.error(`Creating main room failed: ${serverMsg}`);
+        }
+      }
+
+      toast.success('Schedule and Main Room updated!');
       onClose();
-      
+      onUpdated?.();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update schedule');
+      const serverMsg = error?.data?.message || error?.message || String(error);
+      toast.error(`Update failed: ${serverMsg}`);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleInputChange = (field: keyof UpdateScheduleData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
   };
 
   return (
@@ -109,23 +191,27 @@ export default function EditScheduleModal({ isOpen, onClose, schedule }: Props) 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">
+                  Title
+                  <span className="text-xs text-gray-500 ml-2"> (read-only)</span>
+                </Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   placeholder="Schedule title"
+                  disabled
                 />
               </div>
 
               <div className="md:col-span-2">
                 <Label htmlFor="scheduleType">Type</Label>
-                <Select 
-                  value={formData.scheduleType} 
+                <Select
+                  value={formData.scheduleType}
                   onValueChange={(value) => handleInputChange('scheduleType', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select schedule type" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {scheduleTypes.map(type => (
@@ -142,12 +228,12 @@ export default function EditScheduleModal({ isOpen, onClose, schedule }: Props) 
             </div>
 
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="roomDescription">Main Room Description (shown in Main Room)</Label>
               <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Optional description or notes"
+                id="roomDescription"
+                value={formData.roomDescription}
+                onChange={(e) => handleInputChange('roomDescription', e.target.value)}
+                placeholder="Moderator, session details..."
                 rows={3}
               />
             </div>
@@ -198,25 +284,6 @@ export default function EditScheduleModal({ isOpen, onClose, schedule }: Props) 
                 Duration: {calculateDuration(formData.startTime, formData.endTime)}
               </div>
             )}
-          </div>
-
-          {/* Current Data Preview */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-sm mb-2">Current Schedule Information:</h4>
-            <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-              <div>
-                <span className="font-medium">ID:</span> {schedule.id}
-              </div>
-              <div>
-                <span className="font-medium">Type:</span> {schedule.type}
-              </div>
-              <div>
-                <span className="font-medium">Created:</span> {new Date(schedule.created_at).toLocaleDateString()}
-              </div>
-              <div>
-                <span className="font-medium">Modified:</span> {new Date(schedule.updated_at).toLocaleDateString()}
-              </div>
-            </div>
           </div>
 
           <DialogFooter>

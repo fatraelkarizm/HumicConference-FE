@@ -30,7 +30,7 @@ class ScheduleService {
 
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<BackendApiResponse<any>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ class ScheduleService {
     }
 
     const result = await response.json();
-    
+
     if (result.code && result.code >= 400) {
       throw new Error(result.message || `Request failed with code ${result.code}`);
     }
@@ -111,11 +111,11 @@ class ScheduleService {
       notes: data.description || null,
       conference_schedule_id: conferenceId,
     };
-    
+
     try {
       const response = await this.makeRequest('/api/v1/schedule', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
@@ -124,16 +124,16 @@ class ScheduleService {
 
       if (response.data && response.data.id) {
         return response.data;
-      } 
-      
+      }
+
       return 'success';
-      
+
     } catch (error: any) {
-      
+
       if (error.message && error.message.toLowerCase().includes('successfully')) {
         return 'success';
       }
-      
+
       throw error;
     }
   }
@@ -142,19 +142,19 @@ class ScheduleService {
     if (!data.title?.trim()) {
       return { isValid: false, error: 'Title is required' };
     }
-    
+
     if (!data.date) {
       return { isValid: false, error: 'Date is required' };
     }
-    
+
     if (!data.startTime || !data.endTime) {
       return { isValid: false, error: 'Start time and end time are required' };
     }
-    
+
     if (data.startTime >= data.endTime) {
       return { isValid: false, error: 'Start time must be before end time' };
     }
-    
+
     if (!data.conference) {
       return { isValid: false, error: 'Conference is required' };
     }
@@ -162,27 +162,71 @@ class ScheduleService {
     return { isValid: true };
   }
 
+  // ✅ Try different endpoint variations
   async updateSchedule(accessToken: string, id: string, data: UpdateScheduleData): Promise<BackendSchedule> {
-    const updatePayload: any = {};
-    
-    if (data.date) updatePayload.date = data.date;
-    if (data.startTime) updatePayload.start_time = data.startTime;
-    if (data.endTime) updatePayload.end_time = data.endTime;
-    if (data.description) updatePayload.notes = data.description;
-    if (data.scheduleType) updatePayload.type = this.mapScheduleTypeToBackend(data.scheduleType);
-    
-    const response = await this.makeRequest(`/api/v1/schedule/${id}`, {
-      method: 'PUT',
-      headers: { 
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(updatePayload)
+    console.log('🔧 ScheduleService.updateSchedule called:', {
+      id,
+      data,
+      endpoint: `/api/v1/schedule/${id}`
     });
 
-    return response.data;
-  }
+    const updatePayload: any = {};
 
+    // ✅ Only include fields that backend supports
+    if (data.date) {
+      updatePayload.date = data.date;
+      console.log('📅 Adding date:', data.date);
+    }
+
+    if (data.startTime) {
+      updatePayload.start_time = data.startTime;
+      console.log('⏰ Adding start_time:', data.startTime);
+    }
+
+    if (data.endTime) {
+      updatePayload.end_time = data.endTime;
+      console.log('⏰ Adding end_time:', data.endTime);
+    }
+
+    if (data.description !== undefined && data.description !== null) {
+      updatePayload.notes = data.description;
+      console.log('📝 Adding notes (description):', data.description);
+    }
+
+    if (data.scheduleType) {
+      updatePayload.type = this.mapScheduleTypeToBackend(data.scheduleType);
+      console.log('🏷️ Adding type:', updatePayload.type);
+    }
+
+    // ✅ REMOVE title field - backend doesn't support it
+    // if (data.title !== undefined && data.title !== null) {
+    //   updatePayload.title = data.title;
+    //   console.log('📰 Adding title:', data.title);
+    // }
+
+    console.log('📦 Final PATCH payload (without title):', updatePayload);
+
+    try {
+      const response = await this.makeRequest(`/api/v1/schedule/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updatePayload)
+      });
+
+      console.log('✅ PATCH response:', response);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ PATCH failed:', {
+        error: error.message,
+        payload: updatePayload,
+        id
+      });
+      throw error;
+    }
+  }
   async deleteSchedule(accessToken: string, id: string): Promise<boolean> {
     try {
       const response = await this.makeRequest(`/api/v1/schedule/${id}`, {
@@ -199,7 +243,7 @@ class ScheduleService {
   private mapScheduleTypeToBackend(scheduleType?: string): 'TALK' | 'BREAK' | 'ONE_DAY_ACTIVITY' {
     switch (scheduleType?.toLowerCase()) {
       case 'break':
-      case 'coffee break': 
+      case 'coffee break':
         return 'BREAK';
       case 'activity':
       case 'workshop':
@@ -208,7 +252,7 @@ class ScheduleService {
       case 'speech':
       case 'reporting':
       case 'panel':
-      default: 
+      default:
         return 'TALK';
     }
   }

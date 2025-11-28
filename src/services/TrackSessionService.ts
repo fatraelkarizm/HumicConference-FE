@@ -114,7 +114,7 @@ class TrackSessionService {
     if (data.trackId) updatePayload.track_id = data.trackId;
 
     const response = await this.makeRequest(`/api/v1/track-session/${sessionId}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'

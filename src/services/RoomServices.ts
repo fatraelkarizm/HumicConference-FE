@@ -40,15 +40,29 @@ class RoomService {
       ...options
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    // Try to parse JSON body for both success and error responses
+    let parsed: any = null;
+    const text = await response.text();
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch (e) {
+      parsed = text;
     }
 
-    const result = await response.json();
+    if (!response.ok) {
+      const err: any = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // attach parsed body so callers can inspect validation errors
+      err.status = response.status;
+      err.data = parsed;
+      throw err;
+    }
 
-    if (result.code && result.code >= 400) {
-      throw new Error(result.message || `Request failed with code ${result.code}`);
+    const result = parsed;
+
+    if (result && result.code && result.code >= 400) {
+      const err: any = new Error(result.message || `Request failed with code ${result.code}`);
+      err.data = result;
+      throw err;
     }
 
     return result;
@@ -78,22 +92,28 @@ class RoomService {
   }
 
   async createRoom(accessToken: string, data: any): Promise<BackendRoom> {
-    const roomPayload: any = {
-      name: data.name,
-      identifier: data.identifier || null,
-      description: data.description || null,
-      type: data.type,
-      online_meeting_url: data.onlineMeetingUrl || null,
-      start_time: data.startTime,
-      end_time: data.endTime,
-      schedule_id: data.scheduleId
+    // Build payload but only include keys with defined (non-undefined) values.
+    const roomPayload: any = {};
+    const pushIf = (key: string, value: any) => {
+      if (value !== undefined && value !== null) {
+        roomPayload[key] = value;
+      }
     };
 
-    // ✅ Handle different track formats
+    pushIf('name', data.name);
+    pushIf('identifier', data.identifier);
+    pushIf('description', data.description);
+    pushIf('type', data.type);
+    pushIf('online_meeting_url', data.onlineMeetingUrl);
+    pushIf('start_time', data.startTime);
+    pushIf('end_time', data.endTime);
+    pushIf('schedule_id', data.scheduleId);
+
+    // Handle different track formats if provided (only include when present)
     if (data.track) {
       roomPayload.track = data.track;
     } else if (data.trackId) {
-      roomPayload.track_id = data.trackId;
+      pushIf('track_id', data.trackId);
     }
 
     const response = await this.makeRequest('/api/v1/room', {
@@ -109,25 +129,71 @@ class RoomService {
   }
 
   async updateRoom(accessToken: string, roomId: string, data: UpdateRoomData): Promise<BackendRoom> {
-    const updatePayload: any = {};
+    console.group('🔧 ROOM UPDATE DEBUG');
+    console.log('Room ID:', roomId);
+    console.log('Update data:', data);
 
-    if (data.name) updatePayload.name = data.name;
-    if (data.identifier !== undefined) updatePayload.identifier = data.identifier;
-    if (data.description !== undefined) updatePayload.description = data.description;
-    if (data.type) updatePayload.type = data.type;
-    if (data.onlineMeetingUrl !== undefined) updatePayload.online_meeting_url = data.onlineMeetingUrl;
-    if (data.trackId !== undefined) updatePayload.track_id = data.trackId;
+    // Try without track_id first (most likely to succeed)
+    const attempts = [
+      // 1) Without track_id (backend might not allow updating track via room update)
+      (() => {
+        const payload: any = {};
+        if (data.name && data.name.trim()) payload.name = data.name.trim();
+        if (data.type) payload.type = data.type;
+        if (data.identifier !== undefined) payload.identifier = data.identifier || null;
+        if (data.description !== undefined) payload.description = data.description || null;
+        if (data.onlineMeetingUrl !== undefined) payload.online_meeting_url = data.onlineMeetingUrl || null;
+        // ❌ Skip track_id - backend seems to reject it
+        return payload;
+      })(),
 
-    const response = await this.makeRequest(`/api/v1/room/${roomId}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(updatePayload)
-    });
+      // 2) With track_id as fallback
+      (() => {
+        const payload: any = {};
+        if (data.name && data.name.trim()) payload.name = data.name.trim();
+        if (data.type) payload.type = data.type;
+        if (data.identifier !== undefined) payload.identifier = data.identifier || null;
+        if (data.description !== undefined) payload.description = data.description || null;
+        if (data.onlineMeetingUrl !== undefined) payload.online_meeting_url = data.onlineMeetingUrl || null;
+        if (data.trackId !== undefined) payload.track_id = data.trackId || null;
+        return payload;
+      })()
+    ];
 
-    return response.data;
+    let lastError: any = null;
+
+    for (let i = 0; i < attempts.length; i++) {
+      const updatePayload = attempts[i];
+
+      try {
+        console.log(`🔄 Attempt ${i + 1}:`, updatePayload);
+
+        const response = await this.makeRequest(`/api/v1/room/${roomId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updatePayload)
+        });
+
+        console.log(`✅ PATCH successful with attempt ${i + 1}:`, response.data);
+        console.groupEnd();
+        return response.data;
+
+      } catch (error: any) {
+        lastError = error;
+        console.log(`❌ Attempt ${i + 1} failed:`, {
+          status: error.status,
+          message: error.message,
+          validation: error.data?.errors?.validation
+        });
+      }
+    }
+
+    console.error('🚨 All update attempts failed');
+    console.groupEnd();
+    throw lastError;
   }
 
   async deleteRoom(accessToken: string, roomId: string): Promise<boolean> {

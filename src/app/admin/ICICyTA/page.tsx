@@ -934,7 +934,11 @@ export default function ICICyTAAdminPage() {
                   }}
                   onRefresh={() => {
                     // Refresh all data
-                    window.location.reload(); // Simple refresh, or implement proper refetch
+                    return
+                      // Refresh all data
+                      // Refresh all data
+                      // Refresh all data
+                      window.location.reload(); // Simple refresh, or implement proper refetch
                   }}
                 />
               </CardContent>

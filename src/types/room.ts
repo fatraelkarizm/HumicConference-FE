@@ -21,12 +21,12 @@ export interface BackendRoom {
 // =================== FORM DATA TYPES ===================
 export type NewRoomData = {
   name: string;
-  identifier?: string;
+  identifier?: string | null;
   description?: string;
   type: 'MAIN' | 'PARALLEL';
-  onlineMeetingUrl?: string;
+  onlineMeetingUrl?: string | null;
   scheduleId: string;
-  trackId?: string;
+  trackId?: string | null;
 };
 
 export type UpdateRoomData = Partial<Omit<NewRoomData, 'scheduleId'>>;

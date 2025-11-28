@@ -123,7 +123,7 @@ class ConferenceScheduleService {
     if (data.noShowPolicy !== undefined) updatePayload.no_show_policy = data.noShowPolicy;
 
     const response = await this.makeRequest(`/api/v1/conference-schedule/${conferenceId}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'

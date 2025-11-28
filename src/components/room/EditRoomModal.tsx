@@ -1,18 +1,30 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRoomActions } from '@/hooks/useRoom';
-import { useTrackOptions } from '@/hooks/useTrack';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Edit2, Building, Globe, Tag, Users } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import type { BackendRoom, UpdateRoomData } from '@/types/room';
+import { useState, useEffect } from "react";
+import { useRoomActions } from "@/hooks/useRoom";
+import { useTrackOptions } from "@/hooks/useTrack";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Edit2, Building, Globe, Tag, Users } from "lucide-react";
+import { toast } from "react-hot-toast";
+import type { BackendRoom, UpdateRoomData } from "@/types/room";
 
 interface Props {
   isOpen: boolean;
@@ -22,12 +34,12 @@ interface Props {
 
 export default function EditRoomModal({ isOpen, onClose, room }: Props) {
   const [formData, setFormData] = useState<UpdateRoomData>({
-    name: '',
-    identifier: '',
-    description: '',
-    type: 'MAIN',
-    onlineMeetingUrl: '',
-    trackId: ''
+    name: "",
+    identifier: "",
+    description: "",
+    type: "MAIN",
+    onlineMeetingUrl: "",
+    trackId: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -38,31 +50,31 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
   useEffect(() => {
     if (room) {
       setFormData({
-        name: room.name,
-        identifier: room.identifier || '',
-        description: room.description || '',
+        name: room.name || "",
+        identifier: room.identifier || "",
+        description: room.description || "",
         type: room.type,
-        onlineMeetingUrl: room.online_meeting_url || '',
-        trackId: room.track_id || ''
+        onlineMeetingUrl: room.online_meeting_url || "",
+        trackId: room.track_id || "",
       });
     }
   }, [room]);
 
   const roomTypes = [
-    { 
-      value: 'MAIN', 
-      label: 'Main Room', 
-      description: 'Primary session room for main activities',
-      icon: '🏛️',
-      color: 'bg-blue-100 text-blue-800'
+    {
+      value: "MAIN",
+      label: "Main Room",
+      description: "Primary session room for main activities",
+      icon: "🏛️",
+      color: "bg-blue-100 text-blue-800",
     },
-    { 
-      value: 'PARALLEL', 
-      label: 'Parallel Session', 
-      description: 'Concurrent session room for breakout activities',
-      icon: '🏢',
-      color: 'bg-green-100 text-green-800'
-    }
+    {
+      value: "PARALLEL",
+      label: "Parallel Session",
+      description: "Concurrent session room for breakout activities",
+      icon: "🏢",
+      color: "bg-green-100 text-green-800",
+    },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,42 +83,63 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
 
     try {
       // Validate required fields
-      if (formData.name && !formData.name.trim()) {
-        toast.error('Room name cannot be empty');
+      if (!formData.name?.trim()) {
+        toast.error("Room name cannot be empty");
         return;
       }
 
       // Validate URL format if provided
       if (formData.onlineMeetingUrl && !isValidUrl(formData.onlineMeetingUrl)) {
-        toast.error('Please enter a valid URL for online meeting');
+        toast.error("Please enter a valid URL for online meeting");
         return;
       }
 
+      console.log("🔧 Starting room update:", {
+        roomId: room.id,
+        originalRoom: room,
+        formData: formData,
+      });
+
       const updateData: UpdateRoomData = {
-        ...formData,
-        name: formData.name?.trim(),
+        name: formData.name.trim(),
         identifier: formData.identifier?.trim() || undefined,
         description: formData.description?.trim() || undefined,
+        type: formData.type,
         onlineMeetingUrl: formData.onlineMeetingUrl?.trim() || undefined,
-        trackId: formData.trackId || undefined
+        trackId: formData.trackId || undefined,
       };
 
+      console.log("📦 Update payload:", updateData);
+
       await updateRoom(room.id, updateData);
-      toast.success('Room updated successfully!');
+      toast.success("Room updated successfully! ");
       onClose();
-      
     } catch (error: any) {
-      console.error('Failed to update room:', error);
-      toast.error(error.message || 'Failed to update room');
+      console.error("❌ Room update failed:", error);
+
+      // Show detailed validation errors
+      const data = error?.data;
+      if (data?.errors?.validation) {
+        const validations: Record<string, string[]> = data.errors.validation;
+        const messages = Object.keys(validations).map(
+          (k) => `${k}: ${validations[k].join(", ")}`
+        );
+        toast.error(`Validation failed: ${messages.join(" | ")}`, {
+          duration: 8000,
+        });
+      } else {
+        const serverMsg = data?.message || error?.message || String(error);
+        toast.error(`Failed to update room: ${serverMsg}`, { duration: 8000 });
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleInputChange = (field: keyof UpdateRoomData, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -119,7 +152,9 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
     }
   };
 
-  const selectedRoomType = roomTypes.find(type => type.value === formData.type);
+  const selectedRoomType = roomTypes.find(
+    (type) => type.value === formData.type
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -144,26 +179,33 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
                 <Label htmlFor="name">Room Name</Label>
                 <Input
                   id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  value={formData.name || ""}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
                   placeholder="Room name"
                 />
               </div>
 
               <div>
                 <Label htmlFor="type">Room Type</Label>
-                <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value as 'MAIN' | 'PARALLEL')}>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value) =>
+                    handleInputChange("type", value as "MAIN" | "PARALLEL")
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select room type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {roomTypes.map(type => (
+                    {roomTypes.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         <div className="flex items-center">
                           <span className="mr-2">{type.icon}</span>
                           <div>
                             <div className="font-medium">{type.label}</div>
-                            <div className="text-xs text-gray-500">{type.description}</div>
+                            <div className="text-xs text-gray-500">
+                              {type.description}
+                            </div>
                           </div>
                         </div>
                       </SelectItem>
@@ -176,8 +218,10 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
                 <Label htmlFor="identifier">Room Identifier</Label>
                 <Input
                   id="identifier"
-                  value={formData.identifier}
-                  onChange={(e) => handleInputChange('identifier', e.target.value)}
+                  value={formData.identifier || ""}
+                  onChange={(e) =>
+                    handleInputChange("identifier", e.target.value)
+                  }
                   placeholder="e.g., Room A, Session 1A"
                 />
               </div>
@@ -189,7 +233,9 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
                   <span className="text-lg">{selectedRoomType.icon}</span>
                   <div>
                     <div className="font-medium">{selectedRoomType.label}</div>
-                    <div className="text-sm">{selectedRoomType.description}</div>
+                    <div className="text-sm">
+                      {selectedRoomType.description}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -199,8 +245,10 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
               <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                value={formData.description || ""}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 placeholder="Room description, moderator info, or special notes"
                 rows={3}
               />
@@ -219,20 +267,28 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
               <Input
                 id="onlineMeetingUrl"
                 type="url"
-                value={formData.onlineMeetingUrl}
-                onChange={(e) => handleInputChange('onlineMeetingUrl', e.target.value)}
-                placeholder="https://zoom.us/j/... or https://teams.microsoft.com/..."
+                value={formData.onlineMeetingUrl || ""}
+                onChange={(e) =>
+                  handleInputChange("onlineMeetingUrl", e.target.value)
+                }
+                placeholder="https://zoom.us/j/...  or https://teams.microsoft.com/..."
               />
             </div>
 
             {formData.onlineMeetingUrl && (
               <div className="flex items-center space-x-2 text-sm">
                 {isValidUrl(formData.onlineMeetingUrl) ? (
-                  <Badge variant="outline" className="text-green-600 border-green-200">
+                  <Badge
+                    variant="outline"
+                    className="text-green-600 border-green-200"
+                  >
                     ✓ Valid URL
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-red-600 border-red-200">
+                  <Badge
+                    variant="outline"
+                    className="text-red-600 border-red-200"
+                  >
                     ✗ Invalid URL
                   </Badge>
                 )}
@@ -241,7 +297,7 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
           </div>
 
           {/* Track Assignment (for Parallel Rooms) */}
-          {formData.type === 'PARALLEL' && (
+          {formData.type === "PARALLEL" && (
             <div className="space-y-4">
               <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
                 <Tag className="w-4 h-4" />
@@ -250,18 +306,28 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
 
               <div>
                 <Label htmlFor="trackId">Associated Track</Label>
-                <Select value={formData.trackId} onValueChange={(value) => handleInputChange('trackId', value)}>
+                <Select
+                  value={formData.trackId || "no-track"}
+                  onValueChange={(value) =>
+                    handleInputChange(
+                      "trackId",
+                      value === "no-track" ? "" : value
+                    )
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a track (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No track assigned</SelectItem>
-                    {trackOptions.map(track => (
+                    <SelectItem value="no-track">No track assigned</SelectItem>
+                    {trackOptions.map((track) => (
                       <SelectItem key={track.value} value={track.value}>
                         <div>
                           <div className="font-medium">{track.label}</div>
                           {track.description && (
-                            <div className="text-xs text-gray-500">{track.description}</div>
+                            <div className="text-xs text-gray-500">
+                              {track.description}
+                            </div>
                           )}
                         </div>
                       </SelectItem>
@@ -274,19 +340,24 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
 
           {/* Current Data Preview */}
           <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-sm mb-2">Current Room Information:</h4>
+            <h4 className="font-medium text-sm mb-2">
+              Current Room Information:
+            </h4>
             <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
               <div>
                 <span className="font-medium">ID:</span> {room.id}
               </div>
               <div>
-                <span className="font-medium">Schedule ID:</span> {room.schedule_id}
+                <span className="font-medium">Schedule ID:</span>{" "}
+                {room.schedule_id}
               </div>
               <div>
-                <span className="font-medium">Created:</span> {new Date(room.created_at).toLocaleDateString()}
+                <span className="font-medium">Created:</span>{" "}
+                {new Date(room.created_at).toLocaleDateString()}
               </div>
               <div>
-                <span className="font-medium">Modified:</span> {new Date(room.updated_at).toLocaleDateString()}
+                <span className="font-medium">Modified:</span>{" "}
+                {new Date(room.updated_at).toLocaleDateString()}
               </div>
             </div>
           </div>
@@ -296,7 +367,7 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Updating...' : 'Update Room'}
+              {loading ? "Updating..." : "Update Room"}
             </Button>
           </DialogFooter>
         </form>

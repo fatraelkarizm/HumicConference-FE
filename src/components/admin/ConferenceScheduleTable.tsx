@@ -11,12 +11,12 @@ import { Label } from "@/components/ui/label";
 import {
   Clock,
   MapPin,
-  Users,
   MoreHorizontal,
   Edit2,
   Eye,
   Trash2,
   Plus,
+  X,
   Calendar,
 } from "lucide-react";
 import {
@@ -32,6 +32,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "react-hot-toast";
 import type {
   BackendConferenceSchedule,
@@ -64,6 +71,12 @@ export default function ConferenceScheduleTable({
   const [selectedDay, setSelectedDay] = useState<string>("");
   const [showAddTimeSlot, setShowAddTimeSlot] = useState(false);
   const [showAddRoom, setShowAddRoom] = useState(false);
+  const [showAddDay, setShowAddDay] = useState(false);
+  const [showDeleteDay, setShowDeleteDay] = useState(false); // ✅ Delete day modal
+  const [dayToDelete, setDayToDelete] = useState<string>(""); // ✅ Day to delete
+  const [extendedDays, setExtendedDays] = useState(0);
+  const [addDayMode, setAddDayMode] = useState<"extend" | "specific">("extend"); // ✅ Add mode
+  const [specificDate, setSpecificDate] = useState(""); // ✅ Specific date picker
   const [selectedScheduleForRoom, setSelectedScheduleForRoom] =
     useState<BackendSchedule | null>(null);
   const [selectedRoomType, setSelectedRoomType] = useState<string>("");
@@ -110,14 +123,14 @@ export default function ConferenceScheduleTable({
 
     // Add existing schedules to their respective days
     schedules.forEach((schedule) => {
-      const date = new Date(schedule.date).toISOString().split("T")[0];
+      const date = new Date(schedule.date). toISOString().split("T")[0];
       if (grouped[date]) {
         grouped[date].push(schedule);
       }
     });
 
     // Sort schedules within each day by time
-    Object.keys(grouped).forEach((date) => {
+    Object.keys(grouped). forEach((date) => {
       grouped[date].sort((a, b) => {
         const timeA = a.start_time || "00:00";
         const timeB = b.start_time || "00:00";
@@ -126,37 +139,36 @@ export default function ConferenceScheduleTable({
     });
 
     return { grouped, daysList };
-  }, [schedules, conference.start_date, conference.end_date]);
+  }, [schedules, conference. start_date, conference.end_date]);
 
   const { grouped, daysList } = schedulesByDay;
   const currentDay = selectedDay || daysList[0] || "";
 
-  // Get all rooms and filter for current day schedules
+  // Single useRoom hook usage (avoid duplicate declarations)
   const {
     rooms: allRooms,
     loading: roomsLoading,
     refetch: refetchRooms,
   } = useRoom();
 
+  // Filter rooms for current day schedules
   const currentDayRooms = useMemo(() => {
     const daySchedules = grouped[currentDay] || [];
     const dayScheduleIds = daySchedules.map((schedule) => schedule.id);
 
-    return allRooms.filter((room) => dayScheduleIds.includes(room.schedule_id));
+    return allRooms.filter((room) => dayScheduleIds.includes(room. schedule_id));
   }, [allRooms, grouped, currentDay]);
 
-  // Extract room ID from BackendRoom
+  // Extract room ID from BackendRoom (Room A.. E)
   const extractRoomId = (room: BackendRoom): string | null => {
-    const name = (room.name || "").toLowerCase().trim();
+    const name = (room.name || "").toLowerCase(). trim();
     const identifier = (room.identifier || "").toLowerCase().trim();
 
-    // Match "Room A", "Room B", etc.
     const roomNameMatch = name.match(/^room\s+([a-e])$/i);
     if (roomNameMatch) {
       return roomNameMatch[1].toUpperCase();
     }
 
-    // Backup: From identifier "Parallel Session 1A" -> "A"
     const identifierMatch = identifier.match(/parallel\s+session\s+1([a-e])$/i);
     if (identifierMatch) {
       return identifierMatch[1].toUpperCase();
@@ -186,8 +198,7 @@ export default function ConferenceScheduleTable({
       }
     });
 
-    // Sort by letter A, B, C, D, E
-    const sortedRoomIds = Array.from(roomMap.keys()).sort((a, b) =>
+    const sortedRoomIds = Array.from(roomMap. keys()).sort((a, b) =>
       a.localeCompare(b)
     );
 
@@ -203,7 +214,6 @@ export default function ConferenceScheduleTable({
       }
     });
 
-    // If no parallel rooms, create default columns
     if (roomColumns.length === 0) {
       ["A", "B", "C", "D", "E"].forEach((letter, index) => {
         roomColumns.push({
@@ -223,17 +233,14 @@ export default function ConferenceScheduleTable({
     columnId: string,
     schedule?: BackendSchedule
   ): JSX.Element | null => {
-    // Find room by column ID and schedule ID
-    const room = currentDayRooms.find((room) => {
-      const extractedId = extractRoomId(room);
+    const room = currentDayRooms.find((r) => {
+      const extractedId = extractRoomId(r);
       const matchesColumn = extractedId === columnId;
-      const matchesSchedule = room.schedule_id === schedule?.id;
+      const matchesSchedule = r.schedule_id === schedule?.id;
       return matchesColumn && matchesSchedule;
     });
 
-    if (!room) {
-      return null;
-    }
+    if (!room) return null;
 
     return (
       <div className="space-y-2">
@@ -245,13 +252,13 @@ export default function ConferenceScheduleTable({
 
         {room.description && (
           <div className="text-xs text-gray-700 line-clamp-3 mb-2">
-            {room.description}
+            {room. description}
           </div>
         )}
 
         {room.start_time && room.end_time && (
           <div className="text-xs text-gray-500 mb-2">
-            {formatTime(room.start_time)} - {formatTime(room.end_time)}
+            {room.start_time} - {room.end_time}
           </div>
         )}
 
@@ -261,7 +268,7 @@ export default function ConferenceScheduleTable({
             variant="ghost"
             className="h-6 px-2 text-xs"
             onClick={(e) => {
-              e.stopPropagation();
+              e. stopPropagation();
               onRoomDetail(room);
             }}
           >
@@ -289,11 +296,10 @@ export default function ConferenceScheduleTable({
   const handleRoomCellClick = (columnId: string, schedule: BackendSchedule) => {
     const existingRoom = currentDayRooms.find((room) => {
       const extractedId = extractRoomId(room);
-      return extractedId === columnId && room.schedule_id === schedule.id;
+      return extractedId === columnId && room.schedule_id === schedule. id;
     });
 
-    if (!existingRoom) {
-      // Open add room modal with pre-filled data
+    if (! existingRoom) {
       setSelectedScheduleForRoom(schedule);
       setSelectedRoomType(columnId);
       setNewRoom({
@@ -302,11 +308,232 @@ export default function ConferenceScheduleTable({
         description: "",
         type: "PARALLEL",
         onlineMeetingUrl: conference.online_presentation || "",
-        // ✅ Add required start_time and end_time from schedule
-        startTime: schedule.start_time || "",
+        startTime: schedule. start_time || "",
         endTime: schedule.end_time || "",
       });
       setShowAddRoom(true);
+    }
+  };
+
+  const handleAddRoom = async () => {
+    if (!selectedScheduleForRoom) {
+      toast.error("No schedule selected for new room");
+      return;
+    }
+
+    if (!newRoom. name || !newRoom.identifier) {
+      toast.error("Please provide room name and identifier");
+      return;
+    }
+
+    setLoading(true);
+
+    // Validate URL format
+    const isValidUrl = (str: string): boolean => {
+      if (!str) return false;
+      try {
+        new URL(str);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const payload: any = {
+      name: newRoom.name,
+      identifier: newRoom.identifier,
+      description: newRoom.description || "",
+      type: newRoom. type,
+      scheduleId: selectedScheduleForRoom. id,
+      startTime: newRoom.startTime || selectedScheduleForRoom.start_time,
+      endTime: newRoom. endTime || selectedScheduleForRoom.end_time,
+      onlineMeetingUrl: isValidUrl(newRoom.onlineMeetingUrl)
+        ? newRoom.onlineMeetingUrl
+        : null,
+      track: {
+        name: `Track ${selectedRoomType}`,
+        description: `Parallel track for Room ${selectedRoomType}`,
+      },
+    };
+
+    try {
+      await createRoom(payload);
+      toast.success("Room added successfully!");
+      setShowAddRoom(false);
+      setSelectedScheduleForRoom(null);
+      setSelectedRoomType("");
+      setNewRoom({
+        name: "",
+        identifier: "",
+        description: "",
+        type: "PARALLEL",
+        onlineMeetingUrl: "",
+        startTime: "",
+        endTime: "",
+      });
+      await refetchRooms?. ();
+      onRefresh?.();
+    } catch (err: any) {
+      const data = err?. data;
+      if (data?.errors?. validation) {
+        const validations: Record<string, string[]> = data.errors.validation;
+        const messages = Object.keys(validations).map(
+          (k) => `${k}: ${validations[k]. join(", ")}`
+        );
+        toast.error(`Validation: ${messages.join(" | ")}`, { duration: 8000 });
+      } else {
+        const serverMsg = data?.message || err?.message || String(err);
+        toast.error(`Failed: ${serverMsg}`, { duration: 8000 });
+      }
+    }
+    setLoading(false);
+  };
+
+  // ✅ Add Day helper functions
+  const getNewEndDate = (currentEndDate: string, daysToAdd: number): Date => {
+    const newDate = new Date(currentEndDate);
+    newDate.setDate(newDate.getDate() + daysToAdd);
+    return newDate;
+  };
+
+  // ✅ Handle extend conference (original functionality)
+  const handleExtendConference = async () => {
+    if (addDayMode === "extend" && extendedDays <= 0) {
+      toast. error("Please specify the number of days to add");
+      return;
+    }
+
+    if (addDayMode === "specific" && !specificDate) {
+      toast.error("Please select a specific date");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let newEndDate: Date;
+
+      if (addDayMode === "extend") {
+        newEndDate = getNewEndDate(conference.end_date, extendedDays);
+      } else {
+        // Check if specific date is after current end date
+        const selectedDate = new Date(specificDate);
+        const currentEndDate = new Date(conference.end_date);
+        
+        if (selectedDate <= currentEndDate) {
+          toast.error("Selected date must be after current conference end date");
+          return;
+        }
+        
+        newEndDate = selectedDate;
+      }
+      
+      const response = await fetch(
+        `${process.env. NEXT_PUBLIC_API_BASE_URL}/api/v1/conference-schedule/${conference.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            end_date: newEndDate.toISOString().split("T")[0],
+          }),
+        }
+      );
+
+      if (! response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Failed to update conference end date");
+      }
+
+      if (addDayMode === "extend") {
+        toast.success(
+          `Conference extended by ${extendedDays} day${
+            extendedDays !== 1 ? "s" : ""
+          }! `
+        );
+      } else {
+        toast.success(`Conference extended to ${formatDate(specificDate)}!`);
+      }
+      
+      setShowAddDay(false);
+      setExtendedDays(0);
+      setSpecificDate("");
+      onRefresh?.();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to extend conference");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Handle delete day
+  const handleDeleteDay = async () => {
+    if (!dayToDelete) return;
+
+    // Check if day has schedules
+    const daySchedules = grouped[dayToDelete] || [];
+    if (daySchedules.length > 0) {
+      toast. error("Cannot delete day with existing schedules.  Please delete all schedules first.");
+      return;
+    }
+
+    // Must keep at least 1 day
+    if (daysList.length <= 1) {
+      toast. error("Conference must have at least one day");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      let newEndDate: Date;
+      const dayToDeleteDate = new Date(dayToDelete);
+      const currentEndDate = new Date(conference. end_date);
+
+      // If deleting the last day, move end date back by 1 day
+      if (dayToDelete === daysList[daysList.length - 1]) {
+        newEndDate = new Date(currentEndDate);
+        newEndDate.setDate(newEndDate.getDate() - 1);
+      } else {
+        // If deleting middle day, we need to handle differently
+        // For now, we'll only allow deleting the last day
+        toast.error("Only the last day can be deleted to maintain schedule integrity");
+        return;
+      }
+      
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/conference-schedule/${conference.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${localStorage. getItem("accessToken")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            end_date: newEndDate.toISOString().split("T")[0],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Failed to update conference end date");
+      }
+
+      toast. success(`Day ${getDayNumber(dayToDelete)} deleted successfully! `);
+      setShowDeleteDay(false);
+      setDayToDelete("");
+      
+      // If deleted day was selected, select a different day
+      if (selectedDay === dayToDelete) {
+        setSelectedDay(daysList[daysList.length - 2] || daysList[0] || "");
+      }
+      
+      onRefresh?.();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete day");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -337,7 +564,7 @@ export default function ConferenceScheduleTable({
   };
 
   const handleAddTimeSlot = async () => {
-    if (!newTimeSlot.startTime || !newTimeSlot.endTime) {
+    if (!newTimeSlot.startTime || ! newTimeSlot.endTime) {
       toast.error("Please provide both start and end times");
       return;
     }
@@ -351,7 +578,7 @@ export default function ConferenceScheduleTable({
     try {
       await createSchedule(
         {
-          title: `Time Slot ${newTimeSlot.startTime}-${newTimeSlot.endTime}`,
+          title: `Time Slot ${newTimeSlot. startTime}-${newTimeSlot.endTime}`,
           conference: conference.type,
           date: currentDay,
           startTime: newTimeSlot.startTime,
@@ -366,78 +593,9 @@ export default function ConferenceScheduleTable({
       setShowAddTimeSlot(false);
       setNewTimeSlot({ startTime: "", endTime: "" });
       onRefresh?.();
-      refetchRooms();
+      refetchRooms?.();
     } catch (error: any) {
-      toast.error(error.message || "Failed to add time slot");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddRoom = async () => {
-    if (
-      !selectedScheduleForRoom ||
-      !newRoom.name ||
-      !newRoom.identifier ||
-      !newRoom.startTime ||
-      !newRoom.endTime
-    ) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // ✅ Check if there's an existing parallel room to copy track from
-      const existingParallelRoom = currentDayRooms.find(
-        (room) =>
-          room.type === "PARALLEL" &&
-          room.schedule_id === selectedScheduleForRoom.id
-      );
-
-      let roomData: any = {
-        name: newRoom.name,
-        identifier: newRoom.identifier,
-        description: newRoom.description,
-        type: newRoom.type,
-        onlineMeetingUrl: newRoom.onlineMeetingUrl,
-        scheduleId: selectedScheduleForRoom.id,
-        startTime: newRoom.startTime,
-        endTime: newRoom.endTime,
-      };
-
-      // ✅ If there's existing parallel room, copy its track
-      if (existingParallelRoom && existingParallelRoom.track) {
-        roomData.track = {
-          name: existingParallelRoom.track.name,
-          description: existingParallelRoom.track.description,
-        };
-      } else if (newRoom.type === "PARALLEL") {
-        // ✅ Create new minimal track for PARALLEL rooms
-        roomData.track = {
-          name: `Track ${selectedRoomType}`,
-          description: `Parallel track for Room ${selectedRoomType}`,
-        };
-      }
-
-      await createRoom(roomData);
-
-      toast.success("Room added successfully!");
-      setShowAddRoom(false);
-      setSelectedScheduleForRoom(null);
-      setSelectedRoomType("");
-      setNewRoom({
-        name: "",
-        identifier: "",
-        description: "",
-        type: "PARALLEL",
-        onlineMeetingUrl: "",
-        startTime: "",
-        endTime: "",
-      });
-      refetchRooms();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add room");
+      toast.error(error. message || "Failed to add time slot");
     } finally {
       setLoading(false);
     }
@@ -452,7 +610,7 @@ export default function ConferenceScheduleTable({
       toast.success("Schedule deleted successfully!");
       setDeleteConfirm({ isOpen: false, schedule: null });
       onRefresh?.();
-      refetchRooms();
+      refetchRooms?.();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete schedule");
     } finally {
@@ -463,7 +621,7 @@ export default function ConferenceScheduleTable({
   const getMainRoomContent = (schedule?: BackendSchedule) => {
     if (!schedule) return null;
 
-    if (schedule.notes?.toLowerCase().includes("coffee break")) {
+    if (schedule.notes?. toLowerCase().includes("coffee break")) {
       return (
         <div className="text-center py-2">
           <div className="font-medium text-sm">Coffee Break</div>
@@ -480,7 +638,7 @@ export default function ConferenceScheduleTable({
     }
 
     const mainRoom = currentDayRooms.find(
-      (room) => room.type === "MAIN" && room.schedule_id === schedule.id
+      (room) => room. type === "MAIN" && room. schedule_id === schedule.id
     );
 
     return (
@@ -514,7 +672,7 @@ export default function ConferenceScheduleTable({
               No Conference Days Available
             </h3>
             <p className="text-gray-500">
-              Please check the conference date settings.
+              Please check the conference date settings. 
             </p>
           </div>
         </CardContent>
@@ -524,11 +682,20 @@ export default function ConferenceScheduleTable({
 
   return (
     <div className="space-y-6">
-      {/* Conference Days */}
+      {/* ✅ Conference Days with Add/Delete Day */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium">Conference Days</h3>
           <div className="flex space-x-2">
+            <Button
+              onClick={() => setShowAddDay(true)}
+              size="sm"
+              variant="outline"
+              className="text-purple-600 border-purple-300 hover:bg-purple-50"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Day
+            </Button>
             <Button
               onClick={() => setShowAddTimeSlot(true)}
               size="sm"
@@ -540,66 +707,94 @@ export default function ConferenceScheduleTable({
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2">
           {daysList.map((day, index) => {
             const daySchedules = grouped[day] || [];
             const hasSchedules = daySchedules.length > 0;
             const isSelected = currentDay === day;
+            const isLastDay = index === daysList.length - 1;
 
             return (
-              <button
-                key={day}
-                onClick={() => setSelectedDay(day)}
-                className={`
-                  relative gap-4 w-48 h-20 rounded-lg border-2 transition-all duration-200 flex items-center justify-center
-                  ${
-                    isSelected
-                      ? "bg-[#015B97] text-white border-[#015B97] shadow-lg"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                  }
-                  ${!hasSchedules ? "opacity-60" : ""}
-                `}
-              >
-                <div className="flex items-center justify-center text-center gap-2">
-                  <div
-                    className={`text-sm font-bold ${
-                      isSelected ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    Day {getDayNumber(day)}
-                  </div>
-                  <div
-                    className={`text-xs ${
-                      isSelected ? "text-gray-200" : "text-gray-600"
-                    }`}
-                  >
-                    {new Date(day).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </div>
-                  {hasSchedules && (
+              <div key={day} className="relative group">
+                <button
+                  onClick={() => setSelectedDay(day)}
+                  className={`
+                    flex-shrink-0 w-24 h-20 rounded-lg border-2 transition-all duration-200 flex flex-col items-center justify-center
+                    ${
+                      isSelected
+                        ?  "bg-black text-white border-black shadow-lg"
+                        : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    }
+                    ${! hasSchedules ? "opacity-60" : ""}
+                  `}
+                >
+                  <div className="text-center">
                     <div
-                      className={`
-                      text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center
-                      ${
-                        isSelected
-                          ? "bg-white text-black"
-                          : "bg-gray-900 text-white"
-                      }
-                    `}
+                      className={`text-sm font-bold mb-1 ${
+                        isSelected ?  "text-white" : "text-gray-900"
+                      }`}
                     >
-                      {daySchedules.length}
+                      Day {getDayNumber(day)}
                     </div>
-                  )}
-                </div>
-              </button>
+                    <div
+                      className={`text-xs ${
+                        isSelected ? "text-gray-200" : "text-gray-600"
+                      }`}
+                    >
+                      {new Date(day).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </div>
+                    {hasSchedules && (
+                      <div
+                        className={`
+                        text-xs font-bold mt-1 w-5 h-5 rounded-full flex items-center justify-center
+                        ${
+                          isSelected
+                            ? "bg-white text-black"
+                            : "bg-gray-900 text-white"
+                        }
+                      `}
+                      >
+                        {daySchedules.length}
+                      </div>
+                    )}
+                  </div>
+                </button>
+
+                {/* ✅ Delete Day Button (only show for last day and if no schedules) */}
+                {isLastDay && !hasSchedules && daysList.length > 1 && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDayToDelete(day);
+                      setShowDeleteDay(true);
+                    }}
+                    size="sm"
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
             );
           })}
+
+          {/* Add Day Button */}
+          <button
+            onClick={() => setShowAddDay(true)}
+            className="flex-shrink-0 w-24 h-20 rounded-lg border-2 border-dashed border-purple-300 text-purple-600 hover:border-purple-500 hover:bg-purple-50 transition-all duration-200 flex flex-col items-center justify-center"
+          >
+            <Plus className="w-6 h-6 mb-1" />
+            <span className="text-xs font-medium">Add Day</span>
+          </button>
         </div>
       </div>
 
+      {/* Rest of the component remains the same... */}
       {/* Loading state */}
       {roomsLoading && (
         <div className="flex items-center justify-center py-4">
@@ -615,7 +810,7 @@ export default function ConferenceScheduleTable({
         <Card className="border-0 shadow-sm">
           <CardContent className="p-0">
             {/* Header */}
-            <div className="bg-[#015B97] text-white px-6 py-4 font-bold text-center">
+            <div className="bg-yellow-400 text-black px-6 py-4 font-bold text-center">
               <div className="text-lg">
                 Day {getDayNumber(currentDay)}: {formatDate(currentDay)}
               </div>
@@ -640,7 +835,7 @@ export default function ConferenceScheduleTable({
                     </th>
 
                     {/* Dynamic room columns */}
-                    {roomColumnsForDay.map((roomColumn, index) => (
+                    {roomColumnsForDay. map((roomColumn, index) => (
                       <th
                         key={roomColumn.id}
                         className={`text-left py-3 px-4 font-semibold ${
@@ -650,12 +845,12 @@ export default function ConferenceScheduleTable({
                         } bg-gray-50 min-w-[180px]`}
                         title={
                           roomColumn.room
-                            ? `${roomColumn.room.name} (${roomColumn.room.identifier})`
+                            ? `${roomColumn. room. name} (${roomColumn.room.identifier})`
                             : roomColumn.label
                         }
                       >
                         {roomColumn.label}
-                        {roomColumn.room?.identifier && (
+                        {roomColumn.room?. identifier && (
                           <div className="text-xs font-normal text-gray-500 mt-1">
                             {roomColumn.room.identifier}
                           </div>
@@ -668,11 +863,18 @@ export default function ConferenceScheduleTable({
                   {grouped[currentDay]?.map((schedule, index) => {
                     const spanning = isSpanningSchedule(schedule);
 
+                    // find mainRoom for this schedule row
+                    const mainRoom =
+                      currentDayRooms.find(
+                        (r) =>
+                          r.type === "MAIN" && r.schedule_id === schedule.id
+                      ) || null;
+
                     return (
                       <tr
                         key={schedule.id}
                         className={`border-b border-gray-200 hover:bg-gray-50 group ${
-                          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                          index % 2 === 0 ?  "bg-white" : "bg-gray-50/50"
                         }`}
                       >
                         {/* Time Columns */}
@@ -700,27 +902,61 @@ export default function ConferenceScheduleTable({
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => onScheduleDetail(schedule)}
-                                >
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => onScheduleEdit(schedule)}
-                                >
-                                  <Edit2 className="mr-2 h-4 w-4" />
-                                  Edit Schedule
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    setDeleteConfirm({ isOpen: true, schedule })
-                                  }
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
+                                {mainRoom ?  (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => onRoomDetail(mainRoom)}
+                                    >
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Main Room
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => onRoomEdit(mainRoom)}
+                                    >
+                                      <Edit2 className="mr-2 h-4 w-4" />
+                                      Edit Main Room
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setDeleteConfirm({
+                                          isOpen: true,
+                                          schedule,
+                                        })
+                                      }
+                                      className="text-red-600"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete Schedule
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => onScheduleDetail(schedule)}
+                                    >
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => onScheduleEdit(schedule)}
+                                    >
+                                      <Edit2 className="mr-2 h-4 w-4" />
+                                      Edit Schedule
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setDeleteConfirm({
+                                          isOpen: true,
+                                          schedule,
+                                        })
+                                      }
+                                      className="text-red-600"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete Schedule
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -746,7 +982,7 @@ export default function ConferenceScheduleTable({
                           }
 
                           const roomContent = getRoomContentForColumn(
-                            roomColumn.id,
+                            roomColumn. id,
                             schedule
                           );
 
@@ -759,7 +995,7 @@ export default function ConferenceScheduleTable({
                                   : ""
                               } align-top cursor-pointer hover:bg-blue-50 transition-colors`}
                               onClick={() =>
-                                !roomContent &&
+                                ! roomContent &&
                                 handleRoomCellClick(roomColumn.id, schedule)
                               }
                             >
@@ -795,8 +1031,8 @@ export default function ConferenceScheduleTable({
                   })}
 
                   {/* Empty state */}
-                  {(!grouped[currentDay] ||
-                    grouped[currentDay].length === 0) && (
+                  {(! grouped[currentDay] ||
+                    grouped[currentDay]. length === 0) && (
                     <tr>
                       <td
                         colSpan={3 + roomColumnsForDay.length}
@@ -865,7 +1101,7 @@ export default function ConferenceScheduleTable({
                   onChange={(e) =>
                     setNewTimeSlot((prev) => ({
                       ...prev,
-                      startTime: e.target.value,
+                      startTime: e.target. value,
                     }))
                   }
                 />
@@ -916,7 +1152,7 @@ export default function ConferenceScheduleTable({
                 <div>
                   <strong>Time:</strong>{" "}
                   {formatTime(selectedScheduleForRoom?.start_time)} -{" "}
-                  {formatTime(selectedScheduleForRoom?.end_time)}
+                  {formatTime(selectedScheduleForRoom?. end_time)}
                 </div>
                 <div>
                   <strong>Type:</strong>{" "}
@@ -970,38 +1206,6 @@ export default function ConferenceScheduleTable({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="room-start-time">Start Time *</Label>
-                <Input
-                  id="room-start-time"
-                  type="time"
-                  value={newRoom.startTime}
-                  onChange={(e) =>
-                    setNewRoom((prev) => ({
-                      ...prev,
-                      startTime: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="room-end-time">End Time *</Label>
-                <Input
-                  id="room-end-time"
-                  type="time"
-                  value={newRoom.endTime}
-                  onChange={(e) =>
-                    setNewRoom((prev) => ({
-                      ...prev,
-                      endTime: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
             <div>
               <Label htmlFor="room-url">Online Meeting URL</Label>
               <Input
@@ -1029,9 +1233,268 @@ export default function ConferenceScheduleTable({
         </DialogContent>
       </Dialog>
 
+      {/* ✅ Enhanced Add Day Modal with Date Picker */}
+      <Dialog open={showAddDay} onOpenChange={setShowAddDay}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Plus className="w-5 h-5 mr-2 text-purple-600" />
+              Add Conference Days
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Current Conference Duration</Label>
+              <div className="mt-1 p-3 bg-gray-50 border border-gray-200 rounded text-sm">
+                <div className="flex justify-between items-center">
+                  <span>
+                    <strong>From:</strong>{" "}
+                    {formatDate(conference.start_date. split("T")[0])}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span>
+                    <strong>To:</strong>{" "}
+                    {formatDate(conference.end_date.split("T")[0])}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  <strong>Current Days:</strong> {daysList.length}
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ Add Day Mode Selection */}
+            <div>
+              <Label>Add Day Method</Label>
+              <Select value={addDayMode} onValueChange={(value) => setAddDayMode(value as "extend" | "specific")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="extend">
+                    <div className="flex items-center">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Extend by Number of Days
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="specific">
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Extend to Specific Date
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* ✅ Extend by Days Mode */}
+            {addDayMode === "extend" && (
+              <div>
+                <Label htmlFor="extend-days">Extend by Days</Label>
+                <div className="flex items-center space-x-3 mt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExtendedDays(Math.max(0, extendedDays - 1))}
+                    disabled={extendedDays <= 0}
+                  >
+                    -
+                  </Button>
+                  <Input
+                    id="extend-days"
+                    type="number"
+                    min="0"
+                    max="30"
+                    value={extendedDays}
+                    onChange={(e) =>
+                      setExtendedDays(Math.max(0, parseInt(e.target.value) || 0))
+                    }
+                    className="w-20 text-center"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExtendedDays(Math.min(30, extendedDays + 1))}
+                    disabled={extendedDays >= 30}
+                  >
+                    +
+                  </Button>
+                </div>
+                {extendedDays > 0 && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    Adding {extendedDays} day{extendedDays !== 1 ? "s" : ""} will
+                    extend conference until{" "}
+                    {formatDate(
+                      getNewEndDate(conference.end_date, extendedDays)
+                        .toISOString()
+                        . split("T")[0]
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* ✅ Specific Date Mode */}
+            {addDayMode === "specific" && (
+              <div>
+                <Label htmlFor="specific-date">Select End Date *</Label>
+                <Input
+                  id="specific-date"
+                  type="date"
+                  value={specificDate}
+                  min={new Date(new Date(conference.end_date).getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+                  onChange={(e) => setSpecificDate(e.target.value)}
+                  className="mt-2"
+                />
+                {specificDate && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    Conference will be extended to{" "}
+                    {formatDate(specificDate)}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* ✅ Preview for both modes */}
+            {((addDayMode === "extend" && extendedDays > 0) || 
+              (addDayMode === "specific" && specificDate)) && (
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded">
+                <h4 className="font-medium text-sm mb-2 text-purple-800">
+                  Preview New Days:
+                </h4>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {addDayMode === "extend" 
+                    ? Array.from({ length: extendedDays }, (_, i) => {
+                        const newDate = new Date(conference.end_date);
+                        newDate.setDate(newDate.getDate() + i + 1);
+                        return (
+                          <div key={i} className="text-xs text-purple-700">
+                            <strong>Day {daysList. length + i + 1}:</strong>{" "}
+                            {formatDate(newDate.toISOString().split("T")[0])}
+                          </div>
+                        );
+                      })
+                    : (() => {
+                        const startDate = new Date(conference.end_date);
+                        const endDate = new Date(specificDate);
+                        const diffTime = endDate.getTime() - startDate.getTime();
+                        const diffDays = Math. ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        return Array.from({ length: diffDays }, (_, i) => {
+                          const newDate = new Date(conference.end_date);
+                          newDate.setDate(newDate.getDate() + i + 1);
+                          return (
+                            <div key={i} className="text-xs text-purple-700">
+                              <strong>Day {daysList.length + i + 1}:</strong>{" "}
+                              {formatDate(newDate.toISOString().split("T")[0])}
+                            </div>
+                          );
+                        });
+                      })()
+                  }
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddDay(false);
+                setExtendedDays(0);
+                setSpecificDate("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleExtendConference}
+              disabled={
+                loading ||
+                (addDayMode === "extend" && extendedDays <= 0) ||
+                (addDayMode === "specific" && ! specificDate)
+              }
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {loading
+                ? "Adding..."
+                : addDayMode === "extend"
+                ?  `Add ${extendedDays} Day${extendedDays !== 1 ? "s" : ""}`
+                : "Extend to Date"
+              }
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ✅ Delete Day Modal */}
+      <Dialog open={showDeleteDay} onOpenChange={setShowDeleteDay}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-red-600">
+              <Trash2 className="w-5 h-5 mr-2" />
+              Delete Conference Day
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {dayToDelete && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded">
+                <div className="text-sm">
+                  <div className="font-medium text-red-800 mb-2">
+                    You are about to delete:
+                  </div>
+                  <div><strong>Day {getDayNumber(dayToDelete)}:</strong> {formatDate(dayToDelete)}</div>
+                  <div className="mt-2 text-xs text-red-700">
+                    Schedules: {grouped[dayToDelete]?.length || 0}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="text-sm text-gray-700">
+              <p className="mb-2">
+                This will permanently remove this day from the conference and update the conference end date.
+              </p>
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <div className="text-xs text-yellow-800">
+                  <strong>Note:</strong> Only the last day can be deleted to maintain schedule integrity.
+                  Make sure there are no schedules on this day before deleting.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDay(false);
+                setDayToDelete("");
+              }}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteDay}
+              disabled={loading || (grouped[dayToDelete]?.length || 0) > 0}
+            >
+              {loading ?  "Deleting..." : "Delete Day"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation Modal */}
       <Dialog
-        open={deleteConfirm.isOpen}
+        open={deleteConfirm. isOpen}
         onOpenChange={(open) =>
           setDeleteConfirm({
             isOpen: open,
@@ -1049,7 +1512,7 @@ export default function ConferenceScheduleTable({
 
           <div className="py-4">
             <p className="text-gray-700 mb-3">
-              Are you sure you want to delete this schedule? This will also
+              Are you sure you want to delete this schedule?  This will also
               remove all associated rooms and sessions.
             </p>
 
@@ -1058,7 +1521,7 @@ export default function ConferenceScheduleTable({
                 <div className="text-sm">
                   <div>
                     <strong>Date:</strong>{" "}
-                    {formatDate(deleteConfirm.schedule.date.split("T")[0])}
+                    {formatDate(deleteConfirm.schedule.date. split("T")[0])}
                   </div>
                   <div>
                     <strong>Time:</strong>{" "}
@@ -1066,7 +1529,7 @@ export default function ConferenceScheduleTable({
                     {formatTime(deleteConfirm.schedule.end_time)}
                   </div>
                   <div>
-                    <strong>Type:</strong> {deleteConfirm.schedule.type}
+                    <strong>Type:</strong> {deleteConfirm.schedule. type}
                   </div>
                 </div>
               </div>
@@ -1074,7 +1537,7 @@ export default function ConferenceScheduleTable({
 
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
               <p className="text-sm text-red-800">
-                <strong>Warning:</strong> This action cannot be undone.
+                <strong>Warning:</strong> This action cannot be undone. 
               </p>
             </div>
           </div>

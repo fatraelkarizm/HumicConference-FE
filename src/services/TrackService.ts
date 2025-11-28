@@ -98,7 +98,7 @@ class TrackService {
     if (data.description !== undefined) updatePayload.description = data.description;
 
     const response = await this.makeRequest(`/api/v1/track/${trackId}`, {
-      method: 'PUT',
+      method: 'PATCH',
       headers: { 
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
