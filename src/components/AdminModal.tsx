@@ -178,7 +178,7 @@ export default function AdminModal({ open, onClose, onSave, initialData = null, 
               <button type="button" onClick={onClose} className="rounded-md bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:opacity-95">
                 Cancel
               </button>
-              <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-95">
+              <button type="submit" className="rounded-md bg-[#015B97] px-4 py-2 text-sm font-semibold text-white hover:opacity-95">
                 {mode === "create" ? "Create" : "Save"}
               </button>
             </div>

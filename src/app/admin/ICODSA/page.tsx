@@ -103,7 +103,7 @@ export default function ICODSAAdminPage() {
             </p>
             <Button
               onClick={() => setActiveModal("create-conference")}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-[#015B97] hover:bg-[#014f7a]"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create ICODSA Conference
@@ -168,7 +168,7 @@ export default function ICODSAAdminPage() {
                   </p>
                   <Button
                     onClick={() => setActiveModal("create-conference")}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-[#015B97] hover:bg-[#014f7a]"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Create {selectedYear} ICODSA Conference

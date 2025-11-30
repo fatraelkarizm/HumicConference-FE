@@ -73,7 +73,7 @@ export default function TrackSessionsTab({
             <Button
               onClick={() => onModalOpen("add-track-session")}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-[#015B97] hover:bg-[#014f7a]"
             >
               <Users className="w-4 h-4 mr-2" />
               Add Session
@@ -100,7 +100,7 @@ export default function TrackSessionsTab({
             <p>No track sessions found for this conference.</p>
             <Button
               onClick={() => onModalOpen("add-track-session")}
-              className="mt-3 bg-blue-600 hover:bg-blue-700"
+              className="mt-3 bg-[#015B97] hover:bg-[#014f7a]"
             >
               <Users className="w-4 h-4 mr-2" />
               Add First Session

@@ -54,7 +54,7 @@ export default function ScheduleTimeline({ schedules, onEditSchedule, onDeleteSc
         <div key={timeSlot} className="flex gap-4">
           {/* Time Column */}
           <div className="w-24 flex-shrink-0">
-            <div className="bg-blue-600 text-white text-center py-3 px-2 rounded-lg font-medium text-sm">
+            <div className="bg-[#015B97] text-white text-center py-3 px-2 rounded-lg font-medium text-sm">
               {timeSlot}
             </div>
           </div>

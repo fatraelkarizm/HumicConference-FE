@@ -115,7 +115,7 @@ export default function RoomManagementTab({
             <Button
               onClick={() => onModalOpen("add-room")}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-[#015B97] hover:bg-[#014f7a]"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Room
@@ -164,7 +164,7 @@ export default function RoomManagementTab({
             <p>No rooms found for this conference. </p>
             <Button
               onClick={() => onModalOpen("add-room")}
-              className="mt-3 bg-blue-600 hover:bg-blue-700"
+              className="mt-3 bg-[#015B97] hover:bg-[#014f7a]"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add First Room

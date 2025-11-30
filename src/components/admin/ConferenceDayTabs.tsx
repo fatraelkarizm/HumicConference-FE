@@ -74,7 +74,7 @@ export default function ConferenceDayTabs({
                 flex-shrink-0 w-24 h-20 rounded-lg border-2 transition-all duration-200 flex flex-col items-center justify-center
                 ${
                   isSelected
-                    ?  "bg-black text-white border-black shadow-lg"
+                    ?  "bg-[#015B97] text-white border-[#015B97] shadow-lg"
                     : "bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                 }
                 ${! hasSchedules ? "opacity-60" : ""}
@@ -105,7 +105,7 @@ export default function ConferenceDayTabs({
                       text-xs font-bold mt-1 w-5 h-5 rounded-full flex items-center justify-center
                       ${
                         isSelected
-                          ?  "bg-white text-black"
+                          ?  "bg-white text-[#015B97] "
                           : "bg-gray-900 text-white"
                       }
                     `}

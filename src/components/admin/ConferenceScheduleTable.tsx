@@ -293,7 +293,6 @@ export default function ConferenceScheduleTable({
         <div className="flex items-center justify-center py-4">
           <div className="text-sm text-gray-500 flex items-center">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
-            Loading rooms for {formatDate(selectedDay)}...
           </div>
         </div>
       )}

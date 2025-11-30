@@ -351,7 +351,7 @@ export default function AddScheduleModal({
           <Button 
             onClick={handleSubmit} 
             disabled={loading || !formData.date || !formData.startTime || !formData.endTime}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-[#015B97] hover:bg-[#014f7a]"
           >
             {loading ? "Creating..." : "Create Schedule"}
           </Button>

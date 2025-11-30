@@ -46,7 +46,7 @@ export default function ConferenceYearTabs({
                   onClick={() => onYearSelect(year)}
                   className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center space-x-2 ${
                     selectedYear === year
-                      ?  "bg-blue-600 text-white shadow-sm"
+                      ?  "bg-[#015B97] text-white shadow-sm"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                   }`}
                 >

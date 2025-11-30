@@ -70,7 +70,7 @@ export default function ICICyTAAdminPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <Calendar className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          <Calendar className="w-16 h-16 text-[#015B97] mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             No ICICyTA Conferences Found
           </h2>
@@ -79,7 +79,7 @@ export default function ICICyTAAdminPage() {
           </p>
           <Button
             onClick={() => setActiveModal("create-conference")}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-[#015B97] hover:bg-[#014f7a]"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create ICICyTA Conference
@@ -111,7 +111,7 @@ export default function ICICyTAAdminPage() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              <Badge variant="outline" className="bg-blue-50 text-[#015B97]">
                 <CalendarDays className="w-4 h-4 mr-1" />
                 ICICyTA {selectedYear}
               </Badge>
@@ -149,7 +149,7 @@ export default function ICICyTAAdminPage() {
               </p>
               <Button
                 onClick={() => setActiveModal("create-conference")}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-[#015B97] hover:bg-[#014f7a]"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create {selectedYear} ICICyTA Conference

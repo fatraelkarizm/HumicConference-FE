@@ -91,7 +91,7 @@ export default function ICICyTAPage() {
           {isAdminRole(userRole) && (
             <Button
               onClick={() => setActiveModal("create-conference")}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-[#015B97] hover:bg-[#014f7a]"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create ICICyTA Conference
@@ -167,7 +167,7 @@ export default function ICICyTAPage() {
               {isAdminRole(userRole) && (
                 <Button
                   onClick={() => setActiveModal("create-conference")}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-[#015B97] hover:bg-[#014f7a]"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create {selectedYear} ICICyTA Conference
