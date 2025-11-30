@@ -12,7 +12,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'Humic Conference',
+  title: 'Conference Schedule',
   description: 'Admin Dashboard for Humic Conference',
 };
 

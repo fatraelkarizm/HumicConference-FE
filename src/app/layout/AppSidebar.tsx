@@ -203,11 +203,11 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
   const getTitle = () => {
     switch (user?.role) {
       case 'ADMIN_ICICYTA':
-        return 'Humic Conference';
+        return 'Conference Schedule';
       case 'ADMIN_ICODSA':
-        return 'Humic Conference';
+        return 'Conference Schedule';
       default:
-        return 'Humic Conference';
+        return 'Conference Schedule';
     }
   };
 

@@ -17,7 +17,7 @@ export default function UserLayout({
       <header className="bg-white shadow-md relative z-10">
         <nav className="lg:px-12 md:px-8 px-4  py-4 flex justify-between items-center bg-[#015B97]">
           <Link href="/user" className="text-2xl font-semibold text-white">
-            Humic Conference
+            Conference Schedule
           </Link>
 
           {/* Link Desktop: Sembunyikan di mobile */}
@@ -59,7 +59,7 @@ export default function UserLayout({
         {/* Header di dalam Menu (UPDATE DI SINI) */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <div className="text-xl font-semibold text-gray-800">
-            Humic Conference
+            Conference Schedule
           </div>
           <button
             onClick={() => setIsMenuOpen(false)}

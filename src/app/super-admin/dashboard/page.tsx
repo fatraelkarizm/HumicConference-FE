@@ -9,12 +9,12 @@ import StatCard from "@/components/StatCard";
 const stats = [
   {
     title: "Jadwal ICICyTA",
-    description: "Lorem ipsum",
+    description: "Jadwal konferensi ICICyTA tahun ini",
     iconColor: "text-green-500",
   },
   {
     title: "Jadwal ICoDSA",
-    description: "Lorem ipsum",
+    description: "Jadwal konferensi ICoDSA tahun ini",
     iconColor: "text-orange-400",
   },
 ];

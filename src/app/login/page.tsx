@@ -40,10 +40,10 @@ export default function LoginPage() {
         {/* Kolom Kiri (Ilustrasi) */}
         <div className="hidden md:flex flex-col items-center justify-center w-1/2 p-12 bg-white text-center">
           <h1 className="text-4xl font-bold text-gray-800 mb-3">
-            Humic Conference
+            Conference Schedule
           </h1>
           <p className="text-[#64748B] mb-8 px-4">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit suspendisse.
+            Manage and view conference schedules with ease.
           </p>
           <Image
             src="/Humic-Login.svg"
@@ -59,7 +59,7 @@ export default function LoginPage() {
         <div className="w-full md:w-1/2 p-8 md:p-12">
           <p className="text-sm text-gray-500">Start for free</p>
           <h2 className="text-2xl font-bold text-gray-800 mb-6">
-            Sign In to Humic Conference
+            Sign In to Conference Schedule
           </h2>
 
           {/* Form */}
