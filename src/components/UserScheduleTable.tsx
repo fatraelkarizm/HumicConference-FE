@@ -1,17 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, MoreHorizontal, Edit2, Eye, Trash2, Plus, Clock, Calendar } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { 
-  BackendConferenceSchedule, 
-  BackendSchedule, 
-  BackendRoom 
+import { MapPin, Clock, Calendar } from "lucide-react";
+import type {
+  BackendConferenceSchedule,
+  BackendSchedule,
+  BackendRoom
 } from "@/types";
 
 interface Props {
@@ -22,39 +15,25 @@ interface Props {
   roomColumnsForDay: Array<{
     id: string;
     label: string;
-    room: BackendRoom;
+    room: BackendRoom | null;
     sortOrder: number;
   }>;
-  onRoomEdit: (room: BackendRoom) => void;
-  onRoomDetail: (room: BackendRoom) => void;
-  onScheduleEdit: (schedule: BackendSchedule) => void;
-  onScheduleDetail: (schedule: BackendSchedule) => void;
-  onDeleteSchedule: (schedule: BackendSchedule) => void;
-  onRoomCellClick: (columnId: string, schedule: BackendSchedule) => void;
-  onAddSchedule: () => void;
   formatDate: (dateStr: string) => string;
   getDayNumber: (dateStr: string) => number;
   extractRoomId: (room: BackendRoom) => string | null;
 }
 
-export default function ScheduleTable({
+export default function UserScheduleTable({
   conference,
   currentDay,
   schedules,
   currentDayRooms,
   roomColumnsForDay,
-  onRoomEdit,
-  onRoomDetail,
-  onScheduleEdit,
-  onScheduleDetail,
-  onDeleteSchedule,
-  onRoomCellClick,
-  onAddSchedule,
   formatDate,
   getDayNumber,
   extractRoomId,
 }: Props) {
-  
+
   const formatTime = (time?: string) => {
     if (! time) return "--:--";
     const normalizedTime = time.replace(/\./g, ":");
@@ -87,32 +66,6 @@ export default function ScheduleTable({
             {room.start_time} - {room.end_time}
           </div>
         )}
-        <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 px-2 text-xs"
-            onClick={(e) => {
-              e. stopPropagation();
-              onRoomDetail(room);
-            }}
-          >
-            <Eye className="w-3 h-3 mr-1" />
-            View
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 px-2 text-xs"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRoomEdit(room);
-            }}
-          >
-            <Edit2 className="w-3 h-3 mr-1" />
-            Edit
-          </Button>
-        </div>
       </div>
     );
   };
@@ -228,7 +181,7 @@ export default function ScheduleTable({
                       className="border-b border-gray-200 hover:bg-gray-50"
                     >
                       {/* Time Columns */}
-                      <td 
+                      <td
                         className="py-4 px-3 border-r border-gray-200 font-mono text-sm"
                       >
                         {formatTime(schedule.start_time)}
@@ -253,14 +206,13 @@ export default function ScheduleTable({
                 return (
                   <tr
                     key={schedule.id}
-                    className={`border-b border-gray-200 hover:bg-gray-50 group ${
+                    className={`border-b border-gray-200 hover:bg-gray-50 ${
                       index % 2 === 0 ?  "bg-white" : "bg-gray-50/50"
                     }`}
                   >
                     {/* Time Columns */}
-                    <td 
-                      className="py-4 px-3 border-r border-gray-200 font-mono text-sm cursor-pointer hover:bg-blue-50 transition-colors"
-                      onClick={() => onAddSchedule()}
+                    <td
+                      className="py-4 px-3 border-r border-gray-200 font-mono text-sm"
                     >
                       {formatTime(schedule.start_time)}
                     </td>
@@ -269,65 +221,11 @@ export default function ScheduleTable({
                     </td>
 
                     {/* Main Room */}
-                    <td className="py-4 px-4 border-r border-gray-200 relative">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          {getMainRoomContent(schedule)}
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {mainRoom ?  (
-                              <>
-                                <DropdownMenuItem onClick={() => onRoomDetail(mainRoom)}>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Main Room
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onRoomEdit(mainRoom)}>
-                                  <Edit2 className="mr-2 h-4 w-4" />
-                                  Edit Main Room
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => onDeleteSchedule(schedule)}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Schedule
-                                </DropdownMenuItem>
-                              </>
-                            ) : (
-                              <>
-                                <DropdownMenuItem onClick={() => onScheduleDetail(schedule)}>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onScheduleEdit(schedule)}>
-                                  <Edit2 className="mr-2 h-4 w-4" />
-                                  Edit Schedule
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => onDeleteSchedule(schedule)}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Schedule
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                    <td className="py-4 px-4 border-r border-gray-200">
+                      {getMainRoomContent(schedule)}
                     </td>
 
-                    {/* Room Columns */}
+                    {/* Room Columns - View Only */}
                     {roomColumnsForDay.map((roomColumn, roomIndex) => {
                       const roomContent = getRoomContentForColumn(roomColumn.id, schedule);
 
@@ -338,27 +236,14 @@ export default function ScheduleTable({
                             roomIndex < roomColumnsForDay.length - 1
                               ? "border-r border-gray-200"
                               : ""
-                          } align-top cursor-pointer hover:bg-blue-50 transition-colors`}
-                          onClick={() => onRoomCellClick(roomColumn.id, schedule)}
+                          } align-top`}
                         >
-                          <div className="min-h-[60px] group">
+                          <div className="min-h-[60px]">
                             {roomContent || (
                               <div className="flex flex-col items-center justify-center h-full text-center">
-                                <span className="text-gray-400 text-xs italic mb-2">
+                                <span className="text-gray-400 text-xs italic">
                                   No room assigned
                                 </span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-8 px-3 text-xs border border-dashed border-gray-300 hover:border-blue-500 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRoomCellClick(roomColumn.id, schedule);
-                                  }}
-                                >
-                                  <Plus className="w-3 h-3 mr-1" />
-                                  Add Room
-                                </Button>
                               </div>
                             )}
                           </div>
@@ -369,7 +254,7 @@ export default function ScheduleTable({
                 );
               })}
 
-              {/* ✅ Enhanced Empty State with Better UX */}
+              {/* Empty State */}
               {schedules.length === 0 && (
                 <tr>
                   <td
@@ -381,18 +266,8 @@ export default function ScheduleTable({
                       <div className="space-y-2">
                         <div className="text-lg font-medium text-gray-700">No schedules for this day</div>
                         <div className="text-sm text-gray-500 max-w-md mx-auto">
-                          Create your first schedule to start organizing the conference.  
-                          Once you add a time slot with a main room, you can then add parallel sessions.
+                          No conference schedules have been created for this day yet.
                         </div>
-                      </div>
-                      
-                      {/* ✅ Step-by-step guide */}
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-lg mx-auto">
-                        <div className="text-sm font-medium text-blue-800 mb-2">Getting Started:</div>
-                        <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
-                          <li>Add a time slot to create the main room for that time</li>
-                          <li>Then click on Room A, B, C cells to add parallel sessions</li>
-                        </ol>
                       </div>
                     </div>
                   </td>
