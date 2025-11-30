@@ -57,7 +57,6 @@ export default function LoginPage() {
 
         {/* Kolom Kanan (Form) */}
         <div className="w-full md:w-1/2 p-8 md:p-12">
-          <p className="text-sm text-gray-500">Start for free</p>
           <h2 className="text-2xl font-bold text-gray-800 mb-6">
             Sign In to Conference Schedule
           </h2>
