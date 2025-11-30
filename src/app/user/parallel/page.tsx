@@ -17,9 +17,7 @@ export default function ParallelPage() {
         const accessToken = await conferenceScheduleService.getAccessToken();
         if (accessToken) {
           const all = await conferenceScheduleService.getAllConferenceSchedules(accessToken, true);
-          // Filter only active conferences
-          const activeConferences = all.filter(conf => conf.is_active !== false);
-          setConferences(activeConferences);
+          setConferences(all);
         }
       } catch (error) {
         console.error("Failed to fetch conferences:", error);

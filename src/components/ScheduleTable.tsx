@@ -165,7 +165,7 @@ export default function ScheduleTable({
     <Card className="border-0 shadow-sm">
       <CardContent className="p-0">
         {/* Header */}
-        <div className="bg-yellow-400 text-black px-6 py-4 font-bold text-center">
+        <div className="bg-[#015B97] text-white px-6 py-4 font-bold text-center">
           <div className="text-lg">
             Day {getDayNumber(currentDay)}: {formatDate(currentDay)}
           </div>

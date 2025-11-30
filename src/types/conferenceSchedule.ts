@@ -17,6 +17,7 @@ export interface BackendConferenceSchedule {
   online_presentation?: string;
   notes?: string;
   no_show_policy?: string;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
@@ -56,6 +57,7 @@ export type NewConferenceScheduleData = {
   onlinePresentation?: string;
   notes?: string;
   noShowPolicy?: string;
+  isActive?: boolean;
 };
 
 export type UpdateConferenceScheduleData = Partial<NewConferenceScheduleData>;

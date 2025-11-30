@@ -11,6 +11,7 @@ import ConferenceYearTabs from "@/components/admin/conference/ConferenceYearTabs
 import ConferenceContent from "@/components/admin/conference/ConferenceContent";
 import CreateConferenceModal from "@/components/admin/CreateConferenceModal";
 import { useConferenceDataICODSA } from "@/hooks/useConferenceDataICODSA";
+import conferenceScheduleService from "@/services/ConferenceScheduleService";
 import type { BackendConferenceSchedule } from "@/types";
 
 export default function ICODSASuperAdminPage() {
@@ -42,6 +43,26 @@ export default function ICODSASuperAdminPage() {
 
   const handleModalClose = () => {
     setActiveModal(null);
+  };
+
+  const handleToggleActive = async (conferenceId: string, isActive: boolean) => {
+    try {
+      const accessToken = await conferenceScheduleService.getAccessToken();
+      if (!accessToken) {
+        toast.error("Authentication failed");
+        return;
+      }
+
+      await conferenceScheduleService.updateConferenceSchedule(accessToken, conferenceId, {
+        isActive: isActive
+      });
+
+      toast.success(`Conference ${isActive ? 'activated' : 'deactivated'} successfully!`);
+      refetchConferences();
+    } catch (error) {
+      console.error("Failed to toggle conference status:", error);
+      toast.error("Failed to update conference status");
+    }
   };
 
   // Check authentication and role
@@ -123,8 +144,8 @@ export default function ICODSASuperAdminPage() {
                   <p className="text-sm text-gray-500 mt-1">
                     {selectedConference ?  (
                       <>
-                        {new Date(selectedConference.start_date).toLocaleDateString()} -{" "}
-                        {new Date(selectedConference.end_date).toLocaleDateString()}
+                        {selectedConference.start_date ? new Date(selectedConference.start_date).toLocaleDateString() : 'TBD'} -{" "}
+                        {selectedConference.end_date ? new Date(selectedConference.end_date).toLocaleDateString() : 'TBD'}
                       </>
                     ) : (
                       "No conference data available for this year"
@@ -153,6 +174,8 @@ export default function ICODSASuperAdminPage() {
         onYearSelect={setSelectedYear}
         onCreateNew={() => setActiveModal("create-conference")}
         conferenceType="ICODSA"
+        conferences={icodsaConferences}
+        onToggleActive={handleToggleActive}
       />          {/* Main Content */}
           <div className="max-w-full mx-auto py-8">
             {! selectedConference ? (

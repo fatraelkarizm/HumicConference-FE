@@ -30,6 +30,7 @@ export default function EditConferenceModal({ isOpen, onClose, conference, onSuc
     timezone_iana: "Asia/Jakarta",
     onsite_presentation: "",
     online_presentation: "",
+    is_active: true,
   });
 
   // Initialize form data when conference changes
@@ -45,6 +46,7 @@ export default function EditConferenceModal({ isOpen, onClose, conference, onSuc
         timezone_iana: conference.timezone_iana || "Asia/Jakarta",
         onsite_presentation: conference.onsite_presentation || "",
         online_presentation: conference.online_presentation || "",
+        is_active: conference.is_active !== false,
       });
     }
   }, [conference, isOpen]);
@@ -79,6 +81,7 @@ export default function EditConferenceModal({ isOpen, onClose, conference, onSuc
         timezoneIana: formData.timezone_iana,
         onsitePresentation: formData.onsite_presentation.trim(),
         onlinePresentation: formData.online_presentation.trim(),
+        isActive: formData.is_active,
       };
 
       console.log("📝 Updating conference:", updateData);
@@ -216,6 +219,20 @@ export default function EditConferenceModal({ isOpen, onClose, conference, onSuc
                 <SelectItem value="UTC">UTC</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Active Status */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={formData.is_active}
+              onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <Label htmlFor="is_active" className="text-sm font-medium text-gray-700">
+              Conference is active (visible to users)
+            </Label>
           </div>
 
           {/* Actions */}

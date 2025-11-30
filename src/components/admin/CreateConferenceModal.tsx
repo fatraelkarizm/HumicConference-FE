@@ -36,6 +36,7 @@ interface ConferenceFormData {
   onlinePresentation: string;
   notes: string;
   noShowPolicy: string;
+  isActive: boolean;
 }
 
 export default function CreateConferenceModal({ 
@@ -58,6 +59,7 @@ export default function CreateConferenceModal({
     onlinePresentation: "ZOOM MEETING",
     notes: "",
     noShowPolicy: "",
+    isActive: true,
   });
 
   const handleInputChange = (field: keyof ConferenceFormData, value: string) => {
@@ -102,6 +104,7 @@ export default function CreateConferenceModal({
         online_presentation: formData.onlinePresentation. trim(),
         notes: formData.notes.trim(),
         no_show_policy: formData. noShowPolicy.trim(),
+        is_active: formData.isActive,
       };
 
       console.log('Creating conference:', conferencePayload);
@@ -158,6 +161,7 @@ export default function CreateConferenceModal({
         onlinePresentation: "ZOOM MEETING",
         notes: "",
         noShowPolicy: "",
+        isActive: true,
       });
 
       onSuccess();
@@ -324,6 +328,19 @@ export default function CreateConferenceModal({
                   className="bg-gray-100"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <Label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+                Active Conference
+              </Label>
             </div>
           </div>
 

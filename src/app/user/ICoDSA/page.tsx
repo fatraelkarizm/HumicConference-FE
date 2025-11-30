@@ -1,37 +1,36 @@
-// "use client";
+"use client";
 
-// import React, { useEffect, useState } from "react";
-// import { CalendarDaysIcon } from "@heroicons/react/24/outline";
-// import ScheduleCard from "@/components/schedule/ScheduleCard";
-// import type { ScheduleItem } from "@/types/schedule";
-// import { getSchedules } from "@/services/ScheduleService";
+import React, { useEffect, useState } from "react";
+import { CalendarDaysIcon } from "@heroicons/react/24/outline";
+import { Clock, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import conferenceScheduleService from "@/services/ConferenceScheduleService";
+import type { BackendConferenceSchedule } from "@/types";
+import Link from "next/link";
 
-// export default function ICoDSAPage() {
-//   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
-//   const [loading, setLoading] = useState(true);
+export default function ICoDSAPage() {
+  const [conferences, setConferences] = useState<BackendConferenceSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
 
-//   useEffect(() => {
-//     (async () => {
-//       setLoading(true);
-//       const all = await getSchedules("ICoDSA");
-//       setSchedules(all);
-//       setLoading(false);
-//     })();
-//   }, []);
-
-  // Group schedules by dayNumber
-  const byDay: Record<string, ScheduleItem[]> = {};
-  schedules.forEach((s) => {
-    const day = s.dayNumber !== undefined && s.dayNumber !== null ? Number(s.dayNumber) : 1;
-    const key = `day-${day}`;
-    (byDay[key] = byDay[key] || []).push(s);
-  });
-
-  const dayKeys = Object.keys(byDay).sort((a, b) => {
-    const na = Number(a.split("-")[1] || 1);
-    const nb = Number(b.split("-")[1] || 1);
-    return na - nb;
-  });
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const accessToken = await conferenceScheduleService.getAccessToken();
+        if (accessToken) {
+          const all = await conferenceScheduleService.getAllConferenceSchedules(accessToken, true);
+          // Filter only ICoDSA conferences that are active
+          const icodsaConferences = all.filter(conf => conf.type === 'ICODSA' && conf.is_active !== false);
+          setConferences(icodsaConferences);
+        }
+      } catch (error) {
+        console.error("Failed to fetch conferences:", error);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   return (
     <div className="bg-white min-h-screen text-black px-6 lg:px-12 py-8">
@@ -45,64 +44,128 @@
             <p className="text-sm text-gray-600">Public schedule — read only</p>
           </div>
         </div>
+        <Link href="/user/parallel">
+          <Button variant="outline" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Parallel Sessions
+          </Button>
+        </Link>
       </div>
 
       {loading ? (
-        <div className="text-gray-600">Loading schedules…</div>
-      ) : dayKeys.length === 0 ? (
-        <div className="text-gray-600">No schedules available yet.</div>
+        <div className="text-gray-600">Loading conferences…</div>
+      ) : conferences.length === 0 ? (
+        <div className="text-gray-600">No conferences available yet.</div>
       ) : (
-        <div className="space-y-10">
-          {dayKeys.map((dayKey) => {
-            const items = byDay[dayKey];
-            const dayNumber = Number(dayKey.split("-")[1] || 1);
-            const first = items[0];
-            const headerTitle = first?.dayTitle ?? `Day ${dayNumber}`;
-
-            const byTime: Record<string, ScheduleItem[]> = {};
-            items.forEach((s) => {
-              const k = s.timeDisplay || s.date || "TBD";
-              (byTime[k] = byTime[k] || []).push(s);
-            });
-
-            const timeKeys = Object.keys(byTime);
-
-            return (
-              <section key={dayKey}>
-                <div className="mb-4 rounded-md p-3 bg-[#CAF2D7]">
-                  <div className="text-sm font-semibold text-[#064e3b]">{headerTitle}</div>
+        <div className="space-y-8">
+          {conferences.map((conference) => (
+            <div key={conference.id} className="border border-gray-200 rounded-lg overflow-hidden">
+              {/* Conference Header */}
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">{conference.name}</h2>
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                  <span>Year: {conference.year}</span>
+                  {conference.start_date && conference.end_date && (
+                    <span>
+                      {new Date(conference.start_date).toLocaleDateString()} - {new Date(conference.end_date).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
+                {conference.description && (
+                  <p className="text-sm text-gray-700 mt-2">{conference.description}</p>
+                )}
+              </div>
 
-                <div className="space-y-6">
-                  {timeKeys.map((timeKey) => {
-                    const rowItems = byTime[timeKey];
-                    return (
-                      <div key={timeKey} className="grid grid-cols-[160px_1fr] items-stretch gap-6">
-                        <div className="h-full">
-                          <div className="h-full rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-semibold text-lg shadow-sm px-4">
-                            {timeKey}
-                          </div>
-                        </div>
-
-                        <div className="h-full">
-                          <div className="h-full rounded-lg p-3">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {rowItems.map((s) => (
-                                <div key={s.id} className="h-full">
-                                  {/* non-clickable public card */}
-                                  <ScheduleCard item={s} className="h-full" />
+              {/* Schedule Table */}
+              {conference.schedules && conference.schedules.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Time
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Activity
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Notes
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {conference.schedules
+                        .sort((a, b) => {
+                          const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
+                          if (dateCompare !== 0) return dateCompare;
+                          return (a.start_time || '').localeCompare(b.start_time || '');
+                        })
+                        .map((schedule) => (
+                        <tr key={schedule.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <Clock className="w-4 h-4 text-gray-400 mr-2" />
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {schedule.start_time && schedule.end_time
+                                    ? `${schedule.start_time} - ${schedule.end_time}`
+                                    : schedule.start_time || schedule.end_time || 'TBD'}
                                 </div>
-                              ))}
+                                <div className="text-xs text-gray-500">
+                                  {schedule.date ? new Date(schedule.date).toLocaleDateString() : 'TBD'}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-900">
+                              {schedule.notes || 'No activity description'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant={
+                              schedule.type === 'TALK' ? 'default' :
+                              schedule.type === 'BREAK' ? 'secondary' : 'outline'
+                            }>
+                              {schedule.type}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {schedule.notes || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              </section>
-            );
-          })}
+              ) : (
+                <div className="px-6 py-8 text-center text-gray-500">
+                  No schedule available for this conference yet.
+                </div>
+              )}
+
+              {/* Conference Footer */}
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  {conference.contact_email && (
+                    <div>
+                      <span className="font-medium text-gray-700">Contact:</span>
+                      <span className="ml-2 text-gray-600">{conference.contact_email}</span>
+                    </div>
+                  )}
+                  {conference.timezone_iana && (
+                    <div>
+                      <span className="font-medium text-gray-700">Timezone:</span>
+                      <span className="ml-2 text-gray-600">{conference.timezone_iana}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

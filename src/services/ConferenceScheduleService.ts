@@ -92,6 +92,7 @@ class ConferenceScheduleService {
       online_presentation: data.onlinePresentation || null,
       notes: data.notes || null,
       no_show_policy: data.noShowPolicy || null,
+      is_active: data.isActive ?? true,
     };
 
     const response = await this.makeRequest('/api/v1/conference-schedule', {
@@ -121,6 +122,7 @@ class ConferenceScheduleService {
     if (data.onlinePresentation !== undefined) updatePayload.online_presentation = data.onlinePresentation;
     if (data.notes !== undefined) updatePayload.notes = data.notes;
     if (data.noShowPolicy !== undefined) updatePayload.no_show_policy = data.noShowPolicy;
+    if (data.isActive !== undefined) updatePayload.is_active = data.isActive;
 
     const response = await this.makeRequest(`/api/v1/conference-schedule/${conferenceId}`, {
       method: 'PATCH',
