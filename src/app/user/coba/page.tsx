@@ -106,10 +106,10 @@ export default function ICICyTAAdminPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-full mx-auto px-6">
+        <div className="max-w-11/12 mx-auto">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-blue-900">
+              <h1 className="text-3xl font-bold text-[#015B97]">
                 {selectedConference?.name || "ICICyTA Conference"}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
@@ -152,7 +152,7 @@ export default function ICICyTAAdminPage() {
       )}
 
       {/* Main Content */}
-      <div className="max-w-full mx-auto py-8">
+      <div className="max-w-11/12 mx-auto py-8">
         {! selectedConference ? (
           // Empty State
           <div className="flex items-center justify-center min-h-[400px]">

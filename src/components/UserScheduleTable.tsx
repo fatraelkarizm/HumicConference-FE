@@ -21,6 +21,7 @@ interface Props {
   formatDate: (dateStr: string) => string;
   getDayNumber: (dateStr: string) => number;
   extractRoomId: (room: BackendRoom) => string | null;
+  onRoomDetail: (room: BackendRoom) => void;
 }
 
 export default function UserScheduleTable({
@@ -32,6 +33,7 @@ export default function UserScheduleTable({
   formatDate,
   getDayNumber,
   extractRoomId,
+  onRoomDetail,
 }: Props) {
 
   const formatTime = (time?: string) => {
@@ -51,7 +53,10 @@ export default function UserScheduleTable({
     if (!room) return null;
 
     return (
-      <div className="space-y-2">
+      <div
+        className="space-y-2 cursor-pointer hover:bg-blue-50 p-2 rounded transition-colors"
+        onClick={() => onRoomDetail(room)}
+      >
         <div className="text-xs font-medium text-blue-700">
           {room.identifier}
         </div>
@@ -93,10 +98,26 @@ export default function UserScheduleTable({
       (room) => room.type === "MAIN" && room.schedule_id === schedule.id
     );
 
+    if (mainRoom) {
+      return (
+        <div
+          className="space-y-2 cursor-pointer hover:bg-blue-50 p-2 rounded transition-colors"
+          onClick={() => onRoomDetail(mainRoom)}
+        >
+          <div className="font-medium text-sm">
+            {mainRoom.description || schedule.notes || "Main Session"}
+          </div>
+          <Badge variant="outline" className="text-xs bg-gray-100">
+            TALK
+          </Badge>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-2">
         <div className="font-medium text-sm">
-          {mainRoom?.description || schedule.notes || "Main Session"}
+          {schedule.notes || "Main Session"}
         </div>
         <Badge variant="outline" className="text-xs bg-gray-100">
           TALK
@@ -115,7 +136,7 @@ export default function UserScheduleTable({
   };
 
   return (
-    <Card className="border-0 shadow-sm">
+    <Card className="border-0 shadow-sm max-w-full mx-auto">
       <CardContent className="p-0">
         {/* Header */}
         <div className="bg-[#015B97] text-white px-6 py-4 font-bold text-center">

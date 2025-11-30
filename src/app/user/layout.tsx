@@ -28,7 +28,10 @@ export default function UserLayout({
             <Link href="/user/ICODSA" className="text-white">
               ICoDSA
             </Link>
-            <Link href="#" className="text-white">
+            <Link href="/user/parallel" className="text-white">
+              Parallel
+            </Link>
+            <Link href="/user/about" className="text-white">
               About
             </Link>
           </div>

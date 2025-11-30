@@ -12,6 +12,7 @@ import type {
 import { useRoom } from "@/hooks/useRoom";
 import { useScheduleTableLogic } from "@/hooks/useScheduleTableLogic";
 import UserScheduleTable from "@/components/UserScheduleTable";
+import UserDetailRoomModal from "@/components/UserDetailRoomModal";
 
 interface Props {
   conference: BackendConferenceSchedule;
@@ -22,6 +23,8 @@ export default function UserConferenceScheduleTable({
   conference,
   schedules,
 }: Props) {
+  const [selectedRoom, setSelectedRoom] = useState<BackendRoom | null>(null);
+  const [showRoomDetailModal, setShowRoomDetailModal] = useState(false);
   // Schedule logic
   const { grouped, daysList, selectedDay, setSelectedDay, formatDate, getDayNumber } =
     useScheduleTableLogic(conference, schedules);
@@ -107,6 +110,17 @@ export default function UserConferenceScheduleTable({
     return columns;
   }, [currentDayRooms]);
 
+  // Handle room detail view
+  const handleRoomDetail = (room: BackendRoom) => {
+    setSelectedRoom(room);
+    setShowRoomDetailModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowRoomDetailModal(false);
+    setSelectedRoom(null);
+  };
+
   // If no conference days, show empty state
   if (daysList.length === 0) {
     return (
@@ -127,7 +141,7 @@ export default function UserConferenceScheduleTable({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-full mx-auto">
       {/* Simple Day Tabs for Users */}
       <div className="flex flex-wrap gap-2">
         {daysList.map((day) => (
@@ -136,7 +150,7 @@ export default function UserConferenceScheduleTable({
             onClick={() => setSelectedDay(day)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectedDay === day
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#015B97] text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -155,7 +169,17 @@ export default function UserConferenceScheduleTable({
         formatDate={formatDate}
         getDayNumber={getDayNumber}
         extractRoomId={extractRoomId}
+        onRoomDetail={handleRoomDetail}
       />
+
+      {/* Room Detail Modal */}
+      {showRoomDetailModal && selectedRoom && (
+        <UserDetailRoomModal
+          isOpen={true}
+          onClose={handleModalClose}
+          room={selectedRoom}
+        />
+      )}
     </div>
   );
 }

@@ -1,172 +1,214 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { CalendarDaysIcon } from "@heroicons/react/24/outline";
-import { Clock, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useConferenceSchedule } from "@/hooks/useConferenceSchedule";
 import { Badge } from "@/components/ui/badge";
-import conferenceScheduleService from "@/services/ConferenceScheduleService";
+import { Button } from "@/components/ui/button";
+import { CalendarDays, Plus, Calendar } from "lucide-react";
+import { toast } from "react-hot-toast";
+import ConferenceYearTabs from "@/components/admin/conference/ConferenceYearTabs";
+import ConferenceContent from "@/components/admin/conference/ConferenceContent";
+import CreateConferenceModal from "@/components/admin/CreateConferenceModal";
+import UserConferenceScheduleTable from "@/components/UserConferenceScheduleTable";
+import { useConferenceTabsData } from "@/hooks/useConferenceTabsData";
 import type { BackendConferenceSchedule } from "@/types";
-import Link from "next/link";
+
+// Role checking utility
+const isAdminRole = (role?: string) => {
+  return role === 'SUPER_ADMIN' || role === 'ADMIN_ICICYTA' || role === 'ADMIN_ICODSA';
+};
 
 export default function ICoDSAPage() {
-  const [conferences, setConferences] = useState<BackendConferenceSchedule[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
+  // Mock user role - in real app this would come from auth context
+  const userRole = 'USER'; // Change this to test different roles: 'SUPER_ADMIN', 'ADMIN_ICICYTA', 'ADMIN_ICODSA', 'USER'
+
+  // Base conferences hook
+  const {
+    conferences,
+    loading: confLoading,
+    error: confError,
+    refetch: refetchConferences,
+  } = useConferenceSchedule();
+
+  // Filter conferences for ICoDSA only
+  const icodsaConferences = conferences.filter(conf => conf.type === 'ICODSA');
+
+  // Get available years for ICoDSA
+  const availableYears = Array.from(
+    new Set(icodsaConferences.map((conf) => conf.year))
+  ).sort((a, b) => parseInt(b) - parseInt(a));
+
+  // Get selected conference
+  const selectedConference = icodsaConferences.find((conf) => conf.year === selectedYear) || null;
+
+  // Get data for selected conference (for regular users)
+  const { schedules: userSchedules, loading: userLoading } = useConferenceTabsData(selectedConference || {} as BackendConferenceSchedule);
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const accessToken = await conferenceScheduleService.getAccessToken();
-        if (accessToken) {
-          const all = await conferenceScheduleService.getAllConferenceSchedules(accessToken, true);
-          // Filter only ICoDSA conferences that are active
-          const icodsaConferences = all.filter(conf => conf.type === 'ICODSA' && conf.is_active !== false);
-          setConferences(icodsaConferences);
-        }
-      } catch (error) {
-        console.error("Failed to fetch conferences:", error);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+    if (availableYears.length > 0 && !selectedYear) {
+      setSelectedYear(availableYears[0]);
+    }
+  }, [availableYears, selectedYear]);
+
+  const handleModalClose = () => {
+    setActiveModal(null);
+  };
+
+  // Loading state
+  if (confLoading || userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (confError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Error Loading Conferences
+          </h2>
+          <p className="text-gray-600">Failed to load conference data. </p>
+        </div>
+      </div>
+    );
+  }
+
+  // No conferences state
+  if (availableYears.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Calendar className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            No ICoDSA Conferences Found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            {isAdminRole(userRole) ? "Create your first ICoDSA conference to get started." : "No conference data available."}
+          </p>
+          {isAdminRole(userRole) && (
+            <Button
+              onClick={() => setActiveModal("create-conference")}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create ICoDSA Conference
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white min-h-screen text-black px-6 lg:px-12 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <span className="inline-flex items-center justify-center rounded-md bg-[#FFB84D] p-2">
-            <CalendarDaysIcon className="w-5 h-5 text-white" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-semibold text-black">Schedule ICoDSA</h1>
-            <p className="text-sm text-gray-600">Public schedule — read only</p>
-          </div>
-        </div>
-        <Link href="/user/parallel">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Parallel Sessions
-          </Button>
-        </Link>
-      </div>
-
-      {loading ? (
-        <div className="text-gray-600">Loading conferences…</div>
-      ) : conferences.length === 0 ? (
-        <div className="text-gray-600">No conferences available yet.</div>
-      ) : (
-        <div className="space-y-8">
-          {conferences.map((conference) => (
-            <div key={conference.id} className="border border-gray-200 rounded-lg overflow-hidden">
-              {/* Conference Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">{conference.name}</h2>
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                  <span>Year: {conference.year}</span>
-                  {conference.start_date && conference.end_date && (
-                    <span>
-                      {new Date(conference.start_date).toLocaleDateString()} - {new Date(conference.end_date).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-                {conference.description && (
-                  <p className="text-sm text-gray-700 mt-2">{conference.description}</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-11/12 mx-auto">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-3xl font-bold text-[#015B97]">
+                {selectedConference?.name || "ICoDSA Conference"}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                {selectedConference ?  (
+                  <>
+                    {new Date(selectedConference.start_date).toLocaleDateString()} -{" "}
+                    {new Date(selectedConference.end_date).toLocaleDateString()}
+                  </>
+                ) : (
+                  "No conference data available for this year"
                 )}
-              </div>
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                <CalendarDays className="w-4 h-4 mr-1" />
+                ICoDSA {selectedYear}
+              </Badge>
 
-              {/* Schedule Table */}
-              {conference.schedules && conference.schedules.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Time
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Activity
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Type
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Notes
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {conference.schedules
-                        .sort((a, b) => {
-                          const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
-                          if (dateCompare !== 0) return dateCompare;
-                          return (a.start_time || '').localeCompare(b.start_time || '');
-                        })
-                        .map((schedule) => (
-                        <tr key={schedule.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <Clock className="w-4 h-4 text-gray-400 mr-2" />
-                              <div>
-                                <div className="text-sm font-medium text-gray-900">
-                                  {schedule.start_time && schedule.end_time
-                                    ? `${schedule.start_time} - ${schedule.end_time}`
-                                    : schedule.start_time || schedule.end_time || 'TBD'}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {schedule.date ? new Date(schedule.date).toLocaleDateString() : 'TBD'}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">
-                              {schedule.notes || 'No activity description'}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant={
-                              schedule.type === 'TALK' ? 'default' :
-                              schedule.type === 'BREAK' ? 'secondary' : 'outline'
-                            }>
-                              {schedule.type}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-500">
-                            {schedule.notes || '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="px-6 py-8 text-center text-gray-500">
-                  No schedule available for this conference yet.
+              {/* ✅ Simple Action Buttons - Show only for admins */}
+              {isAdminRole(userRole) && (
+                <div className="flex items-center space-x-2">
+                  {/* No buttons needed */}
                 </div>
               )}
-
-              {/* Conference Footer */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  {conference.contact_email && (
-                    <div>
-                      <span className="font-medium text-gray-700">Contact:</span>
-                      <span className="ml-2 text-gray-600">{conference.contact_email}</span>
-                    </div>
-                  )}
-                  {conference.timezone_iana && (
-                    <div>
-                      <span className="font-medium text-gray-700">Timezone:</span>
-                      <span className="ml-2 text-gray-600">{conference.timezone_iana}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
-          ))}
+          </div>
         </div>
+      </div>
+
+      {/* Conference Year Series - Show only for admins */}
+      {isAdminRole(userRole) && (
+        <ConferenceYearTabs
+          availableYears={availableYears}
+          selectedYear={selectedYear}
+          onYearSelect={setSelectedYear}
+          onCreateNew={() => setActiveModal("create-conference")}
+          conferenceType="ICODSA"
+        />
+      )}
+
+      {/* Main Content */}
+      <div className="max-w-11/12 mx-auto py-8">
+        {!selectedConference ? (
+          // Empty State
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Calendar className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                No ICoDSA Conference for {selectedYear}
+              </h2>
+              <p className="text-gray-600 mb-6">
+                {isAdminRole(userRole) ? "Create a new ICoDSA conference for " + selectedYear + " to get started." : "No conference data available."}
+              </p>
+              {isAdminRole(userRole) && (
+                <Button
+                  onClick={() => setActiveModal("create-conference")}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create {selectedYear} ICoDSA Conference
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          // Conference Content with Tabs - Show only for admins, direct table for users
+          isAdminRole(userRole) ? (
+            <ConferenceContent
+              conference={selectedConference}
+              onModalOpen={setActiveModal}
+              onRefresh={refetchConferences}
+            />
+          ) : (
+            // Direct Schedule View for regular users - Same layout as admin
+            <UserConferenceScheduleTable
+              conference={selectedConference}
+              schedules={userSchedules}
+            />
+          )
+        )}
+      </div>
+
+      {/* Create Conference Modal - Only for admins */}
+      {isAdminRole(userRole) && activeModal === "create-conference" && (
+        <CreateConferenceModal
+          isOpen={true}
+          onClose={handleModalClose}
+          onSuccess={() => {
+            setActiveModal(null);
+            refetchConferences();
+            toast.success("ICoDSA Conference created successfully!");
+          }}
+          conferenceType="ICODSA"
+        />
       )}
     </div>
   );
