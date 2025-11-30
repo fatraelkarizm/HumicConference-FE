@@ -1,7 +1,7 @@
 // src/app/user/page.tsx
 
-import ICICyTAPage from "./ICICYTA/page";
-import ICoDSAPage from "./ICODSA/page";
+import ICICyTAPage from "./ICICyTA/page";
+import ICoDSAPage from "./ICoDSA/page";
 export default function UserPage() {
   return (
     <>
