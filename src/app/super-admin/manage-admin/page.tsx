@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import AdminTable, { AdminRow } from "@/components/AdminTable";
 import AdminModal, { Admin } from "@/components/AdminModal";
-import AdminService from "@/services/AdminService";
+import AdminService from "@/services/adminService";
 import { useAuth } from "@/context/AuthContext";
 
 export default function ManageAdminPage() {

@@ -87,8 +87,8 @@ export default function AddDayModal({
       onClose();
       setExtendedDays(0);
       onRefresh?.();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to extend conference");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to extend conference");
     } finally {
       setLoading(false);
     }

@@ -13,7 +13,7 @@ import ConferenceModals from "@/components/admin/conference/ConferenceModal";
 import EditConferenceModal from "@/components/admin/conference/EditConferenceModal";
 import DeleteConferenceModal from "@/components/admin/conference/DeleteConferenceModal";
 import { useConferenceTabsData } from "@/hooks/useConferenceTabsData";
-import type { BackendConferenceSchedule } from "@/types";
+import type { BackendConferenceSchedule, BackendSchedule, BackendRoom, BackendTrackSession } from "@/types";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -28,9 +28,9 @@ export default function ConferenceContent({
   onRefresh,
 }: Props) {
   const [activeModal, setActiveModal] = useState<string | null>(null);
-  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
-  const [selectedRoom, setSelectedRoom] = useState<any>(null);
-  const [selectedTrackSession, setSelectedTrackSession] = useState<any>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<BackendSchedule | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<BackendRoom | null>(null);
+  const [selectedTrackSession, setSelectedTrackSession] = useState<BackendTrackSession | null>(null);
   const [showEditConferenceModal, setShowEditConferenceModal] = useState(false);
   const [showDeleteConferenceModal, setShowDeleteConferenceModal] = useState(false);
 

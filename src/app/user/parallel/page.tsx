@@ -41,55 +41,30 @@ const ParallelSessionScheduleUI = () => {
 
   // --- LOGIKA UTAMA YANG DIPERBAIKI ---
   const getRoomNameFromSchedules = (session: BackendTrackSession, schedules: BackendConferenceSchedule[], rooms: BackendRoom[], trackIndex: number) => {
-    // 1. Cek jika objek session sudah punya properti room (Best Practice)
-    if (session.room?.name) return session.room.name;
-    if (session.room_name) return session.room_name;
-
-    // 2. Prioritas: Cek langsung di rooms API
+    // Prioritas: Cek langsung di rooms API berdasarkan track_id
     if (rooms && rooms.length > 0) {
-      // Cari room berdasarkan track_id atau schedule_id
-      const foundRoom = rooms.find((room: any) =>
-        room.track_id === session.track_id ||
-        room.schedule_id === session.schedule_id ||
-        room.id === session.room_id
-      );
-
+      const foundRoom = rooms.find((room) => room.track_id === session.track_id);
       if (foundRoom) {
         console.log('Found room from rooms API:', foundRoom);
         return foundRoom.name || "Room Assigned";
       }
     }
 
-    // 3. Fallback: Cek relasi di conferenceSchedules
-    // Struktur: conference_schedule -> schedules -> rooms
+    // Fallback: Cek relasi di conferenceSchedules -> schedules -> rooms
     for (const conferenceSchedule of schedules) {
       if (conferenceSchedule.schedules && Array.isArray(conferenceSchedule.schedules)) {
         for (const schedule of conferenceSchedule.schedules) {
-          // Cek apakah schedule ini punya rooms
           if (schedule.rooms && Array.isArray(schedule.rooms)) {
-            // Cari room yang match dengan session ini
-            const foundRoom = schedule.rooms.find((room: any) =>
-              room.track_id === session.track_id ||
-              room.schedule_id === session.schedule_id ||
-              room.id === session.room_id
-            );
-
+            const foundRoom = schedule.rooms.find((room) => room.track_id === session.track_id);
             if (foundRoom) {
               return foundRoom.name || "Room Assigned";
             }
-          }
-
-          // Jika tidak ada rooms array, cek langsung di schedule
-          if (schedule.track_id === session.track_id || schedule.id === session.schedule_id) {
-            // Cek apakah schedule ini punya room name
-            if (schedule.room?.name) return schedule.room.name;
-            if (schedule.room_name) return schedule.room_name;
           }
         }
       }
     }
 
-    // 4. Fallback terakhir: Ambil dari array manual berdasarkan urutan track
+    // Fallback terakhir: Ambil dari array manual berdasarkan urutan track
     return roomNamesFallback[trackIndex % roomNamesFallback.length];
   };
 
