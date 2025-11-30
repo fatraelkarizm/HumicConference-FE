@@ -244,7 +244,7 @@ export default function AdminTable({ admins = [], onCreate, onEdit, onDelete }: 
 
           {/* show up to 5 numeric pages centered around current */}
           {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-            let start = Math.max(1, Math.min(totalPages - 4, page - 2));
+            const start = Math.max(1, Math.min(totalPages - 4, page - 2));
             const p = start + i;
             if (p > totalPages) return null;
             return (

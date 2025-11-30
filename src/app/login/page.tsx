@@ -27,8 +27,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       // Redirect will be handled automatically by AuthContext based on role
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
@@ -141,7 +141,7 @@ export default function LoginPage() {
             <p className="pt-1">Made with ❤️ by summitdocs</p>
           </div>
           <p className="text-center text-sm text-gray-500 mt-6">
-            Don't have any account?{" "}
+            Don&apos;t have any account?{" "}
             <Link
               href="/signup"
               className="text-[#015B97] hover:underline font-semibold"

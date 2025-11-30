@@ -50,8 +50,8 @@ export default function ManageAdminPage() {
       }));
       
       setAdmins(normalized);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load admins');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load admins');
       setAdmins([]);
     } finally {
       setLoading(false);
@@ -113,8 +113,8 @@ export default function ManageAdminPage() {
           )
         );
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to save admin');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save admin');
       throw err;
     }
   }
@@ -125,8 +125,8 @@ export default function ManageAdminPage() {
       
       await AdminService.deleteAdmin(id);
       setAdmins((prev) => prev.filter((p) => p.id !== id));
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete admin');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete admin');
     }
   }
 

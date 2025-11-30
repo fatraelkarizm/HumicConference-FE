@@ -205,8 +205,6 @@ class AdminService {
         backendPayload.password_confirmation = payload.password;
       }
 
-
-
       const response = await fetch(`${this.baseUrl}/api/v1/user/${id}`, {
         method: 'PATCH',
         headers: {

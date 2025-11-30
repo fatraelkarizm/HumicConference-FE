@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { useTrack } from '@/hooks/useTrack';
-import { useTrackSession } from '@/hooks/useTrackSession';
 import trackSessionService from '@/services/TrackSessionService';
 import conferenceScheduleService from '@/services/ConferenceScheduleService';
 import roomService from '@/services/RoomServices';
+import type { BackendConferenceSchedule, BackendTrackSession, BackendRoom } from '@/types';
 
 interface Paper {
   no: number;
@@ -32,15 +32,15 @@ const ParallelSessionScheduleUI = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [conferenceSchedules, setConferenceSchedules] = useState<any[]>([]);
-  const [trackSessions, setTrackSessions] = useState<any[]>([]);
-  const [rooms, setRooms] = useState<any[]>([]);
+  const [conferenceSchedules, setConferenceSchedules] = useState<BackendConferenceSchedule[]>([]);
+  const [trackSessions, setTrackSessions] = useState<BackendTrackSession[]>([]);
+  const [rooms, setRooms] = useState<BackendRoom[]>([]);
 
   // Room names fallback (jika data API kosong/gagal mapping)
   const roomNamesFallback = ['Room A', 'Room B', 'Room C', 'Room D', 'Room E'];
 
   // --- LOGIKA UTAMA YANG DIPERBAIKI ---
-  const getRoomNameFromSchedules = (session: any, schedules: any[], rooms: any[], trackIndex: number) => {
+  const getRoomNameFromSchedules = (session: BackendTrackSession, schedules: BackendConferenceSchedule[], rooms: BackendRoom[], trackIndex: number) => {
     // 1. Cek jika objek session sudah punya properti room (Best Practice)
     if (session.room?.name) return session.room.name;
     if (session.room_name) return session.room_name;

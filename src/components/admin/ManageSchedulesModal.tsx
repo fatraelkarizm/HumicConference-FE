@@ -90,7 +90,7 @@ export default function ManageSchedulesModal({
           <div className="space-y-2">
             {schedules.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                No schedules found. Click "Add Schedule" to create one.
+                No schedules found. Click &quot;Add Schedule&quot; to create one.
               </div>
             ) : (
               schedules.map((schedule) => (
