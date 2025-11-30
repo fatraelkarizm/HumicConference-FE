@@ -11,12 +11,12 @@ export function useRoomLogic(
   const currentDayRooms = useMemo(() => {
     const daySchedules = grouped[selectedDay] || [];
     const dayScheduleIds = daySchedules.map((schedule) => schedule.id);
-    return allRooms.filter((room) => dayScheduleIds.includes(room. schedule_id));
+    return allRooms.filter((room) => dayScheduleIds.includes(room.schedule_id));
   }, [allRooms, grouped, selectedDay]);
 
   const extractRoomId = (room: BackendRoom): string | null => {
-    const name = (room. name || "").toLowerCase().trim();
-    const identifier = (room. identifier || "").toLowerCase().trim();
+    const name = (room.name || "").toLowerCase().trim();
+    const identifier = (room.identifier || "").toLowerCase().trim();
     
     const roomNameMatch = name.match(/^room\s+([a-e])$/i);
     if (roomNameMatch) return roomNameMatch[1].toUpperCase();

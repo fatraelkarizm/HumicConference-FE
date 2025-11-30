@@ -3,6 +3,18 @@ import { useAuth } from '@/context/AuthContext';
 import roomService from '@/services/RoomServices';
 import type { BackendRoom, NewRoomData, UpdateRoomData } from '@/types/room';
 
+export interface CreateRoomPayload {
+  name: string;
+  identifier?: string | null;
+  description?: string;
+  type: "MAIN" | "PARALLEL";
+  online_meeting_url?: string | null;
+  start_time?: string;
+  end_time?: string;
+  scheduleId: string; // ✅ Fix property name
+  track_id?: string | null;
+}
+
 export const useRoom = (scheduleId?: string) => {
   const { user, isAuthenticated } = useAuth();
   const [rooms, setRooms] = useState<BackendRoom[]>([]);
@@ -50,23 +62,45 @@ export const useRoom = (scheduleId?: string) => {
 };
 
 export const useRoomActions = () => {
-  const createRoom = async (data: NewRoomData & {
-    startTime: string;
-    endTime: string;
-    track?: {
-      id: string;
-      name: string;
-      description: string;
-      category: string;
-      conference_schedule_id: string;
-    };
-  }): Promise<BackendRoom> => {
-    const accessToken = await roomService.getAccessToken();
-    if (!accessToken) {
-      throw new Error('Access token not available');
-    }
+  const createRoom = async (roomData: CreateRoomPayload) => {
+    try {
+      const token = localStorage.getItem('accessToken');
 
-    return await roomService.createRoom(accessToken, data);
+      // ✅ Transform data to match backend expectations
+      const payload = {
+        name: roomData.name,
+        identifier: roomData.identifier,
+        description: roomData.description,
+        type: roomData.type,
+        online_meeting_url: roomData.online_meeting_url,
+        start_time: roomData.start_time,
+        end_time: roomData.end_time,
+        schedule_id: roomData.scheduleId, // ✅ Map to backend field name
+        track_id: roomData.track_id,
+      };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/room`,
+        {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to create room');
+      }
+
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const updateRoom = async (roomId: string, data: UpdateRoomData): Promise<BackendRoom> => {

@@ -1,0 +1,256 @@
+"use client";
+
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import ConferenceScheduleTable from "@/components/admin/ConferenceScheduleTable";
+import RoomManagementTab from "@/components/admin/conference/RoomManagementTab";
+import TrackSessionsTab from "@/components/admin/conference/TrackSessionsTab";
+import ConferenceModals from "@/components/admin/conference/ConferenceModal";
+import { useConferenceTabsData } from "@/hooks/useConferenceTabsData";
+import type { BackendConferenceSchedule } from "@/types";
+import toast from "react-hot-toast";
+
+interface Props {
+  conference: BackendConferenceSchedule;
+  onModalOpen: (modal: string) => void;
+  onRefresh: () => void;
+}
+
+export default function ConferenceContent({ conference, onModalOpen, onRefresh }: Props) {
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
+  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [selectedTrackSession, setSelectedTrackSession] = useState<any>(null);
+
+  // Get data for this conference
+  const {
+    schedules,
+    rooms,
+    tracks,
+    trackSessions,
+    loading,
+    refetchAll
+  } = useConferenceTabsData(conference.id);
+
+  const handleModalClose = () => {
+    setActiveModal(null);
+    setSelectedSchedule(null);
+    setSelectedRoom(null);
+    setSelectedTrackSession(null);
+  };
+
+  // ✅ Enhanced refresh function with delay
+  const handleRefresh = async () => {
+    console.log(`🔄 Refreshing data for ${conference.name} (${conference. year})`);
+    
+    // ✅ Show loading toast
+    const toastId = toast.loading('Refreshing conference data...');
+    
+    try {
+      await refetchAll();
+      onRefresh();
+      
+      toast.success('Data refreshed successfully! ', { id: toastId });
+      console.log('✅ Conference data refreshed');
+    } catch (error) {
+      console.error('❌ Refresh error:', error);
+      toast.error('Failed to refresh data', { id: toastId });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Tabs defaultValue="schedule" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="settings">Schedule Overview</TabsTrigger>
+          <TabsTrigger value="rooms">Room Management</TabsTrigger>
+          <TabsTrigger value="tracks">Track Sessions</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule Table</TabsTrigger>
+        </TabsList>
+
+        {/* Schedule Overview Tab */}
+        <TabsContent value="settings" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  Conference Overview
+                </CardTitle>
+                <Button
+                  onClick={() => setActiveModal("create-conference")}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Conference
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-medium mb-3">General Information</h3>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium">Year:</span>{" "}
+                      {conference.year}
+                    </div>
+                    <div>
+                      <span className="font-medium">Type:</span>{" "}
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 ml-2">
+                        {conference.type}
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="font-medium">Contact:</span>{" "}
+                      {conference.contact_email}
+                    </div>
+                    <div>
+                      <span className="font-medium">Timezone:</span>{" "}
+                      {conference.  timezone_iana}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-3">Presentation Locations</h3>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium">Onsite:</span>{" "}
+                      {conference.onsite_presentation}
+                    </div>
+                    <div>
+                      <span className="font-medium">Online:</span>{" "}
+                      {conference.online_presentation}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Debug info */}
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
+                <h4 className="font-medium text-sm mb-2">
+                  Conference Data for {conference.name} ({conference.year}):
+                </h4>
+                <div className="text-xs space-y-1">
+                  <div>Conference ID: {conference.id}</div>
+                  <div>Schedules: {schedules.length}</div>
+                  <div>Rooms: {rooms.length}</div>
+                  <div>Tracks: {tracks.length}</div>
+                  <div>Track Sessions: {trackSessions.length}</div>
+                </div>
+                
+                <Button
+                  onClick={handleRefresh}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  disabled={loading}
+                >
+                  {loading ? '🔄 Loading...' : `🔄 Refresh ${conference.year} Data`}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Room Management Tab */}
+        <TabsContent value="rooms">
+          <RoomManagementTab
+            conferenceId={conference.id}
+            rooms={rooms}
+            schedules={schedules}
+            loading={loading}
+            onModalOpen={setActiveModal}
+            onRoomSelect={setSelectedRoom}
+            onRefresh={handleRefresh}
+          />
+        </TabsContent>
+
+        {/* Track Sessions Tab */}
+        <TabsContent value="tracks">
+          <TrackSessionsTab
+            conferenceId={conference.id}
+            trackSessions={trackSessions}
+            tracks={tracks}
+            rooms={rooms}
+            loading={loading}
+            onModalOpen={setActiveModal}
+            onTrackSessionSelect={setSelectedTrackSession}
+            onRefresh={handleRefresh}
+          />
+        </TabsContent>
+
+        {/* Schedule Table Tab */}
+        <TabsContent value="schedule" className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-xl font-semibold">
+                Conference Schedule Table - {conference.year}
+              </CardTitle>
+              <div className="flex items-center space-x-2">
+                <Badge variant="outline" className="text-xs">
+                  {schedules.length} schedules
+                </Badge>
+                <Button
+                  onClick={handleRefresh}
+                  variant="outline"
+                  size="sm"
+                  disabled={loading}
+                >
+                  {loading ? '🔄' : '🔄 Refresh'}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ConferenceScheduleTable
+                conference={conference}
+                schedules={schedules}
+                onScheduleSelect={(schedule) => {
+                  setSelectedSchedule(schedule);
+                  if (schedule.id) {
+                    setActiveModal("edit-schedule");
+                  } else {
+                    setActiveModal("add-schedule");
+                  }
+                }}
+                onScheduleEdit={(schedule) => {
+                  setSelectedSchedule(schedule);
+                  setActiveModal("edit-schedule");
+                }}
+                onScheduleDetail={(schedule) => {
+                  setSelectedSchedule(schedule);
+                  setActiveModal("detail-schedule");
+                }}
+                onRoomEdit={(room) => {
+                  setSelectedRoom(room);
+                  setActiveModal("edit-room");
+                }}
+                onRoomDetail={(room) => {
+                  setSelectedRoom(room);
+                  setActiveModal("detail-room");
+                }}
+                onRefresh={handleRefresh}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* All Modals */}
+      <ConferenceModals
+        activeModal={activeModal}
+        onClose={handleModalClose}
+        conference={conference}
+        selectedSchedule={selectedSchedule}
+        selectedRoom={selectedRoom}
+        selectedTrackSession={selectedTrackSession}
+        onRefresh={handleRefresh}
+        onCreateConference={() => onModalOpen("create-conference")}
+      />
+    </div>
+  );
+}

@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import scheduleService from '@/services/ScheduleService';
 import { ScheduleProcessor, mapUserRoleToConference, findConferenceByType } from '@/utils/scheduleUtils';
-import type { 
-  ProcessedConferenceSchedule, 
-  ScheduleItem, 
+import type {
+  ProcessedConferenceSchedule,
+  ScheduleItem,
   NewScheduleData,
   BackendSchedule,
   UpdateScheduleData,
@@ -54,7 +54,7 @@ export const useSchedule = () => {
       const filteredSchedules = allSchedules.filter(
         schedule => schedule.conference_schedule_id === targetConference.id
       );
-      
+
       setSchedules(filteredSchedules);
 
       // Process conference schedule with filtered schedules
@@ -99,18 +99,34 @@ export const useSchedule = () => {
   };
 };
 
+// Update useScheduleActions untuk return proper response
 export const useScheduleActions = () => {
-  const createSchedule = async (data: NewScheduleData, conferenceId: string): Promise<BackendSchedule | 'success'> => {
-    if (!data.title || !data.date || !data.startTime || !data.endTime) {
-      throw new Error('Missing required fields');
-    }
+  const createSchedule = async (scheduleData: any) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/schedule`,
+        {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify(scheduleData),
+        }
+      );
 
-    const accessToken = await scheduleService.getAccessToken();
-    if (!accessToken) {
-      throw new Error('Access token not available');
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to create schedule');
+      }
 
-    return await scheduleService.createSchedule(accessToken, data, conferenceId);
+      const result = await response.json();
+      // ✅ Return the actual schedule data, not just "success"
+      return result.data; // This should contain the created schedule with ID
+    } catch (error) {
+      throw error;
+    }
   };
 
   const updateSchedule = async (scheduleId: string, data: UpdateScheduleData): Promise<BackendSchedule> => {

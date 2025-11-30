@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { BackendConferenceSchedule, BackendSchedule } from "@/types";
 
 export function useScheduleTableLogic(
@@ -11,21 +10,26 @@ export function useScheduleTableLogic(
   const schedulesByDay = useMemo(() => {
     const grouped: Record<string, BackendSchedule[]> = {};
     const startDate = new Date(conference.start_date);
-    const endDate = new Date(conference. end_date);
+    const endDate = new Date(conference.end_date);
     const daysList: string[] = [];
 
-    for (
-      let d = new Date(startDate);
-      d <= endDate;
-      d.setDate(d.getDate() + 1)
-    ) {
-      const dateStr = d.toISOString().split("T")[0];
+    // Helper that returns a UTC date key 'YYYY-MM-DD' to avoid local timezone shifts
+    const toUtcDateKey = (d: Date | string) => {
+      const dt = typeof d === 'string' ? new Date(d) : d;
+      const y = dt.getUTCFullYear();
+      const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(dt.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    for (let d = new Date(startDate); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
+      const dateStr = toUtcDateKey(d);
       daysList.push(dateStr);
       grouped[dateStr] = [];
     }
 
-    schedules. forEach((schedule) => {
-      const date = new Date(schedule.date). toISOString().split("T")[0];
+    schedules.forEach((schedule) => {
+      const date = toUtcDateKey(schedule.date);
       if (grouped[date]) {
         grouped[date].push(schedule);
       }
@@ -40,7 +44,7 @@ export function useScheduleTableLogic(
     });
 
     return { grouped, daysList };
-  }, [schedules, conference. start_date, conference.end_date]);
+  }, [schedules, conference.start_date, conference.end_date]);
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Settings } from "lucide-react";
 import type { BackendSchedule } from "@/types";
 
 interface Props {
@@ -7,8 +7,7 @@ interface Props {
   grouped: Record<string, BackendSchedule[]>;
   selectedDay: string;
   onDaySelect: (day: string) => void;
-  onAddDay: () => void;
-  onAddTimeSlot: () => void;
+  onManageDays: () => void;
   formatDate: (dateStr: string) => string;
   getDayNumber: (dateStr: string) => number;
 }
@@ -18,8 +17,7 @@ export default function ConferenceDayTabs({
   grouped,
   selectedDay,
   onDaySelect,
-  onAddDay,
-  onAddTimeSlot,
+  onManageDays,
   formatDate,
   getDayNumber,
 }: Props) {
@@ -27,25 +25,15 @@ export default function ConferenceDayTabs({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Conference Days</h3>
-        <div className="flex space-x-2">
-          <Button
-            onClick={onAddDay}
-            size="sm"
-            variant="outline"
-            className="text-purple-600 border-purple-300 hover:bg-purple-50"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Day
-          </Button>
-          <Button
-            onClick={onAddTimeSlot}
-            size="sm"
-            className="bg-green-600 hover:bg-green-700 text-sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Time Slot
-          </Button>
-        </div>
+        <Button
+          onClick={onManageDays}
+          size="sm"
+          variant="outline"
+          className="text-blue-600 border-blue-300 hover:bg-blue-50"
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          Manage Days
+        </Button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2">
@@ -78,7 +66,7 @@ export default function ConferenceDayTabs({
                 </div>
                 <div
                   className={`text-xs ${
-                    isSelected ? "text-gray-200" : "text-gray-600"
+                    isSelected ?  "text-gray-200" : "text-gray-600"
                   }`}
                 >
                   {new Date(day).toLocaleDateString("en-US", {
@@ -105,15 +93,6 @@ export default function ConferenceDayTabs({
             </button>
           );
         })}
-
-        {/* Add Day Button */}
-        <button
-          onClick={onAddDay}
-          className="flex-shrink-0 w-24 h-20 rounded-lg border-2 border-dashed border-purple-300 text-purple-600 hover:border-purple-500 hover:bg-purple-50 transition-all duration-200 flex flex-col items-center justify-center"
-        >
-          <Plus className="w-6 h-6 mb-1" />
-          <span className="text-xs font-medium">Add Day</span>
-        </button>
       </div>
     </div>
   );

@@ -1,315 +1,343 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useScheduleActions } from '@/hooks/useSchedule';
-import { useRoomActions } from '@/hooks/useRoom';
-import { useTrackOptions } from '@/hooks/useTrack';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Clock, MapPin, User, FileText, Plus } from 'lucide-react';
-import { toast } from 'react-hot-toast';
-import type { NewScheduleData } from '@/types/schedule';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { toast } from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   conferenceId: string;
+  onSuccess?: () => void;
 }
 
-export default function AddScheduleModal({ isOpen, onClose, conferenceId }: Props) {
-  const [formData, setFormData] = useState<NewScheduleData>({
-    title: '',
-    conference: 'ICICYTA',
-    date: '',
-    startTime: '',
-    endTime: '',
-    speaker: '',
-    description: '',
-    location: '',
-    scheduleType: 'TALK'
-  });
-  const [createRoom, setCreateRoom] = useState(true);
+interface ScheduleFormData {
+  date: string;
+  startTime: string;
+  endTime: string;
+  type: string;
+  notes: string;
+  createMainRoom: boolean;
+  mainRoomDescription: string;
+}
+
+export default function AddScheduleModal({ 
+  isOpen, 
+  onClose, 
+  conferenceId,
+  onSuccess 
+}: Props) {
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<ScheduleFormData>({
+    date: "",
+    startTime: "",
+    endTime: "",
+    type: "TALK",
+    notes: "",
+    createMainRoom: true,
+    mainRoomDescription: "",
+  });
 
-  const { createSchedule } = useScheduleActions();
-  const { createRoom: createRoomAction } = useRoomActions();
-  const { trackOptions } = useTrackOptions();
+  const handleInputChange = (field: keyof ScheduleFormData, value: string | boolean) => {
+    setFormData(prev => ({
+      ... prev,
+      [field]: value
+    }));
+  };
 
-  const scheduleTypes = [
-    { value: 'TALK', label: 'Talk/Speech', icon: '🎤' },
-    { value: 'BREAK', label: 'Break', icon: '☕' },
-    { value: 'ONE_DAY_ACTIVITY', label: 'Activity/Workshop', icon: '🏃' },
-    { value: 'PANEL', label: 'Panel Discussion', icon: '👥' },
-    { value: 'REPORTING', label: 'Reporting', icon: '📊' }
-  ];
+  // CREATE SCHEDULE API
+  const createSchedule = async (scheduleData: any) => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${process.env.  NEXT_PUBLIC_API_BASE_URL}/api/v1/schedule`,
+      {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(scheduleData),
+      }
+    );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (!  response.ok) {
+      const errorText = await response.  text();
+      throw new Error(errorText || 'Failed to create schedule');
+    }
+
+    const result = await response.json();
+    return result. data;
+  };
+
+  // CREATE ROOM API
+  const createRoom = async (roomData: any) => {
+    const token = localStorage.getItem('accessToken');
+    
+    const response = await fetch(
+      `${process.env. NEXT_PUBLIC_API_BASE_URL}/api/v1/room`,
+      {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.  stringify(roomData),
+      }
+    );
+
+    if (! response.  ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to create room');
+    }
+
+    const result = await response.json();
+    return result. data;
+  };
+
+  const handleSubmit = async () => {
+    // Validation
+    if (!formData.date || !formData.startTime || !formData.endTime) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (formData.startTime >= formData.endTime) {
+      toast.error("Start time must be before end time");
+      return;
+    }
+
     setLoading(true);
-
     try {
-      // Validate required fields
-      if (!formData.title.trim()) {
-        toast.error('Title is required');
-        return;
-      }
-
-      if (!formData.date) {
-        toast.error('Date is required');
-        return;
-      }
-
-      if (!formData.startTime || !formData.endTime) {
-        toast.error('Start time and end time are required');
-        return;
-      }
-
-      if (formData.startTime >= formData.endTime) {
-        toast.error('Start time must be before end time');
-        return;
-      }
-
-      // Create schedule
-      const result = await createSchedule(formData, conferenceId);
+      console.log('🔍 Creating schedule for conference:', conferenceId);
       
-      // Create room if needed and schedule creation was successful
-      if (createRoom && result !== 'success' && typeof result === 'object' && result.id) {
-        try {
-          await createRoomAction({
-            name: formData.title,
-            description: formData.speaker ? `Moderator: ${formData.speaker}` : formData.description,
-            type: formData.scheduleType === 'PANEL' ? 'PARALLEL' : 'MAIN',
-            onlineMeetingUrl: formData.location?.startsWith('http') ? formData.location : undefined,
-            scheduleId: result.id,
-            startTime: '',
-            endTime: ''
-          });
-        } catch (roomError) {
-        }
-      }
+      // Step 1: Create Schedule
+      const schedulePayload = {
+        date: formData.date,
+        start_time: formData.startTime,
+        end_time: formData.endTime,
+        type: formData.type,
+        notes: formData.notes || "",
+        conference_schedule_id: conferenceId,
+      };
+      
+      console.log('🔍 SCHEDULE PAYLOAD:', schedulePayload);
+      const scheduleResponse = await createSchedule(schedulePayload);
+      console.log('✅ SCHEDULE CREATED:', scheduleResponse);
 
-      toast.success('Schedule created successfully!');
+      // Step 2: Create Main Room (if enabled)
+      if (formData. createMainRoom && scheduleResponse?.id) {
+        const roomPayload = {
+          name: "Main Room",
+          identifier: null,
+          description: formData. mainRoomDescription || formData.notes || "Main Session",
+          type: "MAIN",
+          online_meeting_url: null,
+          schedule_id: scheduleResponse.id,
+        };
+        
+        console.log('🔍 CREATING MAIN ROOM:', roomPayload);
+        const roomResponse = await createRoom(roomPayload);
+        console.log('✅ MAIN ROOM CREATED:', roomResponse);
+      }
+      
+      toast.success("Schedule and main room created successfully!");
+      
+      // Reset form
+      setFormData({
+        date: "",
+        startTime: "",
+        endTime: "",
+        type: "TALK",
+        notes: "",
+        createMainRoom: true,
+        mainRoomDescription: "",
+      });
+
+      // ✅ FORCE REFRESH - Wait a bit then trigger refresh
+      setTimeout(() => {
+        console.log('🔄 Triggering data refresh...');
+        onSuccess?.();
+      }, 100);
+
       onClose();
       
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create schedule');
+      console.error('❌ FULL ERROR:', error);
+      
+      let errorMessage = "Failed to create";
+      
+      if (error?.message) {
+        try {
+          const errorData = JSON.parse(error.message);
+          if (errorData.errors?. validation) {
+            const validations = errorData.errors.  validation;
+            const messages = Object.keys(validations).map(
+              (field) => `${field}: ${validations[field]. join(", ")}`
+            );
+            errorMessage = `Validation Error: ${messages.  join(" | ")}`;
+          } else {
+            errorMessage = errorData.message || errorMessage;
+          }
+        } catch (e) {
+          errorMessage = error.  message;
+        }
+      }
+      
+      toast.error(errorMessage, { duration: 10000 });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (field: keyof NewScheduleData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center text-xl">
+          <DialogTitle className="flex items-center">
             <Plus className="w-5 h-5 mr-2 text-blue-600" />
-            Add New Schedule Item
+            Add New Schedule
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-              <FileText className="w-4 h-4" />
-              <span>Basic Information</span>
-            </div>
+        <div className="space-y-4">
+          {/* Date */}
+          <div>
+            <Label htmlFor="date">Date *</Label>
+            <Input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => handleInputChange('date', e.target.value)}
+            />
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label htmlFor="title">Title *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="e.g., Opening Speech by Rector"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="scheduleType">Type *</Label>
-                <Select value={formData.scheduleType} onValueChange={(value) => handleInputChange('scheduleType', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select schedule type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {scheduleTypes.map(type => (
-                      <SelectItem key={type.value} value={type.value}>
-                        <span className="flex items-center">
-                          <span className="mr-2">{type.icon}</span>
-                          {type.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="conference">Conference</Label>
-                <Select value={formData.conference} onValueChange={(value) => handleInputChange('conference', value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ICICYTA">ICICyTA</SelectItem>
-                    <SelectItem value="ICODSA">ICODSA</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
+          {/* Time Range */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Optional description or notes"
-                rows={3}
+              <Label htmlFor="startTime">Start Time *</Label>
+              <Input
+                id="startTime"
+                type="time"
+                value={formData.startTime}
+                onChange={(e) => handleInputChange('startTime', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="endTime">End Time *</Label>
+              <Input
+                id="endTime"
+                type="time"
+                value={formData.endTime}
+                onChange={(e) => handleInputChange('endTime', e.target.value)}
               />
             </div>
           </div>
 
-          {/* Date and Time */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-              <CalendarDays className="w-4 h-4" />
-              <span>Date & Time</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="date">Date *</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => handleInputChange('date', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="startTime">Start Time *</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) => handleInputChange('startTime', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="endTime">End Time *</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => handleInputChange('endTime', e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            {formData.startTime && formData.endTime && formData.startTime < formData.endTime && (
-              <div className="text-sm text-gray-600">
-                <Clock className="w-4 h-4 inline mr-1" />
-                Duration: {calculateDuration(formData.startTime, formData.endTime)}
-              </div>
-            )}
+          {/* Type */}
+          <div>
+            <Label>Schedule Type</Label>
+            <Select value={formData.  type} onValueChange={(value) => handleInputChange('type', value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TALK">Talk/Presentation</SelectItem>
+                <SelectItem value="BREAK">Break</SelectItem>
+                <SelectItem value="KEYNOTE">Keynote</SelectItem>
+                <SelectItem value="PANEL">Panel Discussion</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Speaker and Location */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-              <User className="w-4 h-4" />
-              <span>Speaker & Location</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="speaker">Speaker/Moderator</Label>
-                <Input
-                  id="speaker"
-                  value={formData.speaker}
-                  onChange={(e) => handleInputChange('speaker', e.target.value)}
-                  placeholder="e.g., Prof. Dr. John Doe"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="location">Location/Online Link</Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  placeholder="Room name or Zoom link"
-                />
-              </div>
-            </div>
+          {/* Notes */}
+          <div>
+            <Label htmlFor="notes">Notes/Description</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.  target.value)}
+              placeholder="e.g., Opening Keynote, Coffee Break, etc."
+              rows={2}
+            />
           </div>
 
-          {/* Room Creation Option */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-              <MapPin className="w-4 h-4" />
-              <span>Room Management</span>
-            </div>
-
-            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+          {/* Main Room Creation */}
+          <div className="bg-blue-50 border border-blue-200 rounded p-3">
+            <div className="flex items-start space-x-3">
               <input
                 type="checkbox"
-                id="createRoom"
-                checked={createRoom}
-                onChange={(e) => setCreateRoom(e.target.checked)}
-                className="rounded border-gray-300"
+                id="createMainRoom"
+                checked={formData.createMainRoom}
+                onChange={(e) => handleInputChange('createMainRoom', e.  target.checked)}
+                className="mt-0.5"
               />
-              <div>
-                <Label htmlFor="createRoom" className="font-medium cursor-pointer">
-                  Create room automatically
+              <div className="flex-1">
+                <Label htmlFor="createMainRoom" className="text-sm font-medium">
+                  Create Main Room
                 </Label>
-                <p className="text-xs text-gray-600 mt-1">
-                  This will create a room entry for this schedule with the speaker as moderator
+                <p className="text-xs text-blue-600 mt-1">
+                  Automatically create a main room for this time slot.     
+                  You can add parallel sessions (Room A, B, C) afterward.
                 </p>
+                
+                {formData.createMainRoom && (
+                  <div className="mt-2">
+                    <Input
+                      placeholder="Main room description (optional)"
+                      value={formData.mainRoomDescription}
+                      onChange={(e) => handleInputChange('mainRoomDescription', e.target.  value)}
+                      className="text-xs"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Schedule'}
-            </Button>
-          </DialogFooter>
-        </form>
+          {/* Preview */}
+          {formData.date && formData.  startTime && formData.endTime && (
+            <div className="bg-gray-50 border border-gray-200 rounded p-3">
+              <h4 className="font-medium text-sm mb-2">Preview:</h4>
+              <div className="text-sm space-y-1">
+                <div><strong>Date:</strong> {new Date(formData.date).  toLocaleDateString()}</div>
+                <div><strong>Time:</strong> {formData.startTime} - {formData.endTime}</div>
+                <div><strong>Type:</strong> {formData.type}</div>
+                {formData.notes && <div><strong>Notes:</strong> {formData.notes}</div>}
+                {formData.createMainRoom && (
+                  <div className="text-blue-600 text-xs mt-2">
+                    ✓ Will create main room for this time slot
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={loading || !formData.date || !formData.startTime || !formData.endTime}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {loading ? "Creating..." : "Create Schedule"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
-
-function calculateDuration(startTime: string, endTime: string): string {
-  const start = new Date(`2000-01-01T${startTime}`);
-  const end = new Date(`2000-01-01T${endTime}`);
-  const diff = end.getTime() - start.getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return `${hours}h ${minutes}m`;
 }
