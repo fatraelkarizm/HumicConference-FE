@@ -9,10 +9,10 @@ export interface CreateRoomPayload {
   description?: string;
   type: "MAIN" | "PARALLEL";
   online_meeting_url?: string | null;
-  start_time?: string;
-  end_time?: string;
+  startTime?: string;
+  endTime?: string;
   scheduleId: string; // ✅ Fix property name
-  track_id?: string | null;
+  track?: any;
 }
 
 export const useRoom = (scheduleId?: string) => {
@@ -73,10 +73,10 @@ export const useRoomActions = () => {
         description: roomData.description,
         type: roomData.type,
         online_meeting_url: roomData.online_meeting_url,
-        start_time: roomData.start_time,
-        end_time: roomData.end_time,
+        start_time: roomData.startTime,
+        end_time: roomData.endTime,
         schedule_id: roomData.scheduleId, // ✅ Map to backend field name
-        track_id: roomData.track_id,
+        track: (roomData as any).track,
       };
 
       const response = await fetch(

@@ -42,27 +42,6 @@ export default function ICICyTAAdminPage() {
     setActiveModal(null);
   };
 
-  // ✅ Debug Token Function
-  const debugToken = () => {
-    const token = localStorage.getItem('accessToken');
-    console.log('🔍 Token Debug:');
-    console.log('- Token exists:', token ?  'YES' : 'NO');
-    
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('- Role:', payload.role);
-        console.log('- User ID:', payload.id);
-        console.log('- Exp:', new Date(payload.exp * 1000));
-        console.log('- Expired:', payload.exp * 1000 < Date.now());
-        console.log('- Conference:', selectedConference?.name);
-        console.log('- Conference Type:', selectedConference?.type);
-      } catch (e) {
-        console.log('- Invalid token format');
-      }
-    }
-  };
-
   // Loading state
   if (confLoading) {
     return (
@@ -139,36 +118,7 @@ export default function ICICyTAAdminPage() {
               
               {/* ✅ Simple Action Buttons - No Delete */}
               <div className="flex items-center space-x-2">
-                {/* Debug Token in Development */}
-                {process.env.NODE_ENV === 'development' && (
-                  <Button
-                    onClick={debugToken}
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs"
-                  >
-                    Debug Token
-                  </Button>
-                )}
-                
-                <Button
-                  onClick={() => setActiveModal("create-conference")}
-                  variant="outline"
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Conference
-                </Button>
-                
-                {selectedConference && (
-                  <Button
-                    onClick={() => setActiveModal("add-schedule")}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Schedule
-                  </Button>
-                )}
+                {/* No buttons needed */}
               </div>
             </div>
           </div>

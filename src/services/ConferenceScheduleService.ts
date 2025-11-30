@@ -112,8 +112,8 @@ class ConferenceScheduleService {
     if (data.name) updatePayload.name = data.name;
     if (data.description) updatePayload.description = data.description;
     if (data.year) updatePayload.year = data.year;
-    if (data.startDate) updatePayload.start_date = data.startDate;
-    if (data.endDate) updatePayload.end_date = data.endDate;
+    if (data.startDate) updatePayload.start_date = new Date(data.startDate + 'T00:00:00').toISOString().split('T')[0];
+    if (data.endDate) updatePayload.end_date = new Date(data.endDate + 'T00:00:00').toISOString().split('T')[0];
     if (data.type) updatePayload.type = data.type;
     if (data.contactEmail) updatePayload.contact_email = data.contactEmail;
     if (data.timezoneIana) updatePayload.timezone_iana = data.timezoneIana;

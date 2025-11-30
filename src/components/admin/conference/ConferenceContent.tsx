@@ -20,21 +20,19 @@ interface Props {
   onRefresh: () => void;
 }
 
-export default function ConferenceContent({ conference, onModalOpen, onRefresh }: Props) {
+export default function ConferenceContent({
+  conference,
+  onModalOpen,
+  onRefresh,
+}: Props) {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [selectedTrackSession, setSelectedTrackSession] = useState<any>(null);
 
   // Get data for this conference
-  const {
-    schedules,
-    rooms,
-    tracks,
-    trackSessions,
-    loading,
-    refetchAll
-  } = useConferenceTabsData(conference.id);
+  const { schedules, rooms, tracks, trackSessions, loading, refetchAll } =
+    useConferenceTabsData(conference);
 
   const handleModalClose = () => {
     setActiveModal(null);
@@ -45,20 +43,22 @@ export default function ConferenceContent({ conference, onModalOpen, onRefresh }
 
   // ✅ Enhanced refresh function with delay
   const handleRefresh = async () => {
-    console.log(`🔄 Refreshing data for ${conference.name} (${conference. year})`);
-    
+    console.log(
+      `🔄 Refreshing data for ${conference.name} (${conference.year})`
+    );
+
     // ✅ Show loading toast
-    const toastId = toast.loading('Refreshing conference data...');
-    
+    const toastId = toast.loading("Refreshing conference data...");
+
     try {
       await refetchAll();
       onRefresh();
-      
-      toast.success('Data refreshed successfully! ', { id: toastId });
-      console.log('✅ Conference data refreshed');
+
+      toast.success("Data refreshed successfully! ", { id: toastId });
+      console.log("✅ Conference data refreshed");
     } catch (error) {
-      console.error('❌ Refresh error:', error);
-      toast.error('Failed to refresh data', { id: toastId });
+      console.error("❌ Refresh error:", error);
+      toast.error("Failed to refresh data", { id: toastId });
     }
   };
 
@@ -76,19 +76,10 @@ export default function ConferenceContent({ conference, onModalOpen, onRefresh }
         <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">
-                  <Settings className="w-5 h-5 mr-2" />
-                  Conference Overview
-                </CardTitle>
-                <Button
-                  onClick={() => setActiveModal("create-conference")}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Conference
-                </Button>
-              </div>
+              <CardTitle className="flex items-center">
+                <Settings className="w-5 h-5 mr-2" />
+                Conference Overview
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -101,7 +92,10 @@ export default function ConferenceContent({ conference, onModalOpen, onRefresh }
                     </div>
                     <div>
                       <span className="font-medium">Type:</span>{" "}
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 ml-2">
+                      <Badge
+                        variant="outline"
+                        className="bg-blue-50 text-blue-700 ml-2"
+                      >
                         {conference.type}
                       </Badge>
                     </div>
@@ -111,7 +105,11 @@ export default function ConferenceContent({ conference, onModalOpen, onRefresh }
                     </div>
                     <div>
                       <span className="font-medium">Timezone:</span>{" "}
-                      {conference.  timezone_iana}
+                      {conference.timezone_iana}
+                    </div>
+                    <div>
+                      <span className="font-medium">Track Sessions:</span>{" "}
+                      {trackSessions.length}
                     </div>
                   </div>
                 </div>
@@ -126,32 +124,19 @@ export default function ConferenceContent({ conference, onModalOpen, onRefresh }
                       <span className="font-medium">Online:</span>{" "}
                       {conference.online_presentation}
                     </div>
+                    <div>
+                      <span className="font-medium">Schedules:</span>{" "}
+                      {schedules.length}
+                    </div>
+                    <div>
+                      <span className="font-medium">Room:</span> {rooms.length}
+                    </div>
+                    <div>
+                      <span className="font-medium">Track:</span>{" "}
+                      {tracks.length}
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* Debug info */}
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
-                <h4 className="font-medium text-sm mb-2">
-                  Conference Data for {conference.name} ({conference.year}):
-                </h4>
-                <div className="text-xs space-y-1">
-                  <div>Conference ID: {conference.id}</div>
-                  <div>Schedules: {schedules.length}</div>
-                  <div>Rooms: {rooms.length}</div>
-                  <div>Tracks: {tracks.length}</div>
-                  <div>Track Sessions: {trackSessions.length}</div>
-                </div>
-                
-                <Button
-                  onClick={handleRefresh}
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  disabled={loading}
-                >
-                  {loading ? '🔄 Loading...' : `🔄 Refresh ${conference.year} Data`}
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -195,14 +180,6 @@ export default function ConferenceContent({ conference, onModalOpen, onRefresh }
                 <Badge variant="outline" className="text-xs">
                   {schedules.length} schedules
                 </Badge>
-                <Button
-                  onClick={handleRefresh}
-                  variant="outline"
-                  size="sm"
-                  disabled={loading}
-                >
-                  {loading ? '🔄' : '🔄 Refresh'}
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -248,6 +225,7 @@ export default function ConferenceContent({ conference, onModalOpen, onRefresh }
         selectedSchedule={selectedSchedule}
         selectedRoom={selectedRoom}
         selectedTrackSession={selectedTrackSession}
+        tracks={tracks}
         onRefresh={handleRefresh}
         onCreateConference={() => onModalOpen("create-conference")}
       />

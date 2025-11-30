@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,7 @@ interface Props {
   onClose: () => void;
   conferenceId: string;
   onSuccess?: () => void;
+  initialDate?: string;
 }
 
 interface ScheduleFormData {
@@ -37,11 +38,12 @@ export default function AddScheduleModal({
   isOpen, 
   onClose, 
   conferenceId,
-  onSuccess 
+  onSuccess,
+  initialDate
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ScheduleFormData>({
-    date: "",
+    date: initialDate || "",
     startTime: "",
     endTime: "",
     type: "TALK",
@@ -49,6 +51,16 @@ export default function AddScheduleModal({
     createMainRoom: true,
     mainRoomDescription: "",
   });
+
+  // Update date when initialDate changes
+  useEffect(() => {
+    if (initialDate) {
+      setFormData(prev => ({
+        ...prev,
+        date: initialDate
+      }));
+    }
+  }, [initialDate]);
 
   const handleInputChange = (field: keyof ScheduleFormData, value: string | boolean) => {
     setFormData(prev => ({
@@ -203,7 +215,7 @@ export default function AddScheduleModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Plus className="w-5 h-5 mr-2 text-blue-600" />
@@ -220,6 +232,7 @@ export default function AddScheduleModal({
               type="date"
               value={formData.date}
               onChange={(e) => handleInputChange('date', e.target.value)}
+              disabled={!!initialDate}
             />
           </div>
 

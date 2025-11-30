@@ -16,7 +16,7 @@ import EditTrackSessionModal from "@/components/trackSession/EditTrackSessionMod
 import DetailTrackSessionModal from "@/components/trackSession/DetailTrackSessionModal";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 
-import type { BackendConferenceSchedule } from "@/types";
+import type { BackendConferenceSchedule, BackendTrack } from "@/types";
 
 interface Props {
   activeModal: string | null;
@@ -25,6 +25,7 @@ interface Props {
   selectedSchedule: any;
   selectedRoom: any;
   selectedTrackSession: any;
+  tracks: BackendTrack[];
   onRefresh: () => void;
   onCreateConference: () => void;
 }
@@ -36,6 +37,7 @@ export default function ConferenceModals({
   selectedSchedule,
   selectedRoom,
   selectedTrackSession,
+  tracks,
   onRefresh,
   onCreateConference,
 }: Props) {
@@ -141,7 +143,7 @@ export default function ConferenceModals({
 
       {/* Track Session Modals */}
       {activeModal === "add-track-session" && (
-        <AddTrackSessionModal isOpen={true} onClose={onClose} />
+        <AddTrackSessionModal isOpen={true} onClose={onClose} conference={conference} tracks={tracks} />
       )}
 
       {activeModal === "edit-track-session" && selectedTrackSession && (

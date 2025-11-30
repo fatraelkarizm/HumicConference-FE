@@ -215,10 +215,40 @@ export default function ScheduleTable({
             </thead>
             <tbody>
               {schedules.map((schedule, index) => {
-                const spanning = isSpanningSchedule(schedule);
+                const isBreak = schedule.type === 'BREAK';
                 const mainRoom = currentDayRooms.find(
                   (r) => r.type === "MAIN" && r.schedule_id === schedule.id
                 ) || null;
+
+                if (isBreak) {
+                  // Render break as spanning from main room to room E
+                  return (
+                    <tr
+                      key={schedule.id}
+                      className="border-b border-gray-200 hover:bg-gray-50"
+                    >
+                      {/* Time Columns */}
+                      <td 
+                        className="py-4 px-3 border-r border-gray-200 font-mono text-sm"
+                      >
+                        {formatTime(schedule.start_time)}
+                      </td>
+                      <td className="py-4 px-3 border-r border-gray-200 font-mono text-sm">
+                        {formatTime(schedule.end_time)}
+                      </td>
+
+                      {/* Main Room and spanning to room E */}
+                      <td colSpan={1 + roomColumnsForDay.length} className="py-4 px-4 text-center bg-yellow-50 border-r border-gray-200">
+                        <div className="font-medium text-sm">
+                          {schedule.notes || "Break"}
+                        </div>
+                        <Badge variant="outline" className="text-xs bg-yellow-100 mt-1">
+                          BREAK
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                }
 
                 return (
                   <tr
@@ -228,7 +258,10 @@ export default function ScheduleTable({
                     }`}
                   >
                     {/* Time Columns */}
-                    <td className="py-4 px-3 border-r border-gray-200 font-mono text-sm">
+                    <td 
+                      className="py-4 px-3 border-r border-gray-200 font-mono text-sm cursor-pointer hover:bg-blue-50 transition-colors"
+                      onClick={() => onAddSchedule()}
+                    >
                       {formatTime(schedule.start_time)}
                     </td>
                     <td className="py-4 px-3 border-r border-gray-200 font-mono text-sm">
@@ -296,22 +329,6 @@ export default function ScheduleTable({
 
                     {/* Room Columns */}
                     {roomColumnsForDay.map((roomColumn, roomIndex) => {
-                      if (spanning && roomIndex === 0) {
-                        return (
-                          <td
-                            key={roomColumn.id}
-                            colSpan={roomColumnsForDay.length}
-                            className="py-4 px-4 text-center align-middle"
-                          >
-                            <div className="font-medium text-sm">
-                              {schedule.notes || "Break"}
-                            </div>
-                          </td>
-                        );
-                      } else if (spanning && roomIndex > 0) {
-                        return null;
-                      }
-
                       const roomContent = getRoomContentForColumn(roomColumn.id, schedule);
 
                       return (
@@ -322,7 +339,7 @@ export default function ScheduleTable({
                               ? "border-r border-gray-200"
                               : ""
                           } align-top cursor-pointer hover:bg-blue-50 transition-colors`}
-                          onClick={() => ! roomContent && onRoomCellClick(roomColumn.id, schedule)}
+                          onClick={() => onRoomCellClick(roomColumn.id, schedule)}
                         >
                           <div className="min-h-[60px] group">
                             {roomContent || (
@@ -373,20 +390,10 @@ export default function ScheduleTable({
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-lg mx-auto">
                         <div className="text-sm font-medium text-blue-800 mb-2">Getting Started:</div>
                         <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
-                          <li>Click "Add First Schedule" to create a time slot</li>
-                          <li>This creates the main room for that time</li>
+                          <li>Add a time slot to create the main room for that time</li>
                           <li>Then click on Room A, B, C cells to add parallel sessions</li>
                         </ol>
                       </div>
-                      
-                      <Button
-                        onClick={onAddSchedule}
-                        className="bg-blue-600 text-white hover:bg-blue-700"
-                        size="lg"
-                      >
-                        <Plus className="w-5 h-5 mr-2" />
-                        Add First Schedule
-                      </Button>
                     </div>
                   </td>
                 </tr>

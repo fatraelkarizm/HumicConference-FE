@@ -4,7 +4,8 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Plus, Clock, MoreHorizontal, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Users, Plus, Clock, MoreHorizontal, Trash2, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +35,16 @@ export default function TrackSessionsTab({
   onTrackSessionSelect,
   onRefresh,
 }: Props) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Filter tracks based on search term
+  const filteredTracks = useMemo(() => {
+    if (!searchTerm) return tracks;
+    return tracks.filter(track =>
+      track.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      track.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [tracks, searchTerm]);
 
   if (loading) {
     return (
@@ -71,6 +82,18 @@ export default function TrackSessionsTab({
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Search Bar */}
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search tracks by name or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
         {trackSessions.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -85,7 +108,7 @@ export default function TrackSessionsTab({
           </div>
         ) : (
           <div className="space-y-6">
-            {tracks.map((track) => {
+            {filteredTracks.map((track) => {
               const trackFilteredSessions = trackSessions. filter(
                 (session) => session.track_id === track. id
               );

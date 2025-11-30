@@ -44,7 +44,7 @@ export default function ManageDaysModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Settings className="w-5 h-5 mr-2 text-blue-600" />
@@ -107,23 +107,30 @@ export default function ManageDaysModal({
                         <Eye className="w-4 h-4" />
                       </Button>
                       
-                      {isLastDay && ! hasSchedules && daysList.length > 1 && (
+                      {!hasSchedules && daysList.length > 1 && (
                         <Button
                           onClick={async () => {
                             setLoading(true);
                             try {
-                              const newEndDate = new Date(conference.end_date);
-                              newEndDate.setDate(newEndDate.getDate() - 1);
+                              const dayIndex = daysList.indexOf(day);
+                              
+                              // Set end date to the previous day's date
+                              const newEndDate = daysList[dayIndex - 1];
+                              
+                              if (!newEndDate) {
+                                toast.error("Cannot delete the first day");
+                                return;
+                              }
                               
                               await updateConferenceEndDate(
                                 conference.id, 
-                                newEndDate. toISOString().split("T")[0]
+                                newEndDate
                               );
 
-                              toast.success(`Day ${getDayNumber(day)} deleted successfully! `);
+                              toast.success(`Day ${getDayNumber(day)} deleted successfully!`);
                               
                               if (selectedDay === day) {
-                                setSelectedDay(daysList[daysList.length - 2] || daysList[0] || "");
+                                setSelectedDay(daysList[dayIndex - 1] || daysList[0] || "");
                               }
                               
                               onRefresh?.();

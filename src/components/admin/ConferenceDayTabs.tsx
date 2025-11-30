@@ -8,6 +8,8 @@ interface Props {
   selectedDay: string;
   onDaySelect: (day: string) => void;
   onManageDays: () => void;
+  onManageRooms: () => void;
+  onManageSchedules: () => void;
   formatDate: (dateStr: string) => string;
   getDayNumber: (dateStr: string) => number;
 }
@@ -18,6 +20,8 @@ export default function ConferenceDayTabs({
   selectedDay,
   onDaySelect,
   onManageDays,
+  onManageRooms,
+  onManageSchedules,
   formatDate,
   getDayNumber,
 }: Props) {
@@ -25,15 +29,35 @@ export default function ConferenceDayTabs({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Conference Days</h3>
-        <Button
-          onClick={onManageDays}
-          size="sm"
-          variant="outline"
-          className="text-blue-600 border-blue-300 hover:bg-blue-50"
-        >
-          <Settings className="w-4 h-4 mr-2" />
-          Manage Days
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={onManageSchedules}
+            size="sm"
+            variant="outline"
+            className="text-purple-600 border-purple-300 hover:bg-purple-50"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Manage Schedules
+          </Button>
+          <Button
+            onClick={onManageRooms}
+            size="sm"
+            variant="outline"
+            className="text-green-600 border-green-300 hover:bg-green-50"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Manage Rooms
+          </Button>
+          <Button
+            onClick={onManageDays}
+            size="sm"
+            variant="outline"
+            className="text-blue-600 border-blue-300 hover:bg-blue-50"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Manage Days
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2">

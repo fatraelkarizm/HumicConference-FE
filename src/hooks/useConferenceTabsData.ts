@@ -3,48 +3,28 @@ import { useRoom } from "@/hooks/useRoom";
 import { useTrack } from "@/hooks/useTrack";
 import { useTrackSession } from "@/hooks/useTrackSession";
 import { useMemo } from "react";
+import type { BackendConferenceSchedule } from "@/types";
 
-export function useConferenceTabsData(conferenceId: string) {
+export function useConferenceTabsData(conference: BackendConferenceSchedule) {
   // Fetch all data
   const { schedules, loading: scheduleLoading, refetch: refetchSchedules } = useSchedule();
   const { rooms, loading: roomsLoading, refetch: refetchRooms } = useRoom();
   const { tracks, loading: tracksLoading, refetch: refetchTracks } = useTrack();
   const { trackSessions, loading: trackSessionsLoading, refetch: refetchTrackSessions } = useTrackSession();
 
-  // Debug logging
-  console.log('🔍 useConferenceTabsData Dynamic Debug:');
-  console.log('- Conference ID:', conferenceId);
-  console.log('- Total schedules:', schedules.length);
-  console.log('- Total rooms:', rooms.length);
-
-  // ✅ Filter schedules for this conference with better logging
+  // ✅ Combine nested schedules from conference and global filtered schedules
   const conferenceSchedules = useMemo(() => {
-    const filtered = schedules.filter(schedule => {
-      const matches = schedule.conference_schedule_id === conferenceId;
-      return matches;
-    });
+    const nestedSchedules = conference.schedules && Array.isArray(conference.schedules) ? conference.schedules : [];
+    const globalFiltered = schedules.filter(schedule => schedule.conference_schedule_id === conference.id);
     
-    console.log(`✅ Conference ${conferenceId} has ${filtered.length} schedules`);
+    // Combine and deduplicate by id
+    const allSchedules = [...nestedSchedules, ...globalFiltered];
+    const uniqueSchedules = allSchedules.filter((schedule, index, self) => 
+      index === self.findIndex(s => s.id === schedule.id)
+    );
     
-    // ✅ Log detailed schedule info
-    if (filtered.length > 0) {
-      console.log('✅ Conference schedules:', filtered. map(s => ({
-        id: s.id,
-        date: s.date,
-        time: `${s.start_time}-${s.end_time}`,
-        notes: s.notes,
-        hasRooms: (s as any).rooms ?  (s as any).rooms.length : 0
-      })));
-    }
-    
-    if (filtered.length === 0) {
-      console.log(`⚠️ No schedules found for conference ${conferenceId}`);
-      console.log('Available conference_schedule_ids in data:', 
-        [... new Set(schedules.map(s => s.conference_schedule_id))]);
-    }
-    
-    return filtered;
-  }, [schedules, conferenceId]);
+    return uniqueSchedules;
+  }, [conference, schedules]);
 
   // ✅ Enhanced room filtering - include nested rooms from schedules
   const conferenceRooms = useMemo(() => {
@@ -67,41 +47,29 @@ export function useConferenceTabsData(conferenceId: string) {
       index === self.findIndex(r => r.id === room.id)
     );
     
-    console.log(`✅ Conference ${conferenceId} has ${uniqueRooms.length} rooms`);
-    console.log('✅ Room details:', uniqueRooms. map(r => ({
-      id: r.id,
-      name: r.name,
-      type: r.type,
-      schedule_id: r.schedule_id
-    })));
-    
     return uniqueRooms;
-  }, [rooms, conferenceSchedules, conferenceId]);
+  }, [rooms, conferenceSchedules, conference.id]);
 
   // Filter tracks
   const conferenceTracks = useMemo(() => {
-    const trackIds = conferenceRooms.map(room => room.track_id). filter(Boolean);
+    const trackIds = conferenceRooms.map(room => room.track_id).filter(Boolean);
     const filtered = tracks.filter(track => trackIds.includes(track.id));
     
-    console.log(`✅ Conference ${conferenceId} has ${filtered.length} tracks`);
     return filtered;
-  }, [tracks, conferenceRooms, conferenceId]);
+  }, [tracks, conferenceRooms, conference.id]);
 
   // Filter track sessions
   const conferenceTrackSessions = useMemo(() => {
     const trackIds = conferenceTracks.map(t => t.id);
-    const filtered = trackSessions.filter(session => trackIds. includes(session.track_id));
+    const filtered = trackSessions.filter(session => trackIds.includes(session.track_id));
     
-    console.log(`✅ Conference ${conferenceId} has ${filtered.length} track sessions`);
     return filtered;
-  }, [trackSessions, conferenceTracks, conferenceId]);
+  }, [trackSessions, conferenceTracks, conference.id]);
 
   const loading = scheduleLoading || roomsLoading || tracksLoading || trackSessionsLoading;
 
   // Enhanced refetch
   const refetchAll = async () => {
-    console.log(`🔄 Force refetching ALL data for conference: ${conferenceId}`);
-    
     try {
       await Promise.all([
         refetchSchedules(),
@@ -109,8 +77,6 @@ export function useConferenceTabsData(conferenceId: string) {
         refetchTracks(),
         refetchTrackSessions(),
       ]);
-      
-      console.log('✅ All data refetched successfully');
     } catch (error) {
       console.error('❌ Error refetching data:', error);
     }
