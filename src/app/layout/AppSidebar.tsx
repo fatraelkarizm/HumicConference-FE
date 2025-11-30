@@ -133,8 +133,8 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         icon: CalendarDaysIcon,
         roles: ['SUPER_ADMIN'],
         subItems: [
-          { label: "Jadwal ICICyTA", href: "/super-admin/ICICyTA", icon: DocumentTextIcon },
-          { label: "Jadwal ICoDSA", href: "/super-admin/ICoDSA", icon: DocumentTextIcon },
+          { label: "Konferensi ICICyTA", href: "/super-admin/ICICYTA", icon: DocumentTextIcon },
+          { label: "Konferensi ICoDSA", href: "/super-admin/ICODSA", icon: DocumentTextIcon },
         ],
       });
     } else if (user?.role === 'ADMIN_ICICYTA') {

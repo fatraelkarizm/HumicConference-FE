@@ -1,57 +1,60 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from "react";
 import { useAuth } from '@/context/AuthContext';
-import ScheduleCard from '@/components/schedule/ScheduleCard';
-import { getUserConferenceSchedule } from '@/services/ScheduleService';
-import type { ProcessedConferenceSchedule } from '@/types/schedule';
+import { useConferenceSchedule } from "@/hooks/useConferenceSchedule";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CalendarDays, Plus, Calendar } from "lucide-react";
+import { toast } from "react-hot-toast";
+import ConferenceYearTabs from "@/components/admin/conference/ConferenceYearTabs";
+import ConferenceContent from "@/components/admin/conference/ConferenceContent";
+import CreateConferenceModal from "@/components/admin/CreateConferenceModal";
+import { useConferenceDataICODSA } from "@/hooks/useConferenceDataICODSA";
+import type { BackendConferenceSchedule } from "@/types";
 
-export default function ICICYTASchedulePage() {
+export default function ICODSAAdminPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [schedule, setSchedule] = useState<ProcessedConferenceSchedule | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [activeModal, setActiveModal] = useState<string | null>(null);
 
+  // Base conferences hook
+  const {
+    conferences,
+    loading: confLoading,
+    error: confError,
+    refetch: refetchConferences,
+  } = useConferenceSchedule();
+
+  // Get ICODSA conferences and selected conference
+  const { 
+    icodsaConferences, 
+    availableYears, 
+    selectedConference 
+  } = useConferenceDataICODSA(conferences, selectedYear);
+
+  // Auto-select most recent year
   useEffect(() => {
-    if (!authLoading && isAuthenticated && user?.role === 'ADMIN_ICICYTA') {
-      loadSchedule();
+    if (availableYears.length > 0 && ! selectedYear) {
+      setSelectedYear(availableYears[0]);
     }
-  }, [authLoading, isAuthenticated, user]);
+  }, [availableYears, selectedYear]);
 
-  async function loadSchedule() {
-    setLoading(true);
-    setError(null);
-    try {
-      const scheduleData = await getUserConferenceSchedule();
-      
-      if (scheduleData) {
-        setSchedule(scheduleData);
-      } else {
-        setError('No schedule data available');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load schedule');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleModalClose = () => {
+    setActiveModal(null);
+  };
 
-  function handleOpenDetail(itemId?: string) {
-    // TODO: Implement detail modal
-  }
-
-  if (authLoading || loading) {
+  // Check authentication and role
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading conference schedule...</p>
-        </div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="mt-2 text-gray-600">Loading...</p>
       </div>
     );
   }
 
-  if (!isAuthenticated || user?.role !== 'ADMIN_ICICYTA') {
+  if (!isAuthenticated || user?.role !== 'ADMIN_ICODSA') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -62,111 +65,141 @@ export default function ICICYTASchedulePage() {
     );
   }
 
-  if (error && !schedule) {
+  // Loading state
+  if (confLoading) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-600">{error}</p>
-          <button 
-            onClick={loadSchedule}
-            className="mt-2 text-red-600 underline hover:no-underline"
-          >
-            Try again
-          </button>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  if (!schedule) {
+  // Error state
+  if (confError) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        <div className="text-center py-8">
-          <h2 className="text-xl font-semibold text-gray-800">No Schedule Available</h2>
-          <p className="text-gray-600">No conference schedule found.</p>
-          <button 
-            onClick={loadSchedule}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Reload Schedule
-          </button>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Error Loading Conferences
+          </h2>
+          <p className="text-gray-600">Failed to load conference data. </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">{schedule.name}</h1>
-        {schedule.description && (
-          <p className="text-gray-600 mt-2">{schedule.description}</p>
-        )}
-        
-        {/* Status indicators */}
-       
-        
-        {/* Conference info */}
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="font-semibold">📧 Contact:</span> {schedule.contactEmail}
-            </div>
-            <div>
-              <span className="font-semibold">🕐 Timezone:</span> {schedule.timezone}
-            </div>
-            <div>
-              <span className="font-semibold">🏢 Onsite:</span> {schedule.onsiteLocation}
-            </div>
-            <div>
-              <span className="font-semibold">💻 Online:</span> {schedule.onlineLocation}
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* No conferences state */}
+      {availableYears.length === 0 ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <Calendar className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              No ICODSA Conferences Found
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Create your first ICODSA conference to get started. 
+            </p>
+            <Button
+              onClick={() => setActiveModal("create-conference")}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create ICODSA Conference
+            </Button>
           </div>
-        </div>
-      </div>
-
-      {/* Schedule Days */}
-      {schedule.days.length === 0 ? (
-        <div className="text-center py-8">
-          <div className="text-gray-400 text-6xl mb-4"></div>
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">No Schedule Items</h3>
-          <p className="text-gray-500">Conference schedule items will appear here once they are added.</p>
         </div>
       ) : (
-        schedule.days.map((day) => (
-          <div key={day.date} className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-2xl font-semibold text-gray-800">{day.dayTitle}</h2>
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
-                {day.items.length} sessions
-              </span>
+        <>
+          {/* Header */}
+          <div className="bg-white shadow-sm border-b">
+            <div className="max-w-full mx-auto px-6">
+              <div className="flex justify-between items-center py-6">
+                <div>
+                  <h1 className="text-3xl font-bold text-blue-900">
+                    {selectedConference?.name || "ICODSA Conference"}
+                  </h1>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {selectedConference ?  (
+                      <>
+                        {new Date(selectedConference.start_date).toLocaleDateString()} -{" "}
+                        {new Date(selectedConference.end_date).toLocaleDateString()}
+                      </>
+                    ) : (
+                      "No conference data available for this year"
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                    <CalendarDays className="w-4 h-4 mr-1" />
+                    ICODSA {selectedYear}
+                  </Badge>
+                  
+                  {/* ✅ Simple Action Buttons - No Delete */}
+                  <div className="flex items-center space-x-2">
+                    {/* No buttons needed */}
+                  </div>
+                </div>
+              </div>
             </div>
-            
-            {day.items.length === 0 ? (
-              <div className="text-center py-6 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">No sessions scheduled for this day</p>
+          </div>
+
+      {/* Conference Year Series */}
+      <ConferenceYearTabs
+        availableYears={availableYears}
+        selectedYear={selectedYear}
+        onYearSelect={setSelectedYear}
+        onCreateNew={() => setActiveModal("create-conference")}
+        conferenceType="ICODSA"
+      />          {/* Main Content */}
+          <div className="max-w-full mx-auto py-8">
+            {! selectedConference ? (
+              // Empty State
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                  <Calendar className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    No ICODSA Conference for {selectedYear}
+                  </h2>
+                  <p className="text-gray-600 mb-6">
+                    Create a new ICODSA conference for {selectedYear} to get started.
+                  </p>
+                  <Button
+                    onClick={() => setActiveModal("create-conference")}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create {selectedYear} ICODSA Conference
+                  </Button>
+                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {day.items.map((item) => (
-                  <ScheduleCard
-                    key={item.id}
-                    item={item}
-                    onOpenDetail={handleOpenDetail}
-                  />
-                ))}
-              </div>
+              // Conference Content with Tabs
+              <ConferenceContent 
+                conference={selectedConference}
+                onModalOpen={setActiveModal}
+                onRefresh={refetchConferences}
+              />
             )}
           </div>
-        ))
+        </>
       )}
-      
-      {/* No Show Policy */}
-      {schedule.noShowPolicy && (
-        <div className="mt-8 p-4 bg-blue-50 border-l-4 border-blue-400">
-          <h3 className="font-semibold text-blue-800 mb-2">📋 Important Policy</h3>
-          <p className="text-blue-700 text-sm">{schedule.noShowPolicy}</p>
-        </div>
+
+      {/* Create Conference Modal */}
+      {activeModal === "create-conference" && (
+        <CreateConferenceModal
+          isOpen={true}
+          onClose={handleModalClose}
+          onSuccess={() => {
+            setActiveModal(null);
+            // Don't refetch immediately due to potential token issues
+            // User can refresh manually or navigate
+            toast.success("ICODSA Conference created successfully! Please refresh the page to see it.");
+          }}
+          conferenceType="ICODSA"
+        />
       )}
     </div>
   );

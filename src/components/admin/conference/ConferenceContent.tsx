@@ -10,6 +10,8 @@ import ConferenceScheduleTable from "@/components/admin/ConferenceScheduleTable"
 import RoomManagementTab from "@/components/admin/conference/RoomManagementTab";
 import TrackSessionsTab from "@/components/admin/conference/TrackSessionsTab";
 import ConferenceModals from "@/components/admin/conference/ConferenceModal";
+import EditConferenceModal from "@/components/admin/conference/EditConferenceModal";
+import DeleteConferenceModal from "@/components/admin/conference/DeleteConferenceModal";
 import { useConferenceTabsData } from "@/hooks/useConferenceTabsData";
 import type { BackendConferenceSchedule } from "@/types";
 import toast from "react-hot-toast";
@@ -29,6 +31,8 @@ export default function ConferenceContent({
   const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [selectedTrackSession, setSelectedTrackSession] = useState<any>(null);
+  const [showEditConferenceModal, setShowEditConferenceModal] = useState(false);
+  const [showDeleteConferenceModal, setShowDeleteConferenceModal] = useState(false);
 
   // Get data for this conference
   const { schedules, rooms, tracks, trackSessions, loading, refetchAll } =
@@ -39,6 +43,25 @@ export default function ConferenceContent({
     setSelectedSchedule(null);
     setSelectedRoom(null);
     setSelectedTrackSession(null);
+  };
+
+  const handleEditConference = () => {
+    setShowEditConferenceModal(true);
+  };
+
+  const handleDeleteConference = () => {
+    setShowDeleteConferenceModal(true);
+  };
+
+  const handleConferenceUpdated = () => {
+    setShowEditConferenceModal(false);
+    handleRefresh();
+  };
+
+  const handleConferenceDeleted = () => {
+    setShowDeleteConferenceModal(false);
+    // Navigate back to year selection since conference is deleted
+    onRefresh();
   };
 
   // ✅ Enhanced refresh function with delay
@@ -76,10 +99,31 @@ export default function ConferenceContent({
         <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Settings className="w-5 h-5 mr-2" />
-                Conference Overview
-              </CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  Conference Overview
+                </CardTitle>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEditConference}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                  >
+                    <Settings className="w-4 h-4 mr-1" />
+                    Edit Conference
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeleteConference}
+                    className="text-red-600 border-red-300 hover:bg-red-50"
+                  >
+                    🗑️ Delete Conference
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -228,6 +272,22 @@ export default function ConferenceContent({
         tracks={tracks}
         onRefresh={handleRefresh}
         onCreateConference={() => onModalOpen("create-conference")}
+      />
+
+      {/* Edit Conference Modal */}
+      <EditConferenceModal
+        isOpen={showEditConferenceModal}
+        onClose={() => setShowEditConferenceModal(false)}
+        conference={conference}
+        onSuccess={handleConferenceUpdated}
+      />
+
+      {/* Delete Conference Modal */}
+      <DeleteConferenceModal
+        isOpen={showDeleteConferenceModal}
+        onClose={() => setShowDeleteConferenceModal(false)}
+        conference={conference}
+        onSuccess={handleConferenceDeleted}
       />
     </div>
   );

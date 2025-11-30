@@ -30,9 +30,12 @@ export const useConferenceSchedule = (includeRelation: boolean = true) => {
       }
 
       const conferencesData = await conferenceScheduleService.getAllConferenceSchedules(accessToken, includeRelation);
+      console.log('Fetched conferences:', conferencesData);
+      console.log('Conference types and years:', conferencesData.map(c => ({ type: c.type, year: c.year })));
       setConferences(conferencesData);
 
     } catch (err: any) {
+      console.error('Error fetching conferences:', err);
       setError(err.message || 'Failed to load conference schedules');
     } finally {
       setLoading(false);

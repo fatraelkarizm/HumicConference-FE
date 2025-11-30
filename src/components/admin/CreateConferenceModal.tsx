@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "react-hot-toast";
+import conferenceScheduleService from "@/services/ConferenceScheduleService";
 
 interface Props {
   isOpen: boolean;
@@ -80,7 +81,12 @@ export default function CreateConferenceModal({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = await conferenceScheduleService.getAccessToken();
+
+      if (!token) {
+        toast.error("Authentication failed. Please login again.");
+        return;
+      }
 
       // ✅ Create conference payload with enforced type
       const conferencePayload = {

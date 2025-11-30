@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import roomService from '@/services/RoomServices';
+import conferenceScheduleService from '@/services/ConferenceScheduleService';
 import type { BackendRoom, NewRoomData, UpdateRoomData } from '@/types/room';
 
 export interface CreateRoomPayload {
@@ -64,7 +65,11 @@ export const useRoom = (scheduleId?: string) => {
 export const useRoomActions = () => {
   const createRoom = async (roomData: CreateRoomPayload) => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = await conferenceScheduleService.getAccessToken();
+
+      if (!token) {
+        throw new Error('Authentication failed. Please login again.');
+      }
 
       // ✅ Transform data to match backend expectations
       const payload = {

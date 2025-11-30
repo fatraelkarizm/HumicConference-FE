@@ -1,23 +1,23 @@
-"use client";
+// "use client";
 
-import React, { useEffect, useState } from "react";
-import { CalendarDaysIcon } from "@heroicons/react/24/outline";
-import ScheduleCard from "@/components/schedule/ScheduleCard";
-import type { ScheduleItem } from "@/types/schedule";
-import { getSchedules } from "@/services/ScheduleService";
+// import React, { useEffect, useState } from "react";
+// import { CalendarDaysIcon } from "@heroicons/react/24/outline";
+// import ScheduleCard from "@/components/schedule/ScheduleCard";
+// import type { ScheduleItem } from "@/types/schedule";
+// import { getSchedules } from "@/services/ScheduleService";
 
-export default function ICoDSAPage() {
-  const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
-  const [loading, setLoading] = useState(true);
+// export default function ICoDSAPage() {
+//   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
+//   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const all = await getSchedules("ICoDSA");
-      setSchedules(all);
-      setLoading(false);
-    })();
-  }, []);
+//   useEffect(() => {
+//     (async () => {
+//       setLoading(true);
+//       const all = await getSchedules("ICoDSA");
+//       setSchedules(all);
+//       setLoading(false);
+//     })();
+//   }, []);
 
   // Group schedules by dayNumber
   const byDay: Record<string, ScheduleItem[]> = {};

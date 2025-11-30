@@ -131,6 +131,7 @@ export default function ICICyTAAdminPage() {
         selectedYear={selectedYear}
         onYearSelect={setSelectedYear}
         onCreateNew={() => setActiveModal("create-conference")}
+        conferenceType="ICICYTA"
       />
 
       {/* Main Content */}

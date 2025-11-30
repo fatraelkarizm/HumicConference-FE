@@ -6,6 +6,7 @@ interface Props {
   selectedYear: string;
   onYearSelect: (year: string) => void;
   onCreateNew: () => void;
+  conferenceType?: "ICICYTA" | "ICODSA";
 }
 
 export default function ConferenceYearTabs({
@@ -13,7 +14,9 @@ export default function ConferenceYearTabs({
   selectedYear,
   onYearSelect,
   onCreateNew,
+  conferenceType = "ICICYTA",
 }: Props) {
+  const conferenceName = conferenceType === "ICODSA" ? "ICODSA" : "ICICyTA";
   return (
     <div className="bg-white border-b">
       <div className="max-w-full mx-auto px-6">
@@ -42,7 +45,7 @@ export default function ConferenceYearTabs({
             className="ml-4 border-blue-300 text-blue-700 hover:bg-blue-50 flex-shrink-0"
           >
             <Plus className="w-4 h-4 mr-1" />
-            New ICICyTA Conference
+            New {conferenceName} Conference
           </Button>
         </div>
       </div>

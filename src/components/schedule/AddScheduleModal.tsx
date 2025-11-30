@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
+import conferenceScheduleService from "@/services/ConferenceScheduleService";
 import {
   Dialog,
   DialogContent,
@@ -71,9 +72,14 @@ export default function AddScheduleModal({
 
   // CREATE SCHEDULE API
   const createSchedule = async (scheduleData: any) => {
-    const token = localStorage.getItem('accessToken');
+    const token = await conferenceScheduleService.getAccessToken();
+
+    if (!token) {
+      throw new Error('Authentication failed. Please login again.');
+    }
+
     const response = await fetch(
-      `${process.env.  NEXT_PUBLIC_API_BASE_URL}/api/v1/schedule`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/schedule`,
       {
         method: "POST",
         headers: {
@@ -84,8 +90,8 @@ export default function AddScheduleModal({
       }
     );
 
-    if (!  response.ok) {
-      const errorText = await response.  text();
+    if (!response.ok) {
+      const errorText = await response.text();
       throw new Error(errorText || 'Failed to create schedule');
     }
 
