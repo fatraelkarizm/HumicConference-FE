@@ -13,17 +13,17 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   XMarkIcon,
-  DocumentTextIcon, 
-  UserPlusIcon,     
-  PhotoIcon,        
-  PencilIcon,       
+  DocumentTextIcon,
+  UserPlusIcon,
+  PhotoIcon,
+  PencilIcon,
 } from "@heroicons/react/24/outline";
 
 // --- Tipe Data untuk Menu ---
 type SubMenuItem = {
   label: string;
   href: string;
-  icon: React.ElementType; 
+  icon: React.ElementType;
 };
 
 type MenuItem = {
@@ -41,9 +41,8 @@ const SingleMenuItem = ({ item, isActive }: { item: MenuItem; isActive: boolean 
   <Link
     href={item.href || '#'}
     onClick={item.onClick}
-    className={`rounded-[3px] px-[15px] py-2 flex items-center gap-2.5 cursor-pointer transition-colors ${
-      isActive ? 'bg-[#333A48]' : 'hover:bg-[#333A48]' 
-    }`}
+    className={`rounded-[3px] px-[15px] py-2 flex items-center gap-2.5 cursor-pointer transition-colors ${isActive ? 'bg-[#333A48]' : 'hover:bg-[#333A48]'
+      }`}
   >
     <item.icon className="w-5 h-5 text-white flex-shrink-0" />
     <span className="text-white font-satoshi text-base font-medium">
@@ -56,7 +55,7 @@ const SingleMenuItem = ({ item, isActive }: { item: MenuItem; isActive: boolean 
 const CollapsibleMenuItem = ({ item }: { item: MenuItem }) => {
   const pathname = usePathname();
   const isAnySubItemActive = item.subItems?.some(sub => pathname.startsWith(sub.href)) || false;
-  const [isOpen, setIsOpen] = useState(isAnySubItemActive); 
+  const [isOpen, setIsOpen] = useState(isAnySubItemActive);
 
   return (
     <div className="flex flex-col">
@@ -76,17 +75,16 @@ const CollapsibleMenuItem = ({ item }: { item: MenuItem }) => {
       {isOpen && (
         <div className="pl-[25px] pr-[15px] mt-2 flex flex-col gap-1">
           {item.subItems?.map((subItem) => (
-            <Link 
-              key={subItem.href} 
-              href={subItem.href} 
-              className={`flex items-center gap-2.5 rounded-[3px] px-4 py-2 font-satoshi text-base font-medium transition-colors ${
-                pathname.startsWith(subItem.href) 
-                  ? 'bg-[#333A48] text-white' 
+            <Link
+              key={subItem.href}
+              href={subItem.href}
+              className={`flex items-center gap-2.5 rounded-[3px] px-4 py-2 font-satoshi text-base font-medium transition-colors ${pathname.startsWith(subItem.href)
+                  ? 'bg-[#333A48] text-white'
                   : 'text-white/80 hover:bg-[#333A48] hover:text-white'
-              }`}
+                }`}
             >
-                <subItem.icon className="w-4 h-4 flex-shrink-0" />
-                <span>{subItem.label}</span>
+              <subItem.icon className="w-4 h-4 flex-shrink-0" />
+              <span>{subItem.label}</span>
             </Link>
           ))}
         </div>
@@ -116,10 +114,10 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
   // Generate menu items berdasarkan role user
   const getMenuItems = (): MenuItem[] => {
     const baseItems: MenuItem[] = [
-      { 
-        id: "dashboard", 
-        label: "Dashboard", 
-        href: "/super-admin/dashboard",  
+      {
+        id: "dashboard",
+        label: "Dashboard",
+        href: "/super-admin/dashboard",
         icon: Squares2X2Icon,
         roles: ['SUPER_ADMIN', 'ADMIN_ICICYTA', 'ADMIN_ICODSA']
       },
@@ -133,22 +131,22 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         icon: CalendarDaysIcon,
         roles: ['SUPER_ADMIN'],
         subItems: [
-          { label: "Konferensi ICICyTA", href: "/super-admin/ICICyta", icon: DocumentTextIcon },
-          { label: "Konferensi ICoDSA", href: "/super-admin/ICoDSA", icon: DocumentTextIcon },
+          { label: "Konferensi ICICyTA", href: "/super-admin/ICICYTA", icon: DocumentTextIcon },
+          { label: "Konferensi ICoDSA", href: "/super-admin/ICODSA", icon: DocumentTextIcon },
         ],
       });
     } else if (user?.role === 'ADMIN_ICICYTA') {
       baseItems.push({
         id: "jadwal",
         label: "Jadwal ICICyTA",
-        href: "/admin/ICICyTA",
+        href: "/admin/ICICYTA",
         icon: CalendarDaysIcon,
         roles: ['ADMIN_ICICYTA'],
       });
     } else if (user?.role === 'ADMIN_ICODSA') {
       baseItems.push({
         id: "jadwal",
-        label: "Jadwal ICoDSA", 
+        label: "Jadwal ICoDSA",
         href: "/admin/ICODSA",
         icon: CalendarDaysIcon,
         roles: ['ADMIN_ICODSA'],
@@ -183,10 +181,10 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
     }
 
     // Logout - untuk semua role
-    baseItems.push({ 
-      id: "logout", 
-      label: "Logout", 
-      icon: ArrowLeftStartOnRectangleIcon, 
+    baseItems.push({
+      id: "logout",
+      label: "Logout",
+      icon: ArrowLeftStartOnRectangleIcon,
       onClick: handleLogout,
       roles: ['SUPER_ADMIN', 'ADMIN_ICICYTA', 'ADMIN_ICODSA']
     });
@@ -195,7 +193,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
   };
 
   // Filter menu berdasarkan role user
-  const filteredMenuItems = getMenuItems().filter(item => 
+  const filteredMenuItems = getMenuItems().filter(item =>
     !item.roles || item.roles.includes(user?.role || '')
   );
 
@@ -214,12 +212,12 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
   return (
     <>
       {isOpen && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />}
-      
+
       <div className={`w-[330px] h-screen bg-[#015B97] flex flex-col flex-shrink-0 fixed left-0 top-0 z-50 transform transition-transform duration-300 lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <button onClick={onClose} className="absolute top-4 right-4 text-white lg:hidden">
           <XMarkIcon className="w-6 h-6" />
         </button>
-        
+
         {/* Header dengan title dinamis */}
         <div className="p-[50px_55px_20px] text-center">
           <h1 className="text-white font-satoshi text-3xl font-semibold leading-normal whitespace-pre-line">
@@ -235,12 +233,12 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         {/* Menu Navigation */}
         <div className="flex-1 px-[25px] pt-8 overflow-y-auto">
           <nav className="flex flex-col gap-[18px]">
-            {filteredMenuItems.map((item) => 
-                item.subItems ? (
-                    <CollapsibleMenuItem key={item.id} item={item} />
-                ) : (
-                    <SingleMenuItem key={item.id} item={item} isActive={pathname === item.href} />
-                )
+            {filteredMenuItems.map((item) =>
+              item.subItems ? (
+                <CollapsibleMenuItem key={item.id} item={item} />
+              ) : (
+                <SingleMenuItem key={item.id} item={item} isActive={pathname === item.href} />
+              )
             )}
           </nav>
         </div>

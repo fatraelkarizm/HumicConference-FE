@@ -172,9 +172,9 @@ export default function CreateConferenceModal({
         let redirectPath = "";
 
         if (conferenceType === "ICICYTA") {
-          redirectPath = isSuperAdmin ? "/super-admin/ICICyta" : "/admin/ICICyTA";
+          redirectPath = isSuperAdmin ? "/super-admin/ICICYTA" : "/admin/ICICYTA";
         } else {
-          redirectPath = isSuperAdmin ? "/super-admin/ICoDSA" : "/admin/ICODSA";
+          redirectPath = isSuperAdmin ? "/super-admin/ICODSA" : "/admin/ICODSA";
         }
 
         window.location.href = redirectPath;
