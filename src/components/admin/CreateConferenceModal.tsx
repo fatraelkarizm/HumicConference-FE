@@ -39,10 +39,10 @@ interface ConferenceFormData {
   isActive: boolean;
 }
 
-export default function CreateConferenceModal({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
+export default function CreateConferenceModal({
+  isOpen,
+  onClose,
+  onSuccess,
   conferenceType = "ICICYTA" // ✅ Default to ICICYTA
 }: Props) {
   const [loading, setLoading] = useState(false);
@@ -92,18 +92,18 @@ export default function CreateConferenceModal({
 
       // ✅ Create conference payload with enforced type
       const conferencePayload = {
-        name: formData.name. trim(),
+        name: formData.name.trim(),
         description: formData.description.trim(),
         year: formData.year,
         start_date: formData.startDate,
         end_date: formData.endDate,
         type: conferenceType, // ✅ Use prop instead of form field
-        contact_email: formData.contactEmail. trim(),
+        contact_email: formData.contactEmail.trim(),
         timezone_iana: formData.timezoneIana,
-        onsite_presentation: formData.onsitePresentation. trim(),
-        online_presentation: formData.onlinePresentation. trim(),
+        onsite_presentation: formData.onsitePresentation.trim(),
+        online_presentation: formData.onlinePresentation.trim(),
         notes: formData.notes.trim(),
-        no_show_policy: formData. noShowPolicy.trim(),
+        no_show_policy: formData.noShowPolicy.trim(),
         is_active: formData.isActive,
       };
 
@@ -124,10 +124,10 @@ export default function CreateConferenceModal({
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = 'Failed to create conference';
-        
+
         try {
           const errorData = JSON.parse(errorText);
-          if (errorData.errors?. validation) {
+          if (errorData.errors?.validation) {
             const validations: Record<string, string[]> = errorData.errors.validation;
             const messages = Object.keys(validations).map(
               (k) => `${k}: ${validations[k].join(", ")}`
@@ -139,19 +139,19 @@ export default function CreateConferenceModal({
         } catch (e) {
           console.log('Could not parse error response:', errorText);
         }
-        
+
         throw new Error(errorMessage);
       }
 
       const result = await response.json();
-      
+
       toast.success(`${conferenceType} Conference "${formData.name}" created successfully!`);
-      
+
       // Reset form
       setFormData({
         name: "",
         description: "",
-        year: new Date(). getFullYear().toString(),
+        year: new Date().getFullYear().toString(),
         startDate: "",
         endDate: "",
         type: conferenceType,
@@ -165,10 +165,19 @@ export default function CreateConferenceModal({
       });
 
       onSuccess();
-      
+
       // Optionally redirect to new conference
       setTimeout(() => {
-        window.location.href = `/admin/conference/${result.data.id}`;
+        const isSuperAdmin = window.location.pathname.includes('/super-admin');
+        let redirectPath = "";
+
+        if (conferenceType === "ICICYTA") {
+          redirectPath = isSuperAdmin ? "/super-admin/ICICyta" : "/admin/ICICyTA";
+        } else {
+          redirectPath = isSuperAdmin ? "/super-admin/ICoDSA" : "/admin/ICODSA";
+        }
+
+        window.location.href = redirectPath;
       }, 1000);
 
     } catch (error: any) {
@@ -186,7 +195,7 @@ export default function CreateConferenceModal({
       const startDay = start.getDate();
       const endDay = end.getDate();
       const month = start.toLocaleDateString('en-US', { month: 'long' });
-      
+
       const description = `${startDay}${startDay !== endDay ? ` - ${endDay}` : ''}${startDay === endDay ? 'st' : 'th'} ${month} ${formData.year} (Hybrid)`;
       handleInputChange('description', description);
     }
@@ -211,11 +220,11 @@ export default function CreateConferenceModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          
+
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-700 border-b pb-2">Basic Information</h3>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="year">Year *</Label>
@@ -297,7 +306,7 @@ export default function CreateConferenceModal({
               <Input
                 id="description"
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target. value)}
+                onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="e. g., 17th - 19th December 2025 (Hybrid)"
               />
               <p className="text-xs text-gray-500 mt-1">Auto-generated from dates, or enter manually</p>
@@ -307,7 +316,7 @@ export default function CreateConferenceModal({
           {/* Contact & Settings */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-700 border-b pb-2">Contact & Settings</h3>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="contactEmail">Contact Email *</Label>
@@ -347,12 +356,12 @@ export default function CreateConferenceModal({
           {/* Presentation Locations */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-700 border-b pb-2">Presentation Locations</h3>
-            
+
             <div>
               <Label htmlFor="onsitePresentation">Onsite Location</Label>
               <Input
                 id="onsitePresentation"
-                value={formData. onsitePresentation}
+                value={formData.onsitePresentation}
                 onChange={(e) => handleInputChange('onsitePresentation', e.target.value)}
                 placeholder="e.g., THE EVITEL RESORT UBUD, BALI, INDONESIA (2nd Floor)"
               />
@@ -363,7 +372,7 @@ export default function CreateConferenceModal({
               <Input
                 id="onlinePresentation"
                 value={formData.onlinePresentation}
-                onChange={(e) => handleInputChange('onlinePresentation', e.target. value)}
+                onChange={(e) => handleInputChange('onlinePresentation', e.target.value)}
                 placeholder="e. g., ZOOM MEETING"
               />
             </div>
@@ -383,13 +392,13 @@ export default function CreateConferenceModal({
           {/* Additional Information */}
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-700 border-b pb-2">Additional Information</h3>
-            
+
             <div>
               <Label htmlFor="noShowPolicy">No Show Policy</Label>
               <Textarea
                 id="noShowPolicy"
                 value={formData.noShowPolicy}
-                onChange={(e) => handleInputChange('noShowPolicy', e. target.value)}
+                onChange={(e) => handleInputChange('noShowPolicy', e.target.value)}
                 placeholder="Enter conference no-show policy..."
                 rows={4}
               />
@@ -405,7 +414,7 @@ export default function CreateConferenceModal({
                 <div><strong>Type:</strong> {conferenceType}</div>
                 <div><strong>Year:</strong> {formData.year}</div>
                 {formData.startDate && formData.endDate && (
-                  <div><strong>Duration:</strong> {new Date(formData.startDate). toLocaleDateString()} - {new Date(formData.endDate).toLocaleDateString()}</div>
+                  <div><strong>Duration:</strong> {new Date(formData.startDate).toLocaleDateString()} - {new Date(formData.endDate).toLocaleDateString()}</div>
                 )}
                 <div><strong>Contact:</strong> {formData.contactEmail}</div>
               </div>
@@ -417,12 +426,12 @@ export default function CreateConferenceModal({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={loading || !formData.name || !formData.startDate || ! formData.endDate}
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !formData.name || !formData.startDate || !formData.endDate}
             className="bg-[#015B97] hover:bg-[#014f7a]"
           >
-            {loading ?  "Creating..." : `Create ${conferenceType} Conference`}
+            {loading ? "Creating..." : `Create ${conferenceType} Conference`}
           </Button>
         </DialogFooter>
       </DialogContent>

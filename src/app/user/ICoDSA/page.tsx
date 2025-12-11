@@ -11,6 +11,7 @@ import ConferenceContent from "@/components/admin/conference/ConferenceContent";
 import CreateConferenceModal from "@/components/admin/CreateConferenceModal";
 import UserConferenceScheduleTable from "@/components/UserConferenceScheduleTable";
 import { useConferenceTabsData } from "@/hooks/useConferenceTabsData";
+import { useConferenceDataICODSA } from "@/hooks/useConferenceDataICODSA";
 import type { BackendConferenceSchedule } from "@/types";
 
 // Role checking utility
@@ -22,8 +23,7 @@ export default function ICoDSAPage() {
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
-  // Mock user role - in real app this would come from auth context
-  const userRole = 'USER'; // Change this to test different roles: 'SUPER_ADMIN', 'ADMIN_ICICYTA', 'ADMIN_ICODSA', 'USER'
+  const userRole = 'USER'; 
 
   // Base conferences hook
   const {
@@ -33,25 +33,28 @@ export default function ICoDSAPage() {
     refetch: refetchConferences,
   } = useConferenceSchedule();
 
-  // Filter conferences for ICoDSA only
-  const icodsaConferences = conferences.filter(conf => conf.type === 'ICODSA');
-
-  // Get available years for ICoDSA
-  const availableYears = Array.from(
-    new Set(icodsaConferences.map((conf) => conf.year))
-  ).sort((a, b) => parseInt(b) - parseInt(a));
-
-  // Get selected conference
-  const selectedConference = icodsaConferences.find((conf) => conf.year === selectedYear) || null;
+  // Get ICoDSA conferences and selected conference
+  const {
+    icodsaConferences,
+    availableYears,
+    selectedConference
+  } = useConferenceDataICODSA(conferences, selectedYear);
 
   // Get data for selected conference (for regular users)
   const { schedules: userSchedules, loading: userLoading } = useConferenceTabsData(selectedConference || {} as BackendConferenceSchedule);
 
   useEffect(() => {
     if (availableYears.length > 0 && !selectedYear) {
-      setSelectedYear(availableYears[0]);
+      // Find active conference
+      const activeConference = icodsaConferences.find(conf => conf.is_active === true);
+
+      if (activeConference) {
+        setSelectedYear(activeConference.year);
+      } else {
+        setSelectedYear(availableYears[0]);
+      }
     }
-  }, [availableYears, selectedYear]);
+  }, [availableYears, selectedYear, icodsaConferences]);
 
   const handleModalClose = () => {
     setActiveModal(null);
@@ -117,7 +120,7 @@ export default function ICoDSAPage() {
                 {selectedConference?.name || "ICoDSA Conference"}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                {selectedConference ?  (
+                {selectedConference ? (
                   <>
                     {new Date(selectedConference.start_date).toLocaleDateString()} -{" "}
                     {new Date(selectedConference.end_date).toLocaleDateString()}

@@ -178,7 +178,6 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
 
           <div className={`p-4 rounded-lg bg-blue-50 text-blue-800`}>
             <div className="flex items-center space-x-2">
-              <span className="text-lg">💻</span>
               <div>
                 <div className="font-medium">Online Presentation</div>
                 <div className="text-sm">Virtual presentation via video conference</div>

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const protectedRoutes = [
   '/profile',
   '/super-admin',
-  '/admin', 
+  '/admin',
 ];
 
 // Public routes yang tidak memerlukan authentication
@@ -46,12 +46,12 @@ export async function middleware(request: NextRequest) {
 
 
   // Check if route is protected
-  const isProtectedRoute = protectedRoutes.some(route => 
+  const isProtectedRoute = protectedRoutes.some(route =>
     pathname.startsWith(route)
   );
 
   // Check if route is public
-  const isPublicRoute = publicRoutes.some(route => 
+  const isPublicRoute = publicRoutes.some(route =>
     pathname === route || pathname.startsWith(route)
   );
 
@@ -68,7 +68,7 @@ export async function middleware(request: NextRequest) {
 
   // Handle auth routes (login, register) - redirect if already authenticated
   if ((pathname === '/login' || pathname === '/register') && refreshToken) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();
