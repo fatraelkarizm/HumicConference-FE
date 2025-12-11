@@ -22,7 +22,7 @@ export default function ConferenceYearTabs({
   conferences = [],
   onToggleActive,
 }: Props) {
-  const conferenceName = conferenceType === "ICODSA" ? "ICODSA" : "ICICyTA";
+  const conferenceName = conferenceType === "ICODSA" ? "ICODSA" : "ICICYTA";
 
   // Get conference for each year to show status
   const getConferenceForYear = (year: string) => {
@@ -44,22 +44,20 @@ export default function ConferenceYearTabs({
               <div key={year} className="flex items-center space-x-2 flex-shrink-0">
                 <button
                   onClick={() => onYearSelect(year)}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center space-x-2 ${
-                    selectedYear === year
-                      ?  "bg-[#015B97] text-white shadow-sm"
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center space-x-2 ${selectedYear === year
+                      ? "bg-[#015B97] text-white shadow-sm"
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <span>{year}</span>
                   <Badge
                     variant={isActive ? "default" : "secondary"}
-                    className={`text-xs ${
-                      selectedYear === year
+                    className={`text-xs ${selectedYear === year
                         ? "bg-white text-blue-600"
                         : isActive
                           ? "bg-green-100 text-green-800"
                           : "bg-gray-100 text-gray-600"
-                    }`}
+                      }`}
                   >
                     {isActive ? "Active" : "Inactive"}
                   </Badge>
@@ -70,11 +68,10 @@ export default function ConferenceYearTabs({
                     onClick={() => onToggleActive(conference.id, !isActive)}
                     variant="ghost"
                     size="sm"
-                    className={`p-1 h-8 w-8 ${
-                      isActive
+                    className={`p-1 h-8 w-8 ${isActive
                         ? "text-green-600 hover:text-green-700 hover:bg-green-50"
                         : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                    }`}
+                      }`}
                     title={isActive ? "Deactivate conference" : "Activate conference"}
                   >
                     {isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
