@@ -60,6 +60,7 @@ export type NewScheduleData = {
   description?: string;
   location?: string;
   scheduleType?: string;
+  type?: 'TALK' | 'BREAK' | 'ONE_DAY_ACTIVITY'; // Backend expects 'type'
   dayNumber?: number;
   dayTitle?: string;
 };

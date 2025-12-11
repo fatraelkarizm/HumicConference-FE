@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Plus } from "lucide-react";
+import { Settings, Plus, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ConferenceScheduleTable from "@/components/admin/ConferenceScheduleTable";
@@ -120,7 +120,8 @@ export default function ConferenceContent({
                     onClick={handleDeleteConference}
                     className="text-red-600 border-red-300 hover:bg-red-50"
                   >
-                    🗑️ Delete Conference
+                    <Trash className="w-4 h-4 mr-1" />
+                    Delete Conference
                   </Button>
                 </div>
               </div>

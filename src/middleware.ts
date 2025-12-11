@@ -21,7 +21,7 @@ const publicRoutes = [
 
 // Admin routes mapping
 const adminRoutes = {
-  '/admin/ICICYTA': 'ADMIN_ICICYTA',
+  '/admin/ICICyTA': 'ADMIN_ICICYTA',
   '/admin/ICODSA': 'ADMIN_ICODSA',
 };
 

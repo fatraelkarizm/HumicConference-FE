@@ -10,9 +10,10 @@ export interface CreateRoomPayload {
   description?: string;
   type: "MAIN" | "PARALLEL";
   online_meeting_url?: string | null;
+  onlineMeetingUrl?: string | null; 
   startTime?: string;
   endTime?: string;
-  scheduleId: string; // ✅ Fix property name
+  scheduleId: string;
   track?: any;
 }
 
@@ -65,7 +66,7 @@ export const useRoom = (scheduleId?: string) => {
 export const useRoomActions = () => {
   const createRoom = async (roomData: CreateRoomPayload) => {
     try {
-      const token = await conferenceScheduleService.getAccessToken();
+      const token = await roomService.getAccessToken();
 
       if (!token) {
         throw new Error('Authentication failed. Please login again.');
@@ -77,10 +78,11 @@ export const useRoomActions = () => {
         identifier: roomData.identifier,
         description: roomData.description,
         type: roomData.type,
-        online_meeting_url: roomData.online_meeting_url,
+        // ✅ Support both formats (AddRoomModal uses camelCase, ManageRoomsModal uses snake_case)
+        online_meeting_url: roomData.onlineMeetingUrl || roomData.online_meeting_url,
         start_time: roomData.startTime,
         end_time: roomData.endTime,
-        schedule_id: roomData.scheduleId, // ✅ Map to backend field name
+        schedule_id: roomData.scheduleId,
         track: (roomData as any).track,
       };
 

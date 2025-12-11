@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import conferenceScheduleService from "@/services/ConferenceScheduleService";
+import roomService from "@/services/RoomServices";
 import {
   Dialog,
   DialogContent,
@@ -35,9 +36,9 @@ interface ScheduleFormData {
   mainRoomDescription: string;
 }
 
-export default function AddScheduleModal({ 
-  isOpen, 
-  onClose, 
+export default function AddScheduleModal({
+  isOpen,
+  onClose,
   conferenceId,
   onSuccess,
   initialDate
@@ -65,7 +66,7 @@ export default function AddScheduleModal({
 
   const handleInputChange = (field: keyof ScheduleFormData, value: string | boolean) => {
     setFormData(prev => ({
-      ... prev,
+      ...prev,
       [field]: value
     }));
   };
@@ -96,32 +97,36 @@ export default function AddScheduleModal({
     }
 
     const result = await response.json();
-    return result. data;
+    return result.data;
   };
 
   // CREATE ROOM API
   const createRoom = async (roomData: any) => {
-    const token = localStorage.getItem('accessToken');
-    
+    const token = await roomService.getAccessToken();
+
+    if (!token) {
+      throw new Error('Authentication failed. Please login again.');
+    }
+
     const response = await fetch(
-      `${process.env. NEXT_PUBLIC_API_BASE_URL}/api/v1/room`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/room`,
       {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.  stringify(roomData),
+        body: JSON.stringify(roomData),
       }
     );
 
-    if (! response.  ok) {
+    if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || 'Failed to create room');
     }
 
     const result = await response.json();
-    return result. data;
+    return result.data;
   };
 
   const handleSubmit = async () => {
@@ -139,7 +144,7 @@ export default function AddScheduleModal({
     setLoading(true);
     try {
       console.log('🔍 Creating schedule for conference:', conferenceId);
-      
+
       // Step 1: Create Schedule
       const schedulePayload = {
         date: formData.date,
@@ -149,29 +154,29 @@ export default function AddScheduleModal({
         notes: formData.notes || "",
         conference_schedule_id: conferenceId,
       };
-      
+
       console.log('🔍 SCHEDULE PAYLOAD:', schedulePayload);
       const scheduleResponse = await createSchedule(schedulePayload);
       console.log('✅ SCHEDULE CREATED:', scheduleResponse);
 
       // Step 2: Create Main Room (if enabled)
-      if (formData. createMainRoom && scheduleResponse?.id) {
+      if (formData.createMainRoom && scheduleResponse?.id) {
         const roomPayload = {
           name: "Main Room",
           identifier: null,
-          description: formData. mainRoomDescription || formData.notes || "Main Session",
+          description: formData.mainRoomDescription || formData.notes || "Main Session",
           type: "MAIN",
           online_meeting_url: null,
           schedule_id: scheduleResponse.id,
         };
-        
+
         console.log('🔍 CREATING MAIN ROOM:', roomPayload);
         const roomResponse = await createRoom(roomPayload);
         console.log('✅ MAIN ROOM CREATED:', roomResponse);
       }
-      
+
       toast.success("Schedule and main room created successfully!");
-      
+
       // Reset form
       setFormData({
         date: "",
@@ -190,29 +195,29 @@ export default function AddScheduleModal({
       }, 100);
 
       onClose();
-      
+
     } catch (error: any) {
       console.error('❌ FULL ERROR:', error);
-      
+
       let errorMessage = "Failed to create";
-      
+
       if (error?.message) {
         try {
           const errorData = JSON.parse(error.message);
-          if (errorData.errors?. validation) {
-            const validations = errorData.errors.  validation;
+          if (errorData.errors?.validation) {
+            const validations = errorData.errors.validation;
             const messages = Object.keys(validations).map(
-              (field) => `${field}: ${validations[field]. join(", ")}`
+              (field) => `${field}: ${validations[field].join(", ")}`
             );
-            errorMessage = `Validation Error: ${messages.  join(" | ")}`;
+            errorMessage = `Validation Error: ${messages.join(" | ")}`;
           } else {
             errorMessage = errorData.message || errorMessage;
           }
         } catch (e) {
-          errorMessage = error.  message;
+          errorMessage = error.message;
         }
       }
-      
+
       toast.error(errorMessage, { duration: 10000 });
     } finally {
       setLoading(false);
@@ -267,15 +272,14 @@ export default function AddScheduleModal({
           {/* Type */}
           <div>
             <Label>Schedule Type</Label>
-            <Select value={formData.  type} onValueChange={(value) => handleInputChange('type', value)}>
+            <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="TALK">Talk/Presentation</SelectItem>
                 <SelectItem value="BREAK">Break</SelectItem>
-                <SelectItem value="KEYNOTE">Keynote</SelectItem>
-                <SelectItem value="PANEL">Panel Discussion</SelectItem>
+                <SelectItem value="ONE_DAY_ACTIVITY">Activity</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -286,7 +290,7 @@ export default function AddScheduleModal({
             <Textarea
               id="notes"
               value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.  target.value)}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
               placeholder="e.g., Opening Keynote, Coffee Break, etc."
               rows={2}
             />
@@ -299,7 +303,7 @@ export default function AddScheduleModal({
                 type="checkbox"
                 id="createMainRoom"
                 checked={formData.createMainRoom}
-                onChange={(e) => handleInputChange('createMainRoom', e.  target.checked)}
+                onChange={(e) => handleInputChange('createMainRoom', e.target.checked)}
                 className="mt-0.5"
               />
               <div className="flex-1">
@@ -307,16 +311,16 @@ export default function AddScheduleModal({
                   Create Main Room
                 </Label>
                 <p className="text-xs text-blue-600 mt-1">
-                  Automatically create a main room for this time slot.     
+                  Automatically create a main room for this time slot.
                   You can add parallel sessions (Room A, B, C) afterward.
                 </p>
-                
+
                 {formData.createMainRoom && (
                   <div className="mt-2">
                     <Input
                       placeholder="Main room description (optional)"
                       value={formData.mainRoomDescription}
-                      onChange={(e) => handleInputChange('mainRoomDescription', e.target.  value)}
+                      onChange={(e) => handleInputChange('mainRoomDescription', e.target.value)}
                       className="text-xs"
                     />
                   </div>
@@ -326,11 +330,11 @@ export default function AddScheduleModal({
           </div>
 
           {/* Preview */}
-          {formData.date && formData.  startTime && formData.endTime && (
+          {formData.date && formData.startTime && formData.endTime && (
             <div className="bg-gray-50 border border-gray-200 rounded p-3">
               <h4 className="font-medium text-sm mb-2">Preview:</h4>
               <div className="text-sm space-y-1">
-                <div><strong>Date:</strong> {new Date(formData.date).  toLocaleDateString()}</div>
+                <div><strong>Date:</strong> {new Date(formData.date).toLocaleDateString()}</div>
                 <div><strong>Time:</strong> {formData.startTime} - {formData.endTime}</div>
                 <div><strong>Type:</strong> {formData.type}</div>
                 {formData.notes && <div><strong>Notes:</strong> {formData.notes}</div>}
@@ -348,8 +352,8 @@ export default function AddScheduleModal({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={loading || !formData.date || !formData.startTime || !formData.endTime}
             className="bg-[#015B97] hover:bg-[#014f7a]"
           >

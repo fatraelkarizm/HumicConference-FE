@@ -133,15 +133,15 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         icon: CalendarDaysIcon,
         roles: ['SUPER_ADMIN'],
         subItems: [
-          { label: "Konferensi ICICyTA", href: "/super-admin/ICICYTA", icon: DocumentTextIcon },
-          { label: "Konferensi ICoDSA", href: "/super-admin/ICODSA", icon: DocumentTextIcon },
+          { label: "Konferensi ICICyTA", href: "/super-admin/ICICyta", icon: DocumentTextIcon },
+          { label: "Konferensi ICoDSA", href: "/super-admin/ICoDSA", icon: DocumentTextIcon },
         ],
       });
     } else if (user?.role === 'ADMIN_ICICYTA') {
       baseItems.push({
         id: "jadwal",
         label: "Jadwal ICICyTA",
-        href: "/admin/ICICYTA",
+        href: "/admin/ICICyTA",
         icon: CalendarDaysIcon,
         roles: ['ADMIN_ICICYTA'],
       });

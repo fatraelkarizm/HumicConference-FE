@@ -44,10 +44,18 @@ export default function ICICyTAPage() {
   // Get data for selected conference (for regular users)
   const { schedules: userSchedules, loading: userLoading } = useConferenceTabsData(selectedConference || {} as BackendConferenceSchedule);
   useEffect(() => {
-    if (availableYears.length > 0 && ! selectedYear) {
-      setSelectedYear(availableYears[0]);
+    if (availableYears.length > 0 && !selectedYear) {
+      // Find active conference
+      const activeConference = icicytaConferences.find(conf => conf.is_active === true);
+
+      if (activeConference) {
+        setSelectedYear(activeConference.year);
+      } else {
+        // Fallback to latest year if no active conference found
+        setSelectedYear(availableYears[0]);
+      }
     }
-  }, [availableYears, selectedYear]);
+  }, [availableYears, selectedYear, icicytaConferences]);
 
   const handleModalClose = () => {
     setActiveModal(null);
@@ -113,7 +121,7 @@ export default function ICICyTAPage() {
                 {selectedConference?.name || "ICICyTA Conference"}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                {selectedConference ?  (
+                {selectedConference ? (
                   <>
                     {new Date(selectedConference.start_date).toLocaleDateString()} -{" "}
                     {new Date(selectedConference.end_date).toLocaleDateString()}
@@ -153,7 +161,7 @@ export default function ICICyTAPage() {
 
       {/* Main Content */}
       <div className="max-w-11/12 mx-auto py-8">
-        {! selectedConference ? (
+        {!selectedConference ? (
           // Empty State
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">

@@ -8,10 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { 
-  BackendConferenceSchedule, 
-  BackendSchedule, 
-  BackendRoom 
+import type {
+  BackendConferenceSchedule,
+  BackendSchedule,
+  BackendRoom
 } from "@/types";
 
 interface Props {
@@ -54,9 +54,9 @@ export default function ScheduleTable({
   getDayNumber,
   extractRoomId,
 }: Props) {
-  
+
   const formatTime = (time?: string) => {
-    if (! time) return "--:--";
+    if (!time) return "--:--";
     const normalizedTime = time.replace(/\./g, ":");
     return normalizedTime.length <= 5 ? normalizedTime : normalizedTime.substring(0, 5);
   };
@@ -93,7 +93,7 @@ export default function ScheduleTable({
             variant="ghost"
             className="h-6 px-2 text-xs"
             onClick={(e) => {
-              e. stopPropagation();
+              e.stopPropagation();
               onRoomDetail(room);
             }}
           >
@@ -120,7 +120,7 @@ export default function ScheduleTable({
   const getMainRoomContent = (schedule?: BackendSchedule) => {
     if (!schedule) return null;
 
-    if (schedule.notes?. toLowerCase().includes("coffee break")) {
+    if (schedule.notes?.toLowerCase().includes("coffee break")) {
       return (
         <div className="text-center py-2">
           <div className="font-medium text-sm">Coffee Break</div>
@@ -189,22 +189,21 @@ export default function ScheduleTable({
                   Main Room
                 </th>
 
-                {roomColumnsForDay. map((roomColumn, index) => (
+                {roomColumnsForDay.map((roomColumn, index) => (
                   <th
                     key={roomColumn.id}
-                    className={`text-left py-3 px-4 font-semibold ${
-                      index < roomColumnsForDay.length - 1
-                        ? "border-r border-gray-300"
-                        : ""
-                    } bg-gray-50 min-w-[180px]`}
+                    className={`text-left py-3 px-4 font-semibold ${index < roomColumnsForDay.length - 1
+                      ? "border-r border-gray-300"
+                      : ""
+                      } bg-gray-50 min-w-[180px]`}
                     title={
                       roomColumn.room
-                        ? `${roomColumn. room.name} (${roomColumn.room. identifier})`
+                        ? `${roomColumn.room.name} (${roomColumn.room.identifier})`
                         : roomColumn.label
                     }
                   >
                     {roomColumn.label}
-                    {roomColumn.room?. identifier && (
+                    {roomColumn.room?.identifier && (
                       <div className="text-xs font-normal text-gray-500 mt-1">
                         {roomColumn.room.identifier}
                       </div>
@@ -228,7 +227,7 @@ export default function ScheduleTable({
                       className="border-b border-gray-200 hover:bg-gray-50"
                     >
                       {/* Time Columns */}
-                      <td 
+                      <td
                         className="py-4 px-3 border-r border-gray-200 font-mono text-sm"
                       >
                         {formatTime(schedule.start_time)}
@@ -238,13 +237,45 @@ export default function ScheduleTable({
                       </td>
 
                       {/* Main Room and spanning to room E */}
-                      <td colSpan={1 + roomColumnsForDay.length} className="py-4 px-4 text-center bg-yellow-50 border-r border-gray-200">
+                      <td colSpan={roomColumnsForDay.length} className="py-4 px-4 text-center bg-yellow-50 border-r border-gray-200">
                         <div className="font-medium text-sm">
                           {schedule.notes || "Break"}
                         </div>
                         <Badge variant="outline" className="text-xs bg-yellow-100 mt-1">
                           BREAK
                         </Badge>
+                      </td>
+
+                      {/* Actions for Break */}
+                      <td className="py-4 px-2 bg-yellow-50 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 hover:bg-yellow-100"
+                            >
+                              <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onScheduleDetail(schedule)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onScheduleEdit(schedule)}>
+                              <Edit2 className="mr-2 h-4 w-4" />
+                              Edit Schedule
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onDeleteSchedule(schedule)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete Schedule
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   );
@@ -253,12 +284,11 @@ export default function ScheduleTable({
                 return (
                   <tr
                     key={schedule.id}
-                    className={`border-b border-gray-200 hover:bg-gray-50 group ${
-                      index % 2 === 0 ?  "bg-white" : "bg-gray-50/50"
-                    }`}
+                    className={`border-b border-gray-200 hover:bg-gray-50 group ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                      }`}
                   >
                     {/* Time Columns */}
-                    <td 
+                    <td
                       className="py-4 px-3 border-r border-gray-200 font-mono text-sm cursor-pointer hover:bg-blue-50 transition-colors"
                       onClick={() => onAddSchedule()}
                     >
@@ -285,7 +315,7 @@ export default function ScheduleTable({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {mainRoom ?  (
+                            {mainRoom ? (
                               <>
                                 <DropdownMenuItem onClick={() => onRoomDetail(mainRoom)}>
                                   <Eye className="mr-2 h-4 w-4" />
@@ -334,11 +364,10 @@ export default function ScheduleTable({
                       return (
                         <td
                           key={roomColumn.id}
-                          className={`py-4 px-4 ${
-                            roomIndex < roomColumnsForDay.length - 1
-                              ? "border-r border-gray-200"
-                              : ""
-                          } align-top cursor-pointer hover:bg-blue-50 transition-colors`}
+                          className={`py-4 px-4 ${roomIndex < roomColumnsForDay.length - 1
+                            ? "border-r border-gray-200"
+                            : ""
+                            } align-top cursor-pointer hover:bg-blue-50 transition-colors`}
                           onClick={() => onRoomCellClick(roomColumn.id, schedule)}
                         >
                           <div className="min-h-[60px] group">
@@ -381,19 +410,27 @@ export default function ScheduleTable({
                       <div className="space-y-2">
                         <div className="text-lg font-medium text-gray-700">No schedules for this day</div>
                         <div className="text-sm text-gray-500 max-w-md mx-auto">
-                          Create your first schedule to start organizing the conference.  
+                          Create your first schedule to start organizing the conference.
                           Once you add a time slot with a main room, you can then add parallel sessions.
                         </div>
                       </div>
-                      
+
                       {/* ✅ Step-by-step guide */}
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-lg mx-auto">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-lg mx-auto mb-4">
                         <div className="text-sm font-medium text-blue-800 mb-2">Getting Started:</div>
                         <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
                           <li>Add a time slot to create the main room for that time</li>
                           <li>Then click on Room A, B, C cells to add parallel sessions</li>
                         </ol>
                       </div>
+
+                      <Button
+                        onClick={onAddSchedule}
+                        className="bg-[#015B97] hover:bg-[#014f7a]"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create First Schedule
+                      </Button>
                     </div>
                   </td>
                 </tr>

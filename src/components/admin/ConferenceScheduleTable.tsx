@@ -63,13 +63,13 @@ export default function ConferenceScheduleTable({
   });
   const [loading, setLoading] = useState(false);
 
-  const { createRoom } = useRoomActions();
+  const { createRoom, deleteRoom } = useRoomActions();
   const { deleteSchedule } = useScheduleActions();
 
   // ✅ DEFINE extractRoomId FIRST - before using it
   const extractRoomId = (room: BackendRoom): string | null => {
-    const name = (room.name || "").toLowerCase(). trim();
-    const identifier = (room.identifier || "").toLowerCase(). trim();
+    const name = (room.name || "").toLowerCase().trim();
+    const identifier = (room.identifier || "").toLowerCase().trim();
 
     const roomNameMatch = name.match(/^room\s+([a-e])$/i);
     if (roomNameMatch) return roomNameMatch[1].toUpperCase();
@@ -81,11 +81,11 @@ export default function ConferenceScheduleTable({
   };
 
   // Schedule logic
-  const { grouped, daysList, selectedDay, setSelectedDay, formatDate, getDayNumber } = 
+  const { grouped, daysList, selectedDay, setSelectedDay, formatDate, getDayNumber } =
     useScheduleTableLogic(conference, schedules);
 
-  // Update conference end date
-  const updateConferenceEndDate = async (id: string, date: string) => {
+  // Update conference dates
+  const updateConferenceDates = async (id: string, startDate: string, endDate: string) => {
     const token = await conferenceScheduleService.getAccessToken();
     if (!token) {
       toast.error("No access token available");
@@ -93,18 +93,18 @@ export default function ConferenceScheduleTable({
     }
 
     try {
-      await conferenceScheduleService.updateConferenceSchedule(token, id, { 
+      await conferenceScheduleService.updateConferenceSchedule(token, id, {
         year: conference.year.toString(),
-        startDate: conference.start_date.split('T')[0], 
-        endDate: date 
+        startDate: startDate,
+        endDate: endDate
       });
-      toast.success("Conference end date updated successfully");
+      toast.success("Conference dates updated successfully");
       onRefresh?.();
     } catch (error: any) {
-      toast.error(error.message || "Failed to update conference end date");
+      toast.error(error.message || "Failed to update conference dates");
     }
   };
-  
+
   // Fetch ALL rooms and filter them
   const { rooms: allRooms, loading: roomsLoading, refetch: refetchRooms } = useRoom();
 
@@ -124,29 +124,29 @@ export default function ConferenceScheduleTable({
     if ((!currentSchedules || currentSchedules.length === 0) && Array.isArray((conference as any).schedules)) {
       currentSchedules = (conference as any).schedules.filter((s: any) => toUtcDateKey(s.date) === selectedDay);
     }
-    
+
     // ✅ Extract rooms from schedules (they have nested rooms data)
     const roomsFromSchedules: BackendRoom[] = [];
-    
+
     currentSchedules.forEach(schedule => {
       // Check if schedule has rooms property (from API response)
       if ((schedule as any).rooms && Array.isArray((schedule as any).rooms)) {
         roomsFromSchedules.push(...(schedule as any).rooms);
       }
     });
-    
+
     // ✅ Also get rooms from allRooms that match schedule IDs
     const currentScheduleIds = currentSchedules.map(s => s.id);
-    const roomsFromAllRooms = allRooms.filter(room => 
+    const roomsFromAllRooms = allRooms.filter(room =>
       currentScheduleIds.includes(room.schedule_id)
     );
-    
+
     // ✅ Combine both sources and deduplicate by ID
     const allCurrentRooms = [...roomsFromSchedules, ...roomsFromAllRooms];
-    const uniqueRooms = allCurrentRooms.filter((room, index, self) => 
+    const uniqueRooms = allCurrentRooms.filter((room, index, self) =>
       index === self.findIndex(r => r.id === room.id)
     );
-    
+
     return uniqueRooms;
   }, [allRooms, grouped, selectedDay]);
 
@@ -154,13 +154,13 @@ export default function ConferenceScheduleTable({
   const roomColumnsForDay = useMemo(() => {
     const columns: any[] = [];
     const roomLabels = ['A', 'B', 'C', 'D', 'E'];
-    
+
     roomLabels.forEach((label, index) => {
       const existingRoom = currentDayRooms.find(room => {
         const roomId = extractRoomId(room);
         return roomId === label;
       });
-      
+
       columns.push({
         id: label,
         label: `Room ${label}`,
@@ -168,7 +168,7 @@ export default function ConferenceScheduleTable({
         sortOrder: index,
       });
     });
-    
+
     return columns;
   }, [currentDayRooms, extractRoomId]);
 
@@ -183,13 +183,13 @@ export default function ConferenceScheduleTable({
       // ✅ Multiple refresh attempts
       await refetchRooms();
       onRefresh?.();
-      
+
       // Secondary refresh
       setTimeout(async () => {
         await refetchRooms();
         onRefresh?.();
       }, 1000);
-      
+
     } catch (error) {
       console.error('❌ Refresh error:', error);
     }
@@ -265,7 +265,7 @@ export default function ConferenceScheduleTable({
               No Conference Days Available
             </h3>
             <p className="text-gray-500 mb-4">
-              Create your first schedule to start organizing the conference. 
+              Create your first schedule to start organizing the conference.
             </p>
           </div>
         </CardContent>
@@ -308,7 +308,13 @@ export default function ConferenceScheduleTable({
         onRoomDetail={onRoomDetail}
         onScheduleEdit={onScheduleEdit}
         onScheduleDetail={onScheduleDetail}
-        onDeleteSchedule={(schedule) => {}}
+        onDeleteSchedule={async (schedule) => {
+          if (confirm("Are you sure you want to delete this schedule?")) {
+            await deleteSchedule(schedule.id);
+            toast.success("Schedule deleted successfully");
+            handleScheduleSuccess();
+          }
+        }}
         onRoomCellClick={handleRoomCellClick}
         onAddSchedule={() => setShowAddSchedule(true)}
         formatDate={formatDate}
@@ -345,7 +351,7 @@ export default function ConferenceScheduleTable({
         grouped={grouped}
         selectedDay={selectedDay}
         setSelectedDay={setSelectedDay}
-        updateConferenceEndDate={updateConferenceEndDate}
+        updateConferenceDates={updateConferenceDates}
         formatDate={formatDate}
         getDayNumber={getDayNumber}
         onRefresh={onRefresh}
@@ -359,10 +365,16 @@ export default function ConferenceScheduleTable({
         onAddRoom={handleAddRoom}
         onEditRoom={onRoomEdit}
         onDeleteRoom={async (room) => {
-          // TODO: Implement delete room
-          console.log("Delete room", room);
-          toast.success("Room deleted (placeholder)");
-          onRefresh?.();
+          if (confirm(`Are you sure you want to delete room "${room.name}"?`)) {
+            try {
+              await deleteRoom(room.id);
+              toast.success("Room deleted successfully");
+              handleScheduleSuccess();
+            } catch (e: any) {
+              console.error(e);
+              toast.error(e.message || "Failed to delete room");
+            }
+          }
         }}
         onViewRoom={onRoomDetail}
       />
@@ -370,7 +382,7 @@ export default function ConferenceScheduleTable({
       <ManageSchedulesModal
         isOpen={showManageSchedules}
         onClose={() => setShowManageSchedules(false)}
-        schedules={schedules}
+        schedules={grouped[selectedDay] || []}
         onAddSchedule={() => setShowAddSchedule(true)}
         onEditSchedule={onScheduleEdit}
         onDeleteSchedule={async (schedule) => {

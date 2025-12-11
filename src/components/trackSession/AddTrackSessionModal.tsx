@@ -47,16 +47,16 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
   })) : allTrackOptions;
 
   const presentationModes = [
-    { 
-      value: 'ONLINE', 
-      label: 'Online Presentation', 
+    {
+      value: 'ONLINE',
+      label: 'Online Presentation',
       description: 'Virtual presentation via video conference',
       icon: '💻',
       color: 'bg-blue-100 text-blue-800'
     },
-    { 
-      value: 'ONSITE', 
-      label: 'Onsite Presentation', 
+    {
+      value: 'ONSITE',
+      label: 'Onsite Presentation',
       description: 'Physical presentation at conference venue',
       icon: '🏢',
       color: 'bg-green-100 text-green-800'
@@ -110,7 +110,7 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
       await createTrackSession(sessionData);
       toast.success('Track session created successfully!');
       onClose();
-      
+
     } catch (error: any) {
       toast.error(error.message || 'Failed to create track session');
     } finally {
@@ -139,94 +139,55 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Paper Information */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-              <FileText className="w-4 h-4" />
-              <span>Paper Information</span>
-            </div>
+          <div className="md:col-span-2">
+            <Label htmlFor="paperId">Paper ID *</Label>
+            <Input
+              id="paperId"
+              value={formData.paperId}
+              onChange={(e) => handleInputChange('paperId', e.target.value)}
+              placeholder="e.g., 1571094988"
+              required
+            />
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <Label htmlFor="title">Paper Title *</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => handleInputChange('title', e.target.value)}
+              placeholder="e.g., Lung Cancer Classification Based on Ensembling EfficientNet Using Histopathology Images"
+              required
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <Label htmlFor="authors">Authors *</Label>
+            <Textarea
+              id="authors"
+              value={formData.authors}
+              onChange={(e) => handleInputChange('authors', e.target.value)}
+              placeholder="e.g., Akif Rachmat Hidayah and Untari N. Wisesty (Telkom University, Indonesia)"
+              rows={3}
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Include author names and affiliations
+            </p>
+          </div>
+
+          <div className={`p-4 rounded-lg bg-blue-50 text-blue-800`}>
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">💻</span>
               <div>
-                <Label htmlFor="paperId">Paper ID *</Label>
-                <Input
-                  id="paperId"
-                  value={formData.paperId}
-                  onChange={(e) => handleInputChange('paperId', e.target.value)}
-                  placeholder="e.g., 1571094988"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="mode">Presentation Mode *</Label>
-                <Select value={formData.mode} onValueChange={(value) => handleInputChange('mode', value as 'ONLINE' | 'ONSITE')}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select presentation mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {presentationModes.map(mode => (
-                      <SelectItem key={mode.value} value={mode.value}>
-                        <div className="flex items-center">
-                          <span className="mr-2">{mode.icon}</span>
-                          <div>
-                            <div className="font-medium">{mode.label}</div>
-                            <div className="text-xs text-gray-500">{mode.description}</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="title">Paper Title *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="e.g., Lung Cancer Classification Based on Ensembling EfficientNet Using Histopathology Images"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="authors">Authors *</Label>
-                <Textarea
-                  id="authors"
-                  value={formData.authors}
-                  onChange={(e) => handleInputChange('authors', e.target.value)}
-                  placeholder="e.g., Akif Rachmat Hidayah and Untari N. Wisesty (Telkom University, Indonesia)"
-                  rows={3}
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Include author names and affiliations
-                </p>
+                <div className="font-medium">Online Presentation</div>
+                <div className="text-sm">Virtual presentation via video conference</div>
               </div>
             </div>
-
-            {selectedMode && (
-              <div className={`p-4 rounded-lg ${selectedMode.color}`}>
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">{selectedMode.icon}</span>
-                  <div>
-                    <div className="font-medium">{selectedMode.label}</div>
-                    <div className="text-sm">{selectedMode.description}</div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Track Assignment */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-              <Tag className="w-4 h-4" />
-              <span>Track Assignment</span>
-            </div>
-
             <div>
               <Label htmlFor="trackId">Track *</Label>
               <Select value={formData.trackId} onValueChange={(value) => handleInputChange('trackId', value)}>
@@ -256,7 +217,6 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
             {selectedTrack && (
               <div className="bg-purple-50 p-3 rounded-lg">
                 <div className="flex items-center text-purple-700">
-                  <Users className="w-4 h-4 mr-2" />
                   <span className="text-sm font-medium">Track: {selectedTrack.label}</span>
                 </div>
               </div>
@@ -265,11 +225,6 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
 
           {/* Time Configuration */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-              <Clock className="w-4 h-4" />
-              <span>Time Configuration</span>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="startTime">Start Time *</Label>
@@ -296,7 +251,6 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
 
             {formData.startTime && formData.endTime && formData.startTime < formData.endTime && (
               <div className="text-sm text-gray-600">
-                <Clock className="w-4 h-4 inline mr-1" />
                 Duration: {calculateDuration(formData.startTime, formData.endTime)}
               </div>
             )}
@@ -304,11 +258,6 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
 
           {/* Additional Notes */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-              <FileText className="w-4 h-4" />
-              <span>Additional Information</span>
-            </div>
-
             <div>
               <Label htmlFor="notes">Notes (Optional)</Label>
               <Textarea
@@ -342,7 +291,7 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
               <div className="flex justify-between">
                 <span className="text-gray-600">Duration:</span>
                 <span className="font-medium">
-                  {formData.startTime && formData.endTime && formData.startTime < formData.endTime 
+                  {formData.startTime && formData.endTime && formData.startTime < formData.endTime
                     ? calculateDuration(formData.startTime, formData.endTime)
                     : 'Not calculated'
                   }

@@ -58,11 +58,11 @@ export default function EditScheduleModal({ isOpen, onClose, schedule, onUpdated
   }, [schedule]);
 
   const scheduleTypes = [
-    { value: 'TALK', label: 'Talk/Speech', icon: '🎤' },
-    { value: 'BREAK', label: 'Break', icon: '☕' },
-    { value: 'ONE_DAY_ACTIVITY', label: 'Activity/Workshop', icon: '🏃' },
-    { value: 'PANEL', label: 'Panel Discussion', icon: '👥' },
-    { value: 'REPORTING', label: 'Reporting', icon: '📊' }
+    { value: 'TALK', label: 'Talk/Speech' },
+    { value: 'BREAK', label: 'Break' },
+    { value: 'ONE_DAY_ACTIVITY', label: 'Activity/Workshop' },
+    { value: 'PANEL', label: 'Panel Discussion' },
+    { value: 'REPORTING', label: 'Reporting' }
   ];
 
   const handleInputChange = (key: keyof typeof formData, value: string) => {
@@ -111,23 +111,25 @@ export default function EditScheduleModal({ isOpen, onClose, schedule, onUpdated
 
       // 1) Update schedule (only fields backend accepts) - do NOT send start/end times
       // Times belong to the room child; sending them to schedule will update the parent.
+      // 1) Update schedule (only fields backend accepts) 
+      // Times belong to the schedule.
       const schedulePayload: UpdateScheduleData = {
         date: formData.date || undefined,
-        // We intentionally don't send start/end here so child room retains time fields
+        startTime: normalizeTime(formData.startTime) || undefined,
+        endTime: normalizeTime(formData.endTime) || undefined,
         // We intentionally don't send title (backend doesn't accept it)
         description: undefined,
-        scheduleType: formData.scheduleType || undefined
+        type: (formData.scheduleType as any) || undefined
       };
 
       await updateSchedule(schedule.id, schedulePayload);
 
       // 2) Update existing MAIN room or create one
+      // DO NOT send start/end times for MAIN rooms in room payload (they inherit or restricted)
       const roomPayloadForUpdate: any = {};
       if (formData.roomName !== undefined) roomPayloadForUpdate.name = formData.roomName;
       if (formData.roomDescription !== undefined) roomPayloadForUpdate.description = formData.roomDescription;
       if (formData.roomOnlineUrl !== undefined) roomPayloadForUpdate.online_meeting_url = formData.roomOnlineUrl || null;
-      if (formData.startTime) roomPayloadForUpdate.start_time = normalizeTime(formData.startTime);
-      if (formData.endTime) roomPayloadForUpdate.end_time = normalizeTime(formData.endTime);
 
       if (formData.mainRoomId) {
         // Update existing main room. Wrap in try/catch to surface errors but not block schedule update.
@@ -145,11 +147,10 @@ export default function EditScheduleModal({ isOpen, onClose, schedule, onUpdated
           identifier: null,
           description: formData.roomDescription || '',
           type: 'MAIN',
-          online_meeting_url: formData.roomOnlineUrl || null,
+          onlineMeetingUrl: formData.roomOnlineUrl || null,
           // Normalize times for backend if needed by room (some backends require null/omit)
-          start_time: normalizeTime(formData.startTime) || null,
-          end_time: normalizeTime(formData.endTime) || null,
-          schedule_id: schedule.id
+          // EXCLUDE start/end times for MAIN creation to avoid 422
+          scheduleId: schedule.id
         };
 
         try {
@@ -217,7 +218,6 @@ export default function EditScheduleModal({ isOpen, onClose, schedule, onUpdated
                     {scheduleTypes.map(type => (
                       <SelectItem key={type.value} value={type.value}>
                         <span className="flex items-center">
-                          <span className="mr-2">{type.icon}</span>
                           {type.label}
                         </span>
                       </SelectItem>

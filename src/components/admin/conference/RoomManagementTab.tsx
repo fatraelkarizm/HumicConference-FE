@@ -54,9 +54,9 @@ export default function RoomManagementTab({
 
     if (roomFilter !== "all") {
       if (roomFilter === "main") {
-        filtered = filtered. filter((room) => room.type === "MAIN");
+        filtered = filtered.filter((room) => room.type === "MAIN");
       } else if (roomFilter === "parallel") {
-        filtered = filtered. filter((room) => room.type === "PARALLEL");
+        filtered = filtered.filter((room) => room.type === "PARALLEL");
       }
     }
 
@@ -64,8 +64,8 @@ export default function RoomManagementTab({
       filtered = filtered.filter(
         (room) =>
           room.name.toLowerCase().includes(roomSearchTerm.toLowerCase()) ||
-          room.identifier?. toLowerCase().includes(roomSearchTerm.toLowerCase()) ||
-          room.description?.toLowerCase().includes(roomSearchTerm. toLowerCase())
+          room.identifier?.toLowerCase().includes(roomSearchTerm.toLowerCase()) ||
+          room.description?.toLowerCase().includes(roomSearchTerm.toLowerCase())
       );
     }
 
@@ -74,7 +74,7 @@ export default function RoomManagementTab({
 
   // ✅ Handle Delete Room
   const handleDeleteRoom = async (room: BackendRoom) => {
-    if (! confirm(`Are you sure you want to delete room "${room.name}"?`)) return;
+    if (!confirm(`Are you sure you want to delete room "${room.name}"?`)) return;
 
     setDeleteLoading(true);
     try {
@@ -112,14 +112,6 @@ export default function RoomManagementTab({
             <Badge variant="outline">
               {filteredRooms.length} of {conferenceRooms.length} rooms
             </Badge>
-            <Button
-              onClick={() => onModalOpen("add-room")}
-              size="sm"
-              className="bg-[#015B97] hover:bg-[#014f7a]"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Room
-            </Button>
           </div>
         </CardTitle>
       </CardHeader>
@@ -183,7 +175,7 @@ export default function RoomManagementTab({
                     <Badge variant={room.type === "MAIN" ? "default" : "secondary"}>
                       {room.type}
                     </Badge>
-                    
+
                     {/* ✅ Room Actions */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

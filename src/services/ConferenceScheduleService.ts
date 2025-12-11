@@ -29,7 +29,7 @@ class ConferenceScheduleService {
 
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<BackendApiResponse<any>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ class ConferenceScheduleService {
     }
 
     const result = await response.json();
-    
+
     if (result.code && result.code >= 400) {
       throw new Error(result.message || `Request failed with code ${result.code}`);
     }
@@ -97,7 +97,7 @@ class ConferenceScheduleService {
 
     const response = await this.makeRequest('/api/v1/conference-schedule', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
@@ -109,12 +109,12 @@ class ConferenceScheduleService {
 
   async updateConferenceSchedule(accessToken: string, conferenceId: string, data: UpdateConferenceScheduleData): Promise<BackendConferenceSchedule> {
     const updatePayload: any = {};
-    
+
     if (data.name) updatePayload.name = data.name;
     if (data.description) updatePayload.description = data.description;
     if (data.year) updatePayload.year = data.year;
-    if (data.startDate) updatePayload.start_date = new Date(data.startDate + 'T00:00:00').toISOString().split('T')[0];
-    if (data.endDate) updatePayload.end_date = new Date(data.endDate + 'T00:00:00').toISOString().split('T')[0];
+    if (data.startDate) updatePayload.start_date = data.startDate;
+    if (data.endDate) updatePayload.end_date = data.endDate;
     if (data.type) updatePayload.type = data.type;
     if (data.contactEmail) updatePayload.contact_email = data.contactEmail;
     if (data.timezoneIana) updatePayload.timezone_iana = data.timezoneIana;
@@ -126,7 +126,7 @@ class ConferenceScheduleService {
 
     const response = await this.makeRequest(`/api/v1/conference-schedule/${conferenceId}`, {
       method: 'PATCH',
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },

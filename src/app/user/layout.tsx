@@ -22,14 +22,11 @@ export default function UserLayout({
 
           {/* Link Desktop: Sembunyikan di mobile */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link href="/user/ICICYTA" className="text-white">
+            <Link href="/user/ICICyTA" className="text-white">
               ICICyTA
             </Link>
-            <Link href="/user/ICODSA" className="text-white">
+            <Link href="/user/ICoDSA" className="text-white">
               ICoDSA
-            </Link>
-            <Link href="/user/parallel" className="text-white">
-              Parallel
             </Link>
             <Link href="/user/about" className="text-white">
               About
@@ -72,14 +69,14 @@ export default function UserLayout({
         {/* Link Navigasi Mobile */}
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
           <Link
-            href="/user/ICICYTA"
+            href="/user/ICICyTA"
             className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
             onClick={() => setIsMenuOpen(false)}
           >
             ICICyTA
           </Link>
           <Link
-            href="/user/ICODSA"
+            href="/user/ICoDSA"
             className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
             onClick={() => setIsMenuOpen(false)}
           >

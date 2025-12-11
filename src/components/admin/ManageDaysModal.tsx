@@ -21,7 +21,7 @@ interface Props {
   grouped: Record<string, BackendSchedule[]>;
   selectedDay: string;
   setSelectedDay: (day: string) => void;
-  updateConferenceEndDate: (id: string, date: string) => Promise<any>;
+  updateConferenceDates: (id: string, startDate: string, endDate: string) => Promise<any>;
   formatDate: (dateStr: string) => string;
   getDayNumber: (dateStr: string) => number;
   onRefresh?: () => void;
@@ -35,7 +35,7 @@ export default function ManageDaysModal({
   grouped,
   selectedDay,
   setSelectedDay,
-  updateConferenceEndDate,
+  updateConferenceDates,
   formatDate,
   getDayNumber,
   onRefresh,
@@ -59,16 +59,16 @@ export default function ManageDaysModal({
             <div className="mt-1 p-3 bg-gray-50 border border-gray-200 rounded text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <strong>Start:</strong> {formatDate(conference.start_date. split("T")[0])}
+                  <strong>Start:</strong> {formatDate(conference.start_date.split("T")[0])}
                 </div>
                 <div>
-                  <strong>End:</strong> {formatDate(conference. end_date.split("T")[0])}
+                  <strong>End:</strong> {formatDate(conference.end_date.split("T")[0])}
                 </div>
                 <div>
                   <strong>Total Days:</strong> {daysList.length}
                 </div>
                 <div>
-                  <strong>Year:</strong> {new Date(conference.start_date). getFullYear()}
+                  <strong>Year:</strong> {new Date(conference.start_date).getFullYear()}
                 </div>
               </div>
             </div>
@@ -80,8 +80,10 @@ export default function ManageDaysModal({
             <div className="mt-2 space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded p-3">
               {daysList.map((day, index) => {
                 const daySchedules = grouped[day] || [];
-                const hasSchedules = daySchedules. length > 0;
+                const hasSchedules = daySchedules.length > 0;
+                const isFirstDay = index === 0;
                 const isLastDay = index === daysList.length - 1;
+                const canDelete = daysList.length > 1 && (isFirstDay || isLastDay);
 
                 return (
                   <div
@@ -96,7 +98,7 @@ export default function ManageDaysModal({
                         {hasSchedules ? `${daySchedules.length} schedule(s)` : "No schedules"}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Button
                         onClick={() => setSelectedDay(day)}
@@ -106,35 +108,67 @@ export default function ManageDaysModal({
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      
-                      {!hasSchedules && daysList.length > 1 && (
+
+                      {canDelete && (
                         <Button
                           onClick={async () => {
-                            setLoading(true);
-                            try {
-                              const dayIndex = daysList.indexOf(day);
-                              
-                              // Set end date to the previous day's date
-                              const newEndDate = daysList[dayIndex - 1];
-                              
-                              if (!newEndDate) {
-                                toast.error("Cannot delete the first day");
+                            if (hasSchedules) {
+                              if (!confirm(`This day has ${daySchedules.length} schedules. Deleting it will remove them. Continue?`)) {
                                 return;
                               }
-                              
-                              await updateConferenceEndDate(
-                                conference.id, 
-                                newEndDate
-                              );
+                            } else {
+                              if (!confirm(`Are you sure you want to delete Day ${getDayNumber(day)}?`)) {
+                                return;
+                              }
+                            }
+
+                            console.log('--- Delete Day Request ---');
+                            console.log('Current Conference:', { start: conference.start_date, end: conference.end_date });
+                            console.log('Days List:', daysList);
+                            console.log('Deletion Target:', day, 'Index:', index);
+                            console.log('Is First:', isFirstDay, 'Is Last:', isLastDay);
+
+                            setLoading(true);
+                            try {
+                              let newStartDate = conference.start_date.split("T")[0];
+                              let newEndDate = conference.end_date.split("T")[0];
+
+                              if (isFirstDay && daysList.length > 1) {
+                                // Deleting first day -> Start date becomes next day (index 1)
+                                const nextDay = daysList[1];
+                                if (!nextDay) throw new Error("Next day logic failed: Day 1 is missing");
+                                newStartDate = nextDay;
+                                console.log('New Start Date selected:', newStartDate);
+                              } else if (isLastDay && daysList.length > 1) {
+                                // Deleting last day -> End date becomes previous day (2nd to last)
+                                const prevDay = daysList[daysList.length - 2];
+                                if (!prevDay) throw new Error("Previous day logic failed");
+                                newEndDate = prevDay;
+                                console.log('New End Date selected:', newEndDate);
+                              } else {
+                                throw new Error("Invalid delete operation: Not first or last day, or only 1 day left");
+                              }
+
+                              // Safety Check
+                              if (newStartDate > newEndDate) {
+                                console.error('Date range invalid:', newStartDate, newEndDate);
+                                throw new Error(`Invalid date range calculated: ${newStartDate} to ${newEndDate}`);
+                              }
+
+                              console.log('Sending Update:', newStartDate, newEndDate);
+                              await updateConferenceDates(conference.id, newStartDate, newEndDate);
 
                               toast.success(`Day ${getDayNumber(day)} deleted successfully!`);
-                              
+
                               if (selectedDay === day) {
-                                setSelectedDay(daysList[dayIndex - 1] || daysList[0] || "");
+                                // Move selection to safe fallback
+                                if (isLastDay) setSelectedDay(daysList[daysList.length - 2]);
+                                else if (isFirstDay) setSelectedDay(daysList[1]);
                               }
-                              
+
                               onRefresh?.();
                             } catch (error: any) {
+                              console.error("Delete day error:", error);
                               toast.error(error.message || "Failed to delete day");
                             } finally {
                               setLoading(false);
@@ -166,44 +200,53 @@ export default function ManageDaysModal({
                   <Input
                     id="add-date"
                     type="date"
-                    min={new Date().toISOString().split("T")[0]}
                     className="w-40"
                   />
                   <Button
                     onClick={async () => {
                       const input = document.getElementById('add-date') as HTMLInputElement;
                       const selectedDate = input.value;
-                      
-                      if (! selectedDate) {
+
+                      console.log('--- Add Day Request ---');
+                      console.log('Selected Date Input:', selectedDate);
+
+                      if (!selectedDate) {
                         toast.error("Please select a date");
                         return;
                       }
 
-                      const newDate = new Date(selectedDate);
-                      const currentStartDate = new Date(conference.start_date);
-                      const currentEndDate = new Date(conference. end_date);
+                      // We use string comparison for YYYY-MM-DD to avoid timezone issues with Date objects
+                      const newDateStr = selectedDate;
+                      const currentStartStr = conference.start_date.split("T")[0];
+                      const currentEndStr = conference.end_date.split("T")[0];
 
-                      if (newDate < currentStartDate) {
-                        toast.error("Cannot add day before conference start date");
+                      console.log('Current Range:', currentStartStr, 'to', currentEndStr);
+
+                      let finalStart = currentStartStr;
+                      let finalEnd = currentEndStr;
+
+                      if (newDateStr < currentStartStr) {
+                        finalStart = newDateStr;
+                        console.log('Extending Start to:', finalStart);
+                      } else if (newDateStr > currentEndStr) {
+                        finalEnd = newDateStr;
+                        console.log('Extending End to:', finalEnd);
+                      } else {
+                        console.warn('Date inside range:', newDateStr);
+                        toast.error("Date is already within conference duration");
                         return;
-                      }
-
-                      let needsUpdate = false;
-                      if (newDate > currentEndDate) {
-                        needsUpdate = true;
                       }
 
                       setLoading(true);
                       try {
-                        if (needsUpdate) {
-                          await updateConferenceEndDate(conference.id, selectedDate);
-                        }
-
-                        toast.success(`Day ${formatDate(selectedDate)} added successfully! `);
+                        console.log('Sending Update:', finalStart, finalEnd);
+                        await updateConferenceDates(conference.id, finalStart, finalEnd);
+                        toast.success(`Day added successfully!`);
                         input.value = '';
                         onRefresh?.();
                       } catch (error: any) {
-                        toast.error(error. message || "Failed to add day");
+                        console.error('Add day error:', error);
+                        toast.error(error.message || "Failed to add day");
                       } finally {
                         setLoading(false);
                       }
@@ -216,7 +259,7 @@ export default function ManageDaysModal({
                   </Button>
                 </div>
                 <p className="text-xs text-gray-600 mt-2">
-                  Add any specific date.  If date is after current end date, conference will be extended automatically.
+                  Adding a date before start or after end will extend the conference.
                 </p>
               </div>
             </div>

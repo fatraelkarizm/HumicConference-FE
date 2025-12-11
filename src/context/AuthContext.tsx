@@ -189,7 +189,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
 
     // Admin users can only access their specific admin routes
-    if (user.role === 'ADMIN_ICICYTA' && currentPath.startsWith('/admin/ICICYTA')) {
+    if (user.role === 'ADMIN_ICICYTA' && currentPath.startsWith('/admin/ICICyTA')) {
       return true;
     }
 

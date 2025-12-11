@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useConferenceSchedule } from "@/hooks/useConferenceSchedule";
+import { useConferenceSchedule, useConferenceScheduleActions } from "@/hooks/useConferenceSchedule";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Plus, Calendar } from "lucide-react";
@@ -10,7 +10,6 @@ import ConferenceYearTabs from "@/components/admin/conference/ConferenceYearTabs
 import ConferenceContent from "@/components/admin/conference/ConferenceContent";
 import CreateConferenceModal from "@/components/admin/CreateConferenceModal";
 import { useConferenceData } from "@/hooks/useConferenceData";
-import type { BackendConferenceSchedule } from "@/types";
 
 export default function ICICyTAAdminPage() {
   const [selectedYear, setSelectedYear] = useState<string>("");
@@ -25,21 +24,34 @@ export default function ICICyTAAdminPage() {
   } = useConferenceSchedule();
 
   // Get ICICYTA conferences and selected conference
-  const { 
-    icicytaConferences, 
-    availableYears, 
-    selectedConference 
+  const {
+    icicytaConferences,
+    availableYears,
+    selectedConference
   } = useConferenceData(conferences, selectedYear);
 
   // Auto-select most recent year
   useEffect(() => {
-    if (availableYears.length > 0 && ! selectedYear) {
+    if (availableYears.length > 0 && !selectedYear) {
       setSelectedYear(availableYears[0]);
     }
   }, [availableYears, selectedYear]);
 
   const handleModalClose = () => {
     setActiveModal(null);
+  };
+
+  // Actions hook
+  const { updateConferenceSchedule } = useConferenceScheduleActions();
+
+  const handleToggleActive = async (conferenceId: string, isActive: boolean) => {
+    try {
+      await updateConferenceSchedule(conferenceId, { isActive });
+      toast.success(`Conference ${isActive ? "activated" : "deactivated"} successfully`);
+      refetchConferences();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update conference status");
+    }
   };
 
   // Loading state
@@ -75,7 +87,7 @@ export default function ICICyTAAdminPage() {
             No ICICyTA Conferences Found
           </h2>
           <p className="text-gray-600 mb-6">
-            Create your first ICICyTA conference to get started. 
+            Create your first ICICyTA conference to get started.
           </p>
           <Button
             onClick={() => setActiveModal("create-conference")}
@@ -100,7 +112,7 @@ export default function ICICyTAAdminPage() {
                 {selectedConference?.name || "ICICyTA Conference"}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                {selectedConference ?  (
+                {selectedConference ? (
                   <>
                     {new Date(selectedConference.start_date).toLocaleDateString()} -{" "}
                     {new Date(selectedConference.end_date).toLocaleDateString()}
@@ -115,7 +127,7 @@ export default function ICICyTAAdminPage() {
                 <CalendarDays className="w-4 h-4 mr-1" />
                 ICICyTA {selectedYear}
               </Badge>
-              
+
               {/* ✅ Simple Action Buttons - No Delete */}
               <div className="flex items-center space-x-2">
                 {/* No buttons needed */}
@@ -132,11 +144,13 @@ export default function ICICyTAAdminPage() {
         onYearSelect={setSelectedYear}
         onCreateNew={() => setActiveModal("create-conference")}
         conferenceType="ICICYTA"
+        conferences={conferences}
+        onToggleActive={handleToggleActive}
       />
 
       {/* Main Content */}
       <div className="max-w-full mx-auto py-8">
-        {! selectedConference ? (
+        {!selectedConference ? (
           // Empty State
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
@@ -158,7 +172,7 @@ export default function ICICyTAAdminPage() {
           </div>
         ) : (
           // Conference Content with Tabs
-          <ConferenceContent 
+          <ConferenceContent
             conference={selectedConference}
             onModalOpen={setActiveModal}
             onRefresh={refetchConferences}

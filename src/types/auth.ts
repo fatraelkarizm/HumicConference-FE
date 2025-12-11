@@ -102,6 +102,6 @@ export interface ServerAuthResult {
 // FIXED ROLE_ROUTES - update ICODSA
 export const ROLE_ROUTES = {
   SUPER_ADMIN: '/super-admin/dashboard',
-  ADMIN_ICICYTA: '/admin/ICICYTA',
+  ADMIN_ICICYTA: '/admin/ICICyTA',
   ADMIN_ICODSA: '/admin/ICODSA', // FIXED: ICODSA
 } as const;

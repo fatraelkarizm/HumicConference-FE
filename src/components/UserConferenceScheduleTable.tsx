@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Layout } from "lucide-react";
 import type {
   BackendConferenceSchedule,
   BackendSchedule,
@@ -23,13 +25,15 @@ export default function UserConferenceScheduleTable({
   conference,
   schedules,
 }: Props) {
+  const router = useRouter();
   const [selectedRoom, setSelectedRoom] = useState<BackendRoom | null>(null);
   const [showRoomDetailModal, setShowRoomDetailModal] = useState(false);
+
   // Schedule logic
   const { grouped, daysList, selectedDay, setSelectedDay, formatDate, getDayNumber } =
     useScheduleTableLogic(conference, schedules);
 
-  // ✅ DEFINE extractRoomId FIRST - before using it
+  // Define extractRoomId
   const extractRoomId = (room: BackendRoom): string | null => {
     const name = (room.name || "").toLowerCase().trim();
     const identifier = (room.identifier || "").toLowerCase().trim();
@@ -46,7 +50,7 @@ export default function UserConferenceScheduleTable({
   // Fetch ALL rooms and filter them
   const { rooms: allRooms } = useRoom();
 
-  // Helper to produce UTC YYYY-MM-DD key (same logic as useScheduleTableLogic)
+  // Helper to produce UTC YYYY-MM-DD key
   const toUtcDateKey = (d: Date | string) => {
     const dt = typeof d === 'string' ? new Date(d) : d;
     const y = dt.getUTCFullYear();
@@ -55,40 +59,35 @@ export default function UserConferenceScheduleTable({
     return `${y}-${m}-${day}`;
   };
 
-  // ✅ Enhanced filtering - Use schedule data that includes rooms
+  // Enhanced filtering
   const currentDayRooms = useMemo(() => {
-    // If grouped has no schedules for the selected day, fallback to conference.schedules (nested payload)
     let currentSchedules = grouped[selectedDay] || [];
     if ((!currentSchedules || currentSchedules.length === 0) && Array.isArray((conference as any).schedules)) {
       currentSchedules = (conference as any).schedules.filter((s: any) => toUtcDateKey(s.date) === selectedDay);
     }
 
-    // ✅ Extract rooms from schedules (they have nested rooms data)
     const roomsFromSchedules: BackendRoom[] = [];
 
     currentSchedules.forEach(schedule => {
-      // Check if schedule has rooms property (from API response)
       if ((schedule as any).rooms && Array.isArray((schedule as any).rooms)) {
         roomsFromSchedules.push(...(schedule as any).rooms);
       }
     });
 
-    // ✅ Also get rooms from allRooms that match schedule IDs
     const currentScheduleIds = currentSchedules.map(s => s.id);
     const roomsFromAllRooms = allRooms.filter(room =>
       currentScheduleIds.includes(room.schedule_id)
     );
 
-    // ✅ Combine both sources and deduplicate by ID
     const allCurrentRooms = [...roomsFromSchedules, ...roomsFromAllRooms];
     const uniqueRooms = allCurrentRooms.filter((room, index, self) =>
       index === self.findIndex(r => r.id === room.id)
     );
 
     return uniqueRooms;
-  }, [allRooms, grouped, selectedDay]);
+  }, [allRooms, grouped, selectedDay, conference]);
 
-  // ✅ Auto-generate room columns - NOW extractRoomId is defined
+  // Auto-generate room columns
   const roomColumnsForDay = useMemo(() => {
     const columns: any[] = [];
     const roomLabels = ['A', 'B', 'C', 'D', 'E'];
@@ -142,21 +141,30 @@ export default function UserConferenceScheduleTable({
 
   return (
     <div className="max-w-full mx-auto">
-      {/* Simple Day Tabs for Users */}
-      <div className="flex flex-wrap gap-2">
-        {daysList.map((day) => (
-          <button
-            key={day}
-            onClick={() => setSelectedDay(day)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              selectedDay === day
-                ? 'bg-[#015B97] text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Day {getDayNumber(day)}: {formatDate(day).split(',')[0]}
-          </button>
-        ))}
+      {/* Simple Day Tabs and Parallel Button */}
+      <div className="flex items-center justify-between w-full mb-6">
+        <div className="flex flex-wrap gap-2 text-sm md:text-base">
+          {daysList.map((day) => (
+            <button
+              key={day}
+              onClick={() => setSelectedDay(day)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedDay === day
+                  ? 'bg-[#015B97] text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              Day {getDayNumber(day)}: {formatDate(day).split(',')[0]}
+            </button>
+          ))}
+        </div>
+
+        <Button
+          onClick={() => router.push('/user/parallel')}
+          className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm flex items-center gap-2"
+        >
+          <Layout className="w-4 h-4" />
+          Parallel Session
+        </Button>
       </div>
 
       {/* Schedule Table */}

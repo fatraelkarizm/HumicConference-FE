@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import type { BackendSchedule } from "@/types";
+import { toast } from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
@@ -42,7 +43,7 @@ export default function AddRoomModal({
   loading,
   scheduleId,
 }: Props) {
-  
+
   const formatTime = (time?: string) => {
     if (!time) return "--:--";
     const normalizedTime = time.replace(/\./g, ":");
@@ -62,15 +63,31 @@ export default function AddRoomModal({
       }
     };
 
+    if (newRoom.onlineMeetingUrl && !isValidUrl(newRoom.onlineMeetingUrl)) {
+      toast.error("Please enter a valid online meeting URL (e.g., https://zoom.us/...)");
+      return;
+    }
+
+    const ensureHHMM = (time?: string) => {
+      if (!time) return "";
+      const parts = time.replace(/\./g, ":").split(":");
+      if (parts.length >= 2) {
+        const hh = parts[0].padStart(2, "0");
+        const mm = parts[1].padStart(2, "0");
+        return `${hh}:${mm}`;
+      }
+      return time;
+    };
+
     const payload = {
       name: newRoom.name,
       identifier: newRoom.identifier,
       description: newRoom.description || "",
       type: newRoom.type,
-      scheduleId: selectedScheduleForRoom. id,
-      startTime: newRoom.startTime || selectedScheduleForRoom.start_time,
-      endTime: newRoom.endTime || selectedScheduleForRoom.end_time,
-      onlineMeetingUrl: isValidUrl(newRoom.onlineMeetingUrl) ? newRoom.onlineMeetingUrl : null,
+      scheduleId: selectedScheduleForRoom.id,
+      startTime: ensureHHMM(newRoom.startTime || selectedScheduleForRoom.start_time),
+      endTime: ensureHHMM(newRoom.endTime || selectedScheduleForRoom.end_time),
+      onlineMeetingUrl: newRoom.onlineMeetingUrl || null,
       track: {
         name: `Track ${selectedRoomType}`,
         description: `Parallel track for Room ${selectedRoomType}`,
@@ -110,10 +127,11 @@ export default function AddRoomModal({
             <Label htmlFor="room-name">Room Name *</Label>
             <Input
               id="room-name"
+              disabled
               value={newRoom.name}
               onChange={(e) =>
                 setNewRoom((prev: any) => ({
-                  ... prev,
+                  ...prev,
                   name: e.target.value,
                 }))
               }
@@ -132,7 +150,7 @@ export default function AddRoomModal({
                   identifier: e.target.value,
                 }))
               }
-              placeholder={`Parallel Session 1${selectedRoomType}`}
+              placeholder={`Parallel Session ${selectedRoomType}`}
             />
           </div>
 
@@ -158,8 +176,8 @@ export default function AddRoomModal({
               value={newRoom.onlineMeetingUrl}
               onChange={(e) =>
                 setNewRoom((prev: any) => ({
-                  ... prev,
-                  onlineMeetingUrl: e.target. value,
+                  ...prev,
+                  onlineMeetingUrl: e.target.value,
                 }))
               }
               placeholder="https://zoom.us/..."
