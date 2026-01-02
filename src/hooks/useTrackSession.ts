@@ -97,14 +97,14 @@ export const useTrackSessionActions = () => {
 // Specialized hook for sessions grouped by mode
 export const useTrackSessionsByMode = (trackId?: string) => {
   const { trackSessions, loading, error, refetch } = useTrackSession(trackId);
-  
+
   const [onlineSessions, setOnlineSessions] = useState<BackendTrackSession[]>([]);
   const [onsiteSessions, setOnsiteSessions] = useState<BackendTrackSession[]>([]);
 
   useEffect(() => {
     const online = trackSessions.filter(session => session.mode === 'ONLINE');
     const onsite = trackSessions.filter(session => session.mode === 'ONSITE');
-    
+
     setOnlineSessions(online);
     setOnsiteSessions(onsite);
   }, [trackSessions]);
@@ -122,7 +122,7 @@ export const useTrackSessionsByMode = (trackId?: string) => {
 // Specialized hook for sessions with time grouping
 export const useTrackSessionsGroupedByTime = (trackId?: string) => {
   const { trackSessions, loading, error, refetch } = useTrackSession(trackId);
-  
+
   const [sessionsByTime, setSessionsByTime] = useState<Record<string, BackendTrackSession[]>>({});
 
   useEffect(() => {

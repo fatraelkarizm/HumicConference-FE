@@ -22,6 +22,7 @@ import ManageRoomsModal from "@/components/admin/ManageRoomsModal";
 import ManageSchedulesModal from "@/components/admin/ManageSchedulesModal";
 import { useScheduleTableLogic } from "@/hooks/useScheduleTableLogic";
 import conferenceScheduleService from "@/services/ConferenceScheduleService";
+import roomService from "@/services/RoomServices";
 
 interface Props {
   conference: BackendConferenceSchedule;
@@ -222,7 +223,40 @@ export default function ConferenceScheduleTable({
   const handleAddRoom = async (roomData: any) => {
     setLoading(true);
     try {
-      await createRoom(roomData);
+      // ✅ FETCH FRESH ROOMS DATA to check for duplicate identifier
+      const accessToken = await roomService.getAccessToken();
+      if (!accessToken) {
+        throw new Error("Authentication required");
+      }
+
+      const scheduleId = roomData.scheduleId;
+      const existingRoomsForSchedule = await roomService.getAllRooms(accessToken, scheduleId);
+
+      // CHECK FOR DUPLICATE IDENTIFIER
+      let finalIdentifier = roomData.identifier;
+      if (finalIdentifier) {
+        const identifierExists = existingRoomsForSchedule.some(
+          (r: any) => r.identifier?.toLowerCase() === finalIdentifier.toLowerCase()
+        );
+
+        if (identifierExists) {
+          // Auto-generate unique identifier by adding/incrementing number
+          let counter = 2;
+          let candidate = `${finalIdentifier} ${counter}`;
+          while (existingRoomsForSchedule.some((r: any) => r.identifier?.toLowerCase() === candidate.toLowerCase())) {
+            counter++;
+            candidate = `${finalIdentifier} ${counter}`;
+          }
+          finalIdentifier = candidate;
+          toast(`Identifier already exists. Using "${finalIdentifier}" instead.`, { duration: 4000 });
+        }
+      }
+
+      // Use validated identifier
+      await createRoom({
+        ...roomData,
+        identifier: finalIdentifier
+      });
       toast.success("Room added successfully!");
       setShowAddRoom(false);
       setSelectedScheduleForRoom(null);

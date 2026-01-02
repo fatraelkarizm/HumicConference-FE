@@ -29,7 +29,7 @@ class TrackSessionService {
 
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<BackendApiResponse<any>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ class TrackSessionService {
     }
 
     const result = await response.json();
-    
+
     if (result.code && result.code >= 400) {
       throw new Error(result.message || `Request failed with code ${result.code}`);
     }
@@ -91,7 +91,7 @@ class TrackSessionService {
 
     const response = await this.makeRequest('/api/v1/track-session', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
@@ -103,7 +103,7 @@ class TrackSessionService {
 
   async updateTrackSession(accessToken: string, sessionId: string, data: UpdateTrackSessionData): Promise<BackendTrackSession> {
     const updatePayload: any = {};
-    
+
     if (data.paperId) updatePayload.paper_id = data.paperId;
     if (data.title) updatePayload.title = data.title;
     if (data.authors) updatePayload.authors = data.authors;
@@ -115,7 +115,7 @@ class TrackSessionService {
 
     const response = await this.makeRequest(`/api/v1/track-session/${sessionId}`, {
       method: 'PATCH',
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },

@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "react-hot-toast";
+import roomService from "@/services/RoomServices";
 import type { BackendRoom, BackendSchedule } from "@/types";
 
 interface ManageRoomsModalProps {
@@ -67,7 +68,54 @@ export default function ManageRoomsModal({
     }
 
     setLoading(true);
+
     try {
+      // ✅ FETCH FRESH ROOMS DATA for this schedule to ensure complete duplicate check
+      const accessToken = await roomService.getAccessToken();
+      if (!accessToken) {
+        throw new Error("Authentication required");
+      }
+
+      console.group('🔍 ADD ROOM DUPLICATE CHECK');
+      console.log('1. Target Schedule ID:', targetScheduleId);
+      console.log('2. Requested Identifier:', newRoom.identifier);
+      console.log('2.1. Room Name:', newRoom.name);
+
+      const existingRoomsForSchedule = await roomService.getAllRooms(accessToken, targetScheduleId);
+
+      console.log('3. Existing Rooms Fetched:', existingRoomsForSchedule.length, existingRoomsForSchedule);
+      console.log('4. Existing Identifiers:', existingRoomsForSchedule.map(r => r.identifier));
+
+      // CHECK FOR DUPLICATE IDENTIFIER
+      // ✅ If identifier is empty, auto-generate from name
+      let finalIdentifier = newRoom.identifier?.trim() || newRoom.name?.trim() || `Room ${Date.now()}`;
+
+      console.log('4.5. Base Identifier (after auto-gen if empty):', finalIdentifier);
+
+      if (finalIdentifier) {
+        const identifierExists = existingRoomsForSchedule.some(
+          r => r.identifier?.toLowerCase() === finalIdentifier.toLowerCase()
+        );
+
+        console.log('5. Duplicate Found?', identifierExists);
+
+        if (identifierExists) {
+          // Auto-generate unique identifier by adding/incrementing number
+          let counter = 2;
+          let candidate = `${finalIdentifier} ${counter}`;
+          while (existingRoomsForSchedule.some(r => r.identifier?.toLowerCase() === candidate.toLowerCase())) {
+            counter++;
+            candidate = `${finalIdentifier} ${counter}`;
+          }
+          finalIdentifier = candidate;
+          console.log('6. Auto-generated Identifier:', finalIdentifier);
+          toast(`Identifier auto-generated: "${finalIdentifier}"`, { duration: 4000 });
+        }
+      }
+
+      console.log('7. Final Identifier to Submit:', finalIdentifier);
+      console.groupEnd();
+
       const selectedSchedule = schedules.find(s => s.id === targetScheduleId);
 
       const ensureHHMM = (time?: string) => {
@@ -83,10 +131,11 @@ export default function ManageRoomsModal({
 
       await onAddRoom({
         ...newRoom,
+        identifier: finalIdentifier, // Use validated/auto-generated identifier
         startTime: ensureHHMM(selectedSchedule?.start_time),
         endTime: ensureHHMM(selectedSchedule?.end_time),
-        scheduleId: targetScheduleId, // ✅ Use camelCase for Service
-        onlineMeetingUrl: newRoom.online_meeting_url, // ✅ Map to camelCase
+        scheduleId: targetScheduleId,
+        onlineMeetingUrl: newRoom.online_meeting_url,
         track: newRoom.type === "PARALLEL" ? { name: newRoom.trackName, description: `Track for room ${newRoom.name}` } : undefined,
       });
       setNewRoom({

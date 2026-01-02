@@ -6,6 +6,7 @@ import { useTrack } from '@/hooks/useTrack';
 import trackSessionService from '@/services/TrackSessionService';
 import conferenceScheduleService from '@/services/ConferenceScheduleService';
 import roomService from '@/services/RoomServices';
+import scheduleService from '@/services/ScheduleService';
 import type { BackendConferenceSchedule, BackendTrackSession, BackendRoom } from '@/types';
 
 interface Paper {
@@ -81,15 +82,118 @@ const ParallelSessionScheduleUI = () => {
         const accessToken = await trackSessionService.getAccessToken();
         if (!accessToken) throw new Error('Access token not available');
 
-        const allTrackSessions = await trackSessionService.getAllTrackSessions(accessToken);
-        setTrackSessions(allTrackSessions);
-        
-        const schedules = await conferenceScheduleService.getAllConferenceSchedules(accessToken, true);
-        setConferenceSchedules(schedules);
+        // 1. Fetch Conference Schedules to identify active conference
+        const conferenceSchedulesData = await conferenceScheduleService.getAllConferenceSchedules(accessToken, true);
+        setConferenceSchedules(conferenceSchedulesData);
 
-        // Fetch all rooms as backup
-        const allRooms = await roomService.getAllRooms(accessToken);
-        setRooms(allRooms);
+        // 2. Identify target conference (Active one, or latest year as fallback)
+        let targetConferenceId: string | undefined;
+        const activeConference = conferenceSchedulesData.find(conf => conf.is_active === true);
+
+        if (activeConference) {
+          targetConferenceId = activeConference.id;
+        } else if (conferenceSchedulesData.length > 0) {
+          const sorted = [...conferenceSchedulesData].sort((a, b) => parseInt(b.year) - parseInt(a.year));
+          targetConferenceId = sorted[0].id;
+        }
+
+        // 3. Fetch ALL necessary data separately (Robustness check)
+        const [allTrackSessions, allSchedules] = await Promise.all([
+          trackSessionService.getAllTrackSessions(accessToken),
+          scheduleService.getAllSchedules(accessToken)
+        ]);
+
+        console.group('🔍 PARALLEL SESSION DEBUG');
+        console.log('1. Target Conference ID:', targetConferenceId);
+        console.log('2. Active Conference:', activeConference);
+        console.log('3. All Track Sessions:', allTrackSessions.length, allTrackSessions);
+        console.log('4. All Schedules:', allSchedules.length, allSchedules);
+        console.log('4.1. Sample Schedule Structure:', allSchedules[0]); // Check actual structure
+
+        // 4. Client-side Filter logic: Chain Filtering (Conf -> Sch -> Room -> Track)
+        let filteredSessions = allTrackSessions;
+        let validTrackIds = new Set<string>();
+
+        if (targetConferenceId) {
+          // A. Find all schedules belonging to the active conference
+          let validSchedules = allSchedules.filter((s: any) => s.conference_schedule_id === targetConferenceId);
+
+          // FALLBACK: If active conference has NO schedules (new/empty conference),
+          // use the conference that has the MOST schedules (likely the one with actual data)
+          if (validSchedules.length === 0) {
+            console.warn('⚠️ Active conference has no schedules. Finding conference with most data...');
+
+            // Group schedules by conference_schedule_id and count
+            const conferenceScheduleCounts = new Map<string, number>();
+            allSchedules.forEach((s: any) => {
+              const confId = s.conference_schedule_id;
+              conferenceScheduleCounts.set(confId, (conferenceScheduleCounts.get(confId) || 0) + 1);
+            });
+
+            // Find conference with most schedules
+            let maxCount = 0;
+            let fallbackConferenceId = targetConferenceId;
+            conferenceScheduleCounts.forEach((count, confId) => {
+              if (count > maxCount) {
+                maxCount = count;
+                fallbackConferenceId = confId;
+              }
+            });
+
+            console.log('📊 Fallback to conference:', fallbackConferenceId, 'with', maxCount, 'schedules');
+            targetConferenceId = fallbackConferenceId;
+            validSchedules = allSchedules.filter((s: any) => s.conference_schedule_id === targetConferenceId);
+          }
+
+          const validScheduleIds = validSchedules.map((s: any) => s.id);
+
+          console.log('5. Valid Schedules for conference:', validSchedules.length, validSchedules);
+          console.log('6. Valid Schedule IDs:', validScheduleIds);
+
+          // B. Fetch rooms for EACH schedule to bypass pagination limits
+          // Instead of fetching all rooms globally (which gets paginated), 
+          // we fetch rooms per schedule which gives us complete data
+          const roomsPromises = validScheduleIds.map(scheduleId =>
+            roomService.getAllRooms(accessToken, scheduleId).catch(() => [])
+          );
+          const roomsArrays = await Promise.all(roomsPromises);
+          const validRooms = roomsArrays.flat();
+
+          console.log('7. Valid Rooms:', validRooms.length, validRooms);
+
+          setRooms(validRooms); // Update state with fetched rooms
+
+          // C. valid Tracks are those assigned to these rooms
+          validRooms.forEach((room: any) => {
+            // Handle both track_id and nested track object
+            if (room.track_id) validTrackIds.add(room.track_id);
+            if (room.track && room.track.id) validTrackIds.add(room.track.id);
+          });
+
+          console.log('8. Valid Track IDs:', Array.from(validTrackIds));
+
+          // D. Filter sessions
+          if (validTrackIds.size > 0) {
+            filteredSessions = allTrackSessions.filter((session: any) => validTrackIds.has(session.track_id));
+            console.log('9. Filtered Sessions:', filteredSessions.length, filteredSessions);
+          } else {
+            console.warn('⚠️ No valid tracks found - showing empty list');
+            // If no tracks found for this conference, show empty list
+            // This prevents showing old conference data (2024) when viewing new conference (2026)
+            filteredSessions = [];
+          }
+        } else {
+          console.warn('⚠️ No target conference ID - fetching all rooms as fallback');
+          // No target conference, fetch all rooms as fallback
+          const allRooms = await roomService.getAllRooms(accessToken);
+          setRooms(allRooms);
+        }
+
+        console.log('10. FINAL Filtered Sessions:', filteredSessions.length);
+        console.groupEnd();
+
+        setTrackSessions(filteredSessions);
+        setLoading(false);
 
       } catch (err: any) {
         console.error('Error fetching data:', err);
@@ -103,9 +207,9 @@ const ParallelSessionScheduleUI = () => {
 
   // Transform data
   useEffect(() => {
-    if (tracks.length === 0 || conferenceSchedules.length === 0 || trackSessions.length === 0 || rooms.length === 0) {
-      return;
-    }
+    // Rely on data presence, but don't block based on length === 0 if we want to show "empty" state
+    // We only guard against uninitialized state if needed, but since we manage loading separately now, 
+    // we can let this run whenever dependencies change.
 
     const transformData = () => {
       try {
@@ -138,9 +242,9 @@ const ParallelSessionScheduleUI = () => {
         // UI Transformation Logic
         const uiData = Array.from(groupedSessions.values()).map(timeGroup => {
           const sessions: Session[] = [];
-          
+
           // Kita butuh index untuk fallback room name jika API gagal mapping
-          let trackIteratorIndex = 0; 
+          let trackIteratorIndex = 0;
 
           timeGroup.tracks.forEach((trackData: any) => {
             const { track, sessions: trackSessionsList } = trackData;
@@ -151,8 +255,8 @@ const ParallelSessionScheduleUI = () => {
             if (onlineSessions.length > 0) {
               // Ambil nama ruangan untuk online sessions juga
               const roomName = getRoomNameFromSchedules(
-                onlineSessions[0], 
-                conferenceSchedules, 
+                onlineSessions[0],
+                conferenceSchedules,
                 rooms,
                 trackIteratorIndex
               );
@@ -184,8 +288,8 @@ const ParallelSessionScheduleUI = () => {
             if (onsiteSessions.length > 0) {
               // Ambil nama ruangan dengan logika baru
               const roomName = getRoomNameFromSchedules(
-                onsiteSessions[0], 
-                conferenceSchedules, 
+                onsiteSessions[0],
+                conferenceSchedules,
                 rooms,
                 trackIteratorIndex
               );
@@ -212,7 +316,7 @@ const ParallelSessionScheduleUI = () => {
                 }))
               });
             }
-            
+
             trackIteratorIndex++;
           });
 
@@ -220,12 +324,11 @@ const ParallelSessionScheduleUI = () => {
         }).flat();
 
         setParallelSessionsData(uiData);
-        setLoading(false);
+        // Remove setLoading(false) from here since it's handled in the fetch effect
 
       } catch (err: any) {
         console.error('Error transforming data:', err);
         setError(err.message || 'Failed to transform parallel sessions data');
-        setLoading(false);
       }
     };
 
@@ -253,7 +356,7 @@ const ParallelSessionScheduleUI = () => {
   }
 
   const getBadgeStyle = (type: string) => {
-    switch(type) {
+    switch (type) {
       case 'blue': return "bg-blue-100 text-blue-600";
       case 'light-blue': return "bg-sky-100 text-sky-600";
       default: return "bg-gray-100 text-gray-600";
@@ -284,11 +387,11 @@ const ParallelSessionScheduleUI = () => {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-slate-900">Parallel Session Schedule</h1>
           <div className="relative w-full max-w-xl">
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Paper, Name Author/Presenter" 
+              placeholder="Search Paper, Name Author/Presenter"
               className="w-full pl-5 pr-12 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-sm bg-white text-slate-600 placeholder-slate-400 transition-all"
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
@@ -332,7 +435,7 @@ const ParallelSessionScheduleUI = () => {
                           {paper.title}
                         </td>
                         <td className="py-5 px-6 text-slate-600 leading-relaxed pr-8">
-                           {renderAuthors(paper.authors)}
+                          {renderAuthors(paper.authors)}
                         </td>
                         <td className="py-5 px-6 text-slate-500 font-medium">{paper.mode}</td>
                       </tr>
