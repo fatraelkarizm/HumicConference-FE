@@ -20,9 +20,12 @@ import AddRoomModal from "@/components/room/AddRoomModal";
 import ManageDaysModal from "@/components/admin/ManageDaysModal";
 import ManageRoomsModal from "@/components/admin/ManageRoomsModal";
 import ManageSchedulesModal from "@/components/admin/ManageSchedulesModal";
+import ManageImportExportModal from "@/components/admin/ManageImportExportModal";
 import { useScheduleTableLogic } from "@/hooks/useScheduleTableLogic";
 import conferenceScheduleService from "@/services/ConferenceScheduleService";
 import roomService from "@/services/RoomServices";
+import scheduleService from "@/services/ScheduleService";
+import * as XLSX from 'xlsx';
 
 interface Props {
   conference: BackendConferenceSchedule;
@@ -51,6 +54,7 @@ export default function ConferenceScheduleTable({
   const [showManageDays, setShowManageDays] = useState(false);
   const [showManageRooms, setShowManageRooms] = useState(false);
   const [showManageSchedules, setShowManageSchedules] = useState(false);
+  const [showManageImportExport, setShowManageImportExport] = useState(false);
   const [selectedScheduleForRoom, setSelectedScheduleForRoom] = useState<BackendSchedule | null>(null);
   const [selectedRoomType, setSelectedRoomType] = useState<string>("");
   const [newRoom, setNewRoom] = useState({
@@ -67,16 +71,23 @@ export default function ConferenceScheduleTable({
   const { createRoom, deleteRoom } = useRoomActions();
   const { deleteSchedule } = useScheduleActions();
 
-  // ✅ DEFINE extractRoomId FIRST - before using it
-  const extractRoomId = (room: BackendRoom): string | null => {
-    const name = (room.name || "").toLowerCase().trim();
-    const identifier = (room.identifier || "").toLowerCase().trim();
+  // ✅ Extract room letter (A, B, C, D, E) from room identifier
+  const extractRoomId = (room: any): string | null => {
+    const identifier = (room.identifier || '').trim();
 
-    const roomNameMatch = name.match(/^room\s+([a-e])$/i);
-    if (roomNameMatch) return roomNameMatch[1].toUpperCase();
+    // Match PSA-0930 -> A, PSB-1040 -> B, etc.
+    const psMatch = identifier.match(/PS([A-E])-/);
+    if (psMatch) return psMatch[1];
 
-    const identifierMatch = identifier.match(/parallel\s+session\s+1([a-e])$/i);
-    if (identifierMatch) return identifierMatch[1].toUpperCase();
+    // Fallback: match "Parallel Session 1A", "Room A", etc.
+    const name = (room.name || '').toLowerCase().trim();
+    const identifierLower = identifier.toLowerCase();
+
+    if (name.includes('room a') || identifierLower.includes('session a') || identifierLower.includes('session 1a')) return 'A';
+    if (name.includes('room b') || identifierLower.includes('session b') || identifierLower.includes('session 1b')) return 'B';
+    if (name.includes('room c') || identifierLower.includes('session c') || identifierLower.includes('session 1c')) return 'C';
+    if (name.includes('room d') || identifierLower.includes('session d') || identifierLower.includes('session 1d')) return 'D';
+    if (name.includes('room e') || identifierLower.includes('session e') || identifierLower.includes('session 1e')) return 'E';
 
     return null;
   };
@@ -288,6 +299,311 @@ export default function ConferenceScheduleTable({
     setLoading(false);
   };
 
+  // ✅ EXPORT TO EXCEL FUNCTION
+  const handleExportToExcel = () => {
+    try {
+      const workbookData: any[] = [];
+
+      // Header row
+      workbookData.push([
+        'Day',
+        'Date',
+        'Start Time',
+        'End Time',
+        'Main Room Activity',
+        'Room A',
+        'Room B',
+        'Room C',
+        'Room D',
+        'Room E'
+      ]);
+
+      // For each day
+      daysList.forEach((dayKey: string) => {
+        const schedulesForDay = grouped[dayKey] || [];
+
+        schedulesForDay.forEach((schedule: any) => {
+          // Get rooms for this specific schedule
+          const scheduleRooms = allRooms.filter((r: any) => r.schedule_id === schedule.id);
+          const mainRoom = scheduleRooms.find((r: any) => r.type === 'MAIN');
+          const parallelRooms = scheduleRooms.filter((r: any) => r.type === 'PARALLEL');
+
+          // Get main room activity
+          const mainRoomActivity = mainRoom?.name || schedule.notes || '-';
+
+          // Get parallel session for each room (A, B, C, D, E)
+          const roomData: Record<string, string> = {};
+          ['A', 'B', 'C', 'D', 'E'].forEach(roomId => {
+            const room = parallelRooms.find((r: any) => extractRoomId(r) === roomId);
+            if (room) {
+              roomData[roomId] = `${room.name || ''}\n${room.identifier || ''}\n${room.description || ''}`.trim();
+            } else {
+              roomData[roomId] = 'No room assigned';
+            }
+          });
+
+          // Add row
+          workbookData.push([
+            `Day ${getDayNumber(dayKey)}`,
+            formatDate(dayKey),
+            schedule.start_time || '',
+            schedule.end_time || '',
+            mainRoomActivity,
+            roomData['A'],
+            roomData['B'],
+            roomData['C'],
+            roomData['D'],
+            roomData['E']
+          ]);
+        });
+      });
+
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.aoa_to_sheet(workbookData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Conference Schedule');
+
+      // Auto-size columns
+      const maxWidth = workbookData.reduce((w, r) => Math.max(w, r.length), 10);
+      worksheet['!cols'] = Array(maxWidth).fill({ wch: 20 });
+
+      // Export
+      const fileName = `Conference_Schedule_${conference.name}_${conference.year}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+      toast.success('Schedule exported to Excel!');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export schedule');
+    }
+  };
+
+  // ✅ IMPORT FROM EXCEL FUNCTION
+  const handleImportFromExcel = async (data: any[]) => {
+    try {
+      const accessToken = await roomService.getAccessToken();
+      if (!accessToken) {
+        throw new Error("Authentication required");
+      }
+
+      let schedulesCreated = 0;
+      let roomsCreated = 0;
+
+      // Normalize selectedDay to YYYY-MM-DD format
+      const targetDate = new Date(selectedDay);
+      const targetDateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+
+      console.log('🎯 Target date:', selectedDay, '-> normalized:', targetDateStr);
+      console.log('📊 Total schedules:', schedules.length);
+      console.log('📅 Sample dates from DB:', schedules.slice(0, 5).map(s => s.date));
+
+      // Count existing schedules for this day (match by date part only, ignore timestamp)
+      const schedulesForDay = schedules.filter(s => {
+        // Extract date part from "2026-12-22T00:00:00.000Z" -> "2026-12-22"
+        const dbDateStr = s.date?.split('T')[0] || s.date;
+        const match = dbDateStr === targetDateStr;
+
+        // Debug first 3 comparisons
+        if (schedules.indexOf(s) < 3) {
+          console.log(`Comparing: "${dbDateStr}" === "${targetDateStr}" ? ${match}`);
+        }
+
+        return match;
+      });
+      const existingCount = schedulesForDay.length;
+
+      console.log('✅ Schedules matching', targetDateStr, ':', existingCount);
+
+      // Ask user confirmation
+      const shouldProceed = window.confirm(
+        `🗓️ IMPORT KE: ${selectedDay}\n\n` +
+        `📊 Schedules yang ada sekarang: ${existingCount}\n` +
+        `📥 Import akan: HAPUS SEMUA (${existingCount}) schedule lama + tambahin data baru dari Excel\n\n` +
+        `⚠️ Ini akan REPLACE semua schedule untuk Day ini!\n\n` +
+        `Lanjutkan import?`
+      );
+
+      if (!shouldProceed) {
+        toast.error('Import dibatalkan');
+        return;
+      }
+
+      // Delete ALL schedules and rooms for this day
+      if (existingCount > 0) {
+        toast.loading(`Menghapus ${existingCount} schedules lama...`, { id: 'delete-schedules' });
+
+        // Delete all rooms first, then schedules
+        for (const schedule of schedulesForDay) {
+          try {
+            // Get and delete all rooms for this schedule
+            const scheduleRooms = allRooms.filter((r: any) => r.schedule_id === schedule.id);
+            for (const room of scheduleRooms) {
+              try {
+                await deleteRoom(room.id);
+              } catch (e) {
+                console.error('Failed to delete room:', e);
+              }
+            }
+
+            // Then delete the schedule
+            await deleteSchedule(schedule.id);
+          } catch (e) {
+            console.error('Failed to delete schedule:', e);
+          }
+        }
+
+        toast.success(`✅ Deleted ${existingCount} schedules`, { id: 'delete-schedules' });
+
+        // Wait and refresh to ensure data is clean
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await refetchRooms?.();
+      }
+
+      toast.loading('Importing new schedules...', { id: 'import' });
+
+      // Process each row
+      for (const row of data) {
+        try {
+          // Skip rows with invalid/empty times or non-HH:MM format
+          const timeRegex = /^\d{1,2}:\d{2}$/; // Match HH:MM or H:MM
+
+          if (!row.startTime || !row.endTime ||
+            !timeRegex.test(row.startTime) || !timeRegex.test(row.endTime) ||
+            row.startTime === '00:00' && row.endTime === '00:00' ||
+            row.startTime === row.endTime) {
+            continue;
+          }
+
+          // Parse date from Excel format (e.g., "Wednesday, December 16, 2026")
+          const dateStr = row.date;
+          let parsedDate: Date;
+
+          // Try to parse the date
+          parsedDate = new Date(dateStr);
+          if (isNaN(parsedDate.getTime())) {
+            continue;
+          }
+
+          // Format date as YYYY-MM-DD using LOCAL date (not UTC) to avoid timezone issues
+          const year = parsedDate.getFullYear();
+          const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+          const day = String(parsedDate.getDate()).padStart(2, '0');
+          const formattedDate = `${year}-${month}-${day}`;
+
+          // Detect schedule type based on activity name
+          const activityLower = (row.mainRoomActivity || '').toLowerCase();
+          const isBreak = activityLower.includes('break') ||
+            activityLower.includes('lunch') ||
+            activityLower.includes('coffee') ||
+            activityLower.includes('isoma');
+
+          const scheduleType = isBreak ? 'BREAK' : 'TALK';
+
+          // 1. Create Schedule
+          const scheduleData = {
+            title: row.mainRoomActivity || 'Schedule',
+            date: formattedDate,
+            startTime: row.startTime,
+            endTime: row.endTime,
+            scheduleType: scheduleType as any,
+            description: row.mainRoomActivity,
+            conference: conference.name,
+          };
+
+          const createdSchedule = await scheduleService.createSchedule(
+            accessToken,
+            scheduleData,
+            conference.id
+          );
+
+          // Get schedule ID
+          const scheduleId = typeof createdSchedule === 'object' ? createdSchedule.id : null;
+
+          if (!scheduleId) {
+            schedulesCreated++;
+            continue;
+          }
+
+          schedulesCreated++;
+
+          // 2. Create Main Room if needed (skip for BREAK type)
+          if (!isBreak && row.mainRoomActivity && row.mainRoomActivity !== 'No room assigned') {
+            try {
+              // Truncate name to 100 chars
+              const mainRoomName = row.mainRoomActivity.length > 100
+                ? row.mainRoomActivity.substring(0, 97) + '...'
+                : row.mainRoomActivity;
+
+              await createRoom({
+                name: mainRoomName,
+                identifier: `Main-${row.startTime.replace(':', '')}`,
+                description: row.mainRoomActivity,
+                type: 'MAIN',
+                scheduleId,
+                onlineMeetingUrl: '',
+              });
+              roomsCreated++;
+            } catch (e) {
+              console.error('Failed to create main room:', e);
+            }
+          }
+
+          // 3. Create Parallel Rooms (A, B, C, D, E) - skip for BREAK type
+          if (!isBreak) {
+            const roomLetters = ['A', 'B', 'C', 'D', 'E'];
+
+            for (const letter of roomLetters) {
+              const roomKey = `room${letter}` as 'roomA' | 'roomB' | 'roomC' | 'roomD' | 'roomE';
+              const roomData = row[roomKey];
+
+              if (roomData && roomData !== 'No room assigned') {
+                // Parse room data (format: "Room Name\nIdentifier\nDescription")
+                const lines = roomData.split('\n').map((l: string) => l.trim()).filter((l: string) => l);
+                let roomName = lines[0] || `Room ${letter}`;
+                const roomDescription = lines[2] || '';
+
+                // Truncate name to 100 chars
+                if (roomName.length > 100) {
+                  roomName = roomName.substring(0, 97) + '...';
+                }
+
+                // Generate truly unique identifier: Letter + Time
+                const uniqueIdentifier = `PS${letter}-${row.startTime.replace(':', '')}`;
+
+                try {
+                  await createRoom({
+                    name: roomName,
+                    identifier: uniqueIdentifier,
+                    description: roomDescription,
+                    type: 'PARALLEL',
+                    scheduleId,
+                    onlineMeetingUrl: '',
+                    startTime: row.startTime,
+                    endTime: row.endTime,
+                    track: { name: roomDescription || roomName, description: `Track for ${roomName}` }
+                  });
+                  roomsCreated++;
+                } catch (e) {
+                  console.error(`Failed to create room ${letter}:`, e);
+                }
+              }
+            }
+          }
+
+        } catch (rowError) {
+          console.error('Error processing row:', row, rowError);
+        }
+      }
+
+      toast.success(`Imported ${schedulesCreated} schedules and ${roomsCreated} rooms!`);
+      await refetchRooms?.();
+      onRefresh?.();
+    } catch (error: any) {
+      console.error('Import error:', error);
+      throw error;
+    }
+  };
+
   // If no conference days, show empty state
   if (daysList.length === 0) {
     return (
@@ -318,18 +634,19 @@ export default function ConferenceScheduleTable({
         onManageDays={() => { console.log('Manage Days clicked'); setShowManageDays(true); }}
         onManageRooms={() => { console.log('Manage Rooms clicked'); setShowManageRooms(true); }}
         onManageSchedules={() => { console.log('Manage Schedules clicked'); setShowManageSchedules(true); }}
+        onManageImportExport={() => setShowManageImportExport(true)}
         formatDate={formatDate}
         getDayNumber={getDayNumber}
       />
 
-      {/* Loading State */}
-      {roomsLoading && (
+      {/* Loading State - REMOVED per user request */}
+      {/* {roomsLoading && (
         <div className="flex items-center justify-center py-4">
           <div className="text-sm text-gray-500 flex items-center">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Schedule Table */}
       <ScheduleTable
@@ -437,6 +754,15 @@ export default function ConferenceScheduleTable({
           onSuccess={handleScheduleSuccess}
         />
       )}
+
+      {/* Manage Import/Export Modal */}
+      <ManageImportExportModal
+        isOpen={showManageImportExport}
+        onClose={() => setShowManageImportExport(false)}
+        onExport={handleExportToExcel}
+        onImport={handleImportFromExcel}
+        selectedDay={selectedDay}
+      />
     </div>
   );
 }

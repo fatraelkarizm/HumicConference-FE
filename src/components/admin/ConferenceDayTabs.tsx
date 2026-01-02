@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, FileDown } from "lucide-react";
 import type { BackendSchedule } from "@/types";
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
   onManageDays: () => void;
   onManageRooms: () => void;
   onManageSchedules: () => void;
+  onManageImportExport?: () => void;
   formatDate: (dateStr: string) => string;
   getDayNumber: (dateStr: string) => number;
 }
@@ -22,6 +23,7 @@ export default function ConferenceDayTabs({
   onManageDays,
   onManageRooms,
   onManageSchedules,
+  onManageImportExport,
   formatDate,
   getDayNumber,
 }: Props) {
@@ -58,6 +60,17 @@ export default function ConferenceDayTabs({
             <Settings className="w-4 h-4 mr-2" />
             Manage Days
           </Button>
+          {onManageImportExport && (
+            <Button
+              onClick={onManageImportExport}
+              size="sm"
+              variant="outline"
+              className="text-orange-600 border-orange-300 hover:bg-orange-50"
+            >
+              <FileDown className="w-4 h-4 mr-2" />
+              Import / Export
+            </Button>
+          )}
         </div>
       </div>
 
