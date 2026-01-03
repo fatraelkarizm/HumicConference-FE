@@ -463,10 +463,9 @@ export default function ConferenceScheduleTable({
 
           // Parse date from Excel format (e.g., "Wednesday, December 16, 2026")
           const dateStr = row.date;
-          let parsedDate: Date;
 
           // Try to parse the date
-          parsedDate = new Date(dateStr);
+          const parsedDate = new Date(dateStr);
           if (isNaN(parsedDate.getTime())) {
             continue;
           }

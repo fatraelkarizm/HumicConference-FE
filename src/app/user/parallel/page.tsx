@@ -112,7 +112,7 @@ const ParallelSessionScheduleUI = () => {
 
         // 4. Client-side Filter logic: Chain Filtering (Conf -> Sch -> Room -> Track)
         let filteredSessions = allTrackSessions;
-        let validTrackIds = new Set<string>();
+        const validTrackIds = new Set<string>();
 
         if (targetConferenceId) {
           // A. Find all schedules belonging to the active conference
