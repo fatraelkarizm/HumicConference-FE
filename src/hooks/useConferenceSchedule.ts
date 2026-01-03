@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import conferenceScheduleService from '@/services/ConferenceScheduleService';
-import type { 
-  BackendConferenceSchedule, 
-  NewConferenceScheduleData, 
-  UpdateConferenceScheduleData 
+import type {
+  BackendConferenceSchedule,
+  NewConferenceScheduleData,
+  UpdateConferenceScheduleData
 } from '@/types/conferenceSchedule';
 
 export const useConferenceSchedule = (includeRelation: boolean = true) => {
@@ -30,8 +30,6 @@ export const useConferenceSchedule = (includeRelation: boolean = true) => {
       }
 
       const conferencesData = await conferenceScheduleService.getAllConferenceSchedules(accessToken, includeRelation);
-      console.log('Fetched conferences:', conferencesData);
-      console.log('Conference types and years:', conferencesData.map(c => ({ type: c.type, year: c.year })));
       setConferences(conferencesData);
 
     } catch (err: any) {

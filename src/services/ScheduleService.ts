@@ -164,47 +164,28 @@ class ScheduleService {
 
   // ✅ Try different endpoint variations
   async updateSchedule(accessToken: string, id: string, data: UpdateScheduleData): Promise<BackendSchedule> {
-    console.log('🔧 ScheduleService.updateSchedule called:', {
-      id,
-      data,
-      endpoint: `/api/v1/schedule/${id}`
-    });
-
     const updatePayload: any = {};
 
     // ✅ Only include fields that backend supports
     if (data.date) {
       updatePayload.date = data.date;
-      console.log('📅 Adding date:', data.date);
     }
 
     if (data.startTime) {
       updatePayload.start_time = data.startTime;
-      console.log('⏰ Adding start_time:', data.startTime);
     }
 
     if (data.endTime) {
       updatePayload.end_time = data.endTime;
-      console.log('⏰ Adding end_time:', data.endTime);
     }
 
     if (data.description !== undefined && data.description !== null) {
       updatePayload.notes = data.description;
-      console.log('📝 Adding notes (description):', data.description);
     }
 
     if (data.scheduleType) {
       updatePayload.type = this.mapScheduleTypeToBackend(data.scheduleType);
-      console.log('🏷️ Adding type:', updatePayload.type);
     }
-
-    // ✅ REMOVE title field - backend doesn't support it
-    // if (data.title !== undefined && data.title !== null) {
-    //   updatePayload.title = data.title;
-    //   console.log('📰 Adding title:', data.title);
-    // }
-
-    console.log('📦 Final PATCH payload (without title):', updatePayload);
 
     try {
       const response = await this.makeRequest(`/api/v1/schedule/${id}`, {
@@ -216,7 +197,6 @@ class ScheduleService {
         body: JSON.stringify(updatePayload)
       });
 
-      console.log('✅ PATCH response:', response);
       return response.data;
     } catch (error: any) {
       console.error('❌ PATCH failed:', {

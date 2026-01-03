@@ -94,11 +94,7 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
         return;
       }
 
-      console.log("🔧 Starting room update:", {
-        roomId: room.id,
-        originalRoom: room,
-        formData: formData,
-      });
+
 
       const updateData: UpdateRoomData = {
         name: formData.name.trim(),
@@ -109,7 +105,7 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
         trackId: formData.trackId || undefined,
       };
 
-      console.log("📦 Update payload:", updateData);
+
 
       await updateRoom(room.id, updateData);
       toast.success("Room updated successfully! ");

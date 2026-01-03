@@ -393,26 +393,13 @@ export default function ConferenceScheduleTable({
       const targetDate = new Date(selectedDay);
       const targetDateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
 
-      console.log('🎯 Target date:', selectedDay, '-> normalized:', targetDateStr);
-      console.log('📊 Total schedules:', schedules.length);
-      console.log('📅 Sample dates from DB:', schedules.slice(0, 5).map(s => s.date));
-
       // Count existing schedules for this day (match by date part only, ignore timestamp)
       const schedulesForDay = schedules.filter(s => {
         // Extract date part from "2026-12-22T00:00:00.000Z" -> "2026-12-22"
         const dbDateStr = s.date?.split('T')[0] || s.date;
-        const match = dbDateStr === targetDateStr;
-
-        // Debug first 3 comparisons
-        if (schedules.indexOf(s) < 3) {
-          console.log(`Comparing: "${dbDateStr}" === "${targetDateStr}" ? ${match}`);
-        }
-
-        return match;
+        return dbDateStr === targetDateStr;
       });
       const existingCount = schedulesForDay.length;
-
-      console.log('✅ Schedules matching', targetDateStr, ':', existingCount);
 
       // Ask user confirmation
       const shouldProceed = window.confirm(

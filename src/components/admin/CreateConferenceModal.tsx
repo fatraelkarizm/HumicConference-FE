@@ -20,7 +20,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  conferenceType?: "ICICYTA" | "ICODSA"; // ✅ Props to enforce conference type
+  conferenceType?: "ICICYTA" | "ICODSA";
 }
 
 interface ConferenceFormData {
@@ -107,8 +107,6 @@ export default function CreateConferenceModal({
         is_active: formData.isActive,
       };
 
-      console.log('Creating conference:', conferencePayload);
-
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/conference-schedule`,
         {
@@ -137,7 +135,6 @@ export default function CreateConferenceModal({
             errorMessage = errorData.message || errorMessage;
           }
         } catch (e) {
-          console.log('Could not parse error response:', errorText);
         }
 
         throw new Error(errorMessage);

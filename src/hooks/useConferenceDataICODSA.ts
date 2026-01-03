@@ -6,16 +6,15 @@ export function useConferenceDataICODSA(conferences: BackendConferenceSchedule[]
   const icodsaConferences = useMemo(() => {
     const filtered = conferences.filter((conf) => {
       if (conf.type !== "ICODSA") return false;
-      
+
       const startDate = new Date(conf.start_date);
       const endDate = new Date(conf.end_date);
-      
+
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return false;
       if (endDate < startDate) return false;
-      
+
       return true;
     });
-    console.log('ICODSA Conferences:', filtered);
     return filtered;
   }, [conferences]);
 
@@ -24,7 +23,7 @@ export function useConferenceDataICODSA(conferences: BackendConferenceSchedule[]
     const years = Array.from(
       new Set(icodsaConferences.map((conf) => conf.year))
     ).sort((a, b) => parseInt(b) - parseInt(a));
-    
+
     return years;
   }, [icodsaConferences]);
 

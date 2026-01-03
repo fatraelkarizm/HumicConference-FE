@@ -129,9 +129,7 @@ class RoomService {
   }
 
   async updateRoom(accessToken: string, roomId: string, data: UpdateRoomData): Promise<BackendRoom> {
-    console.group('🔧 ROOM UPDATE DEBUG');
-    console.log('Room ID:', roomId);
-    console.log('Update data:', data);
+
 
     // Try without track_id first (most likely to succeed)
     const attempts = [
@@ -166,7 +164,7 @@ class RoomService {
       const updatePayload = attempts[i];
 
       try {
-        console.log(`🔄 Attempt ${i + 1}:`, updatePayload);
+
 
         const response = await this.makeRequest(`/api/v1/room/${roomId}`, {
           method: 'PATCH',
@@ -177,22 +175,15 @@ class RoomService {
           body: JSON.stringify(updatePayload)
         });
 
-        console.log(`✅ PATCH successful with attempt ${i + 1}:`, response.data);
-        console.groupEnd();
         return response.data;
+
 
       } catch (error: any) {
         lastError = error;
-        console.log(`❌ Attempt ${i + 1} failed:`, {
-          status: error.status,
-          message: error.message,
-          validation: error.data?.errors?.validation
-        });
       }
     }
 
     console.error('🚨 All update attempts failed');
-    console.groupEnd();
     throw lastError;
   }
 

@@ -143,8 +143,6 @@ export default function AddScheduleModal({
 
     setLoading(true);
     try {
-      console.log('🔍 Creating schedule for conference:', conferenceId);
-
       // Step 1: Create Schedule
       const schedulePayload = {
         date: formData.date,
@@ -155,9 +153,7 @@ export default function AddScheduleModal({
         conference_schedule_id: conferenceId,
       };
 
-      console.log('🔍 SCHEDULE PAYLOAD:', schedulePayload);
       const scheduleResponse = await createSchedule(schedulePayload);
-      console.log('✅ SCHEDULE CREATED:', scheduleResponse);
 
       // Step 2: Create Main Room (if enabled)
       if (formData.createMainRoom && scheduleResponse?.id) {
@@ -170,9 +166,7 @@ export default function AddScheduleModal({
           schedule_id: scheduleResponse.id,
         };
 
-        console.log('🔍 CREATING MAIN ROOM:', roomPayload);
-        const roomResponse = await createRoom(roomPayload);
-        console.log('✅ MAIN ROOM CREATED:', roomResponse);
+        await createRoom(roomPayload);
       }
 
       toast.success("Schedule and main room created successfully!");
@@ -190,14 +184,12 @@ export default function AddScheduleModal({
 
       // ✅ FORCE REFRESH - Wait a bit then trigger refresh
       setTimeout(() => {
-        console.log('🔄 Triggering data refresh...');
         onSuccess?.();
       }, 100);
 
       onClose();
 
     } catch (error: any) {
-      console.error('❌ FULL ERROR:', error);
 
       let errorMessage = "Failed to create";
 

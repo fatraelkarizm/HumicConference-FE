@@ -76,28 +76,16 @@ export default function ManageRoomsModal({
         throw new Error("Authentication required");
       }
 
-      console.group('🔍 ADD ROOM DUPLICATE CHECK');
-      console.log('1. Target Schedule ID:', targetScheduleId);
-      console.log('2. Requested Identifier:', newRoom.identifier);
-      console.log('2.1. Room Name:', newRoom.name);
-
       const existingRoomsForSchedule = await roomService.getAllRooms(accessToken, targetScheduleId);
-
-      console.log('3. Existing Rooms Fetched:', existingRoomsForSchedule.length, existingRoomsForSchedule);
-      console.log('4. Existing Identifiers:', existingRoomsForSchedule.map(r => r.identifier));
 
       // CHECK FOR DUPLICATE IDENTIFIER
       // ✅ If identifier is empty, auto-generate from name
       let finalIdentifier = newRoom.identifier?.trim() || newRoom.name?.trim() || `Room ${Date.now()}`;
 
-      console.log('4.5. Base Identifier (after auto-gen if empty):', finalIdentifier);
-
       if (finalIdentifier) {
         const identifierExists = existingRoomsForSchedule.some(
           r => r.identifier?.toLowerCase() === finalIdentifier.toLowerCase()
         );
-
-        console.log('5. Duplicate Found?', identifierExists);
 
         if (identifierExists) {
           // Auto-generate unique identifier by adding/incrementing number
@@ -108,13 +96,9 @@ export default function ManageRoomsModal({
             candidate = `${finalIdentifier} ${counter}`;
           }
           finalIdentifier = candidate;
-          console.log('6. Auto-generated Identifier:', finalIdentifier);
           toast(`Identifier auto-generated: "${finalIdentifier}"`, { duration: 4000 });
         }
       }
-
-      console.log('7. Final Identifier to Submit:', finalIdentifier);
-      console.groupEnd();
 
       const selectedSchedule = schedules.find(s => s.id === targetScheduleId);
 

@@ -122,11 +122,7 @@ export default function ManageDaysModal({
                               }
                             }
 
-                            console.log('--- Delete Day Request ---');
-                            console.log('Current Conference:', { start: conference.start_date, end: conference.end_date });
-                            console.log('Days List:', daysList);
-                            console.log('Deletion Target:', day, 'Index:', index);
-                            console.log('Is First:', isFirstDay, 'Is Last:', isLastDay);
+
 
                             setLoading(true);
                             try {
@@ -138,13 +134,15 @@ export default function ManageDaysModal({
                                 const nextDay = daysList[1];
                                 if (!nextDay) throw new Error("Next day logic failed: Day 1 is missing");
                                 newStartDate = nextDay;
-                                console.log('New Start Date selected:', newStartDate);
+                                newStartDate = nextDay;
+
                               } else if (isLastDay && daysList.length > 1) {
                                 // Deleting last day -> End date becomes previous day (2nd to last)
                                 const prevDay = daysList[daysList.length - 2];
                                 if (!prevDay) throw new Error("Previous day logic failed");
                                 newEndDate = prevDay;
-                                console.log('New End Date selected:', newEndDate);
+                                newEndDate = prevDay;
+
                               } else {
                                 throw new Error("Invalid delete operation: Not first or last day, or only 1 day left");
                               }
@@ -155,7 +153,7 @@ export default function ManageDaysModal({
                                 throw new Error(`Invalid date range calculated: ${newStartDate} to ${newEndDate}`);
                               }
 
-                              console.log('Sending Update:', newStartDate, newEndDate);
+
                               await updateConferenceDates(conference.id, newStartDate, newEndDate);
 
                               toast.success(`Day ${getDayNumber(day)} deleted successfully!`);
@@ -207,8 +205,7 @@ export default function ManageDaysModal({
                       const input = document.getElementById('add-date') as HTMLInputElement;
                       const selectedDate = input.value;
 
-                      console.log('--- Add Day Request ---');
-                      console.log('Selected Date Input:', selectedDate);
+
 
                       if (!selectedDate) {
                         toast.error("Please select a date");
@@ -220,17 +217,15 @@ export default function ManageDaysModal({
                       const currentStartStr = conference.start_date.split("T")[0];
                       const currentEndStr = conference.end_date.split("T")[0];
 
-                      console.log('Current Range:', currentStartStr, 'to', currentEndStr);
+
 
                       let finalStart = currentStartStr;
                       let finalEnd = currentEndStr;
 
                       if (newDateStr < currentStartStr) {
                         finalStart = newDateStr;
-                        console.log('Extending Start to:', finalStart);
-                      } else if (newDateStr > currentEndStr) {
                         finalEnd = newDateStr;
-                        console.log('Extending End to:', finalEnd);
+
                       } else {
                         console.warn('Date inside range:', newDateStr);
                         toast.error("Date is already within conference duration");
@@ -239,7 +234,6 @@ export default function ManageDaysModal({
 
                       setLoading(true);
                       try {
-                        console.log('Sending Update:', finalStart, finalEnd);
                         await updateConferenceDates(conference.id, finalStart, finalEnd);
                         toast.success(`Day added successfully!`);
                         input.value = '';
