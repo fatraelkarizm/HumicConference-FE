@@ -215,8 +215,6 @@ export default function ManageDaysModal({
                       const currentStartStr = conference.start_date.split("T")[0];
                       const currentEndStr = conference.end_date.split("T")[0];
 
-
-
                       let finalStart = currentStartStr;
                       let finalEnd = currentEndStr;
 
