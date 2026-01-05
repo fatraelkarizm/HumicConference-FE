@@ -68,7 +68,6 @@ class AuthService {
         throw new Error('No data received from server');
       }
 
-
       // Now access token should be in result.data.accessToken (thanks to API route)
       const userData = {
         id: result.data.id,
@@ -147,10 +146,7 @@ class AuthService {
       if (result.code !== 200) {
         return null;
       }
-
-      // Access token sekarang ada di result.data.accessToken (thanks to API route fix)
       let accessToken = null;
-
       if (result.data && result.data.accessToken) {
         accessToken = result.data.accessToken;
       } else {
