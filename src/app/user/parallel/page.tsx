@@ -30,7 +30,7 @@ interface Session {
 
 const roomNamesFallback = ['Room A', 'Room B', 'Room C', 'Room D', 'Room E'];
 
-const ParallelSessionScheduleUI = () => {
+const ParallelSessionScheduleContent = () => {
   const searchParams = useSearchParams();
   const conferenceIdParam = searchParams.get('conferenceId');
   const { tracks, loading: tracksLoading, error: tracksError } = useTrack();
@@ -180,7 +180,7 @@ const ParallelSessionScheduleUI = () => {
     };
 
     fetchAllTrackSessions();
-  }, [tracks]);
+  }, [tracks, conferenceIdParam]);
 
   useEffect(() => {
 
@@ -302,7 +302,7 @@ const ParallelSessionScheduleUI = () => {
     };
 
     transformData();
-  }, [tracks, conferenceSchedules, trackSessions, rooms]); // Dependencies
+  }, [tracks, conferenceSchedules, trackSessions, rooms, getRoomNameFromSchedules]); // Dependencies
 
   if (tracksLoading || loading) {
     return (
@@ -420,4 +420,14 @@ const ParallelSessionScheduleUI = () => {
   );
 };
 
-export default ParallelSessionScheduleUI;
+export default function ParallelSessionSchedulePage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <ParallelSessionScheduleContent />
+    </React.Suspense>
+  );
+}

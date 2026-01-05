@@ -28,7 +28,6 @@ interface Props {
 }
 
 export default function RoomManagementTab({
-  conferenceId,
   rooms,
   schedules,
   loading,
@@ -108,7 +107,7 @@ export default function RoomManagementTab({
         try {
           await deleteRoom(roomId);
           successCount++;
-        } catch (error) {
+        } catch {
         }
       });
 

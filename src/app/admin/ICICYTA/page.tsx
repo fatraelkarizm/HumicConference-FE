@@ -12,7 +12,11 @@ import ConferenceContent from "@/components/admin/conference/ConferenceContent";
 import CreateConferenceModal from "@/components/admin/CreateConferenceModal";
 import { useConferenceData } from "@/hooks/useConferenceData";
 
-export default function ICICyTAAdminPage() {
+import React, { Suspense } from 'react';
+
+export const dynamic = 'force-dynamic';
+
+function ICICyTAAdminContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialYear = searchParams.get('year') || "";
@@ -219,5 +223,17 @@ export default function ICICyTAAdminPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ICICyTAAdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <ICICyTAAdminContent />
+    </Suspense>
   );
 }

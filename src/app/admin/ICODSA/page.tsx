@@ -12,9 +12,12 @@ import ConferenceYearTabs from "@/components/admin/conference/ConferenceYearTabs
 import ConferenceContent from "@/components/admin/conference/ConferenceContent";
 import CreateConferenceModal from "@/components/admin/CreateConferenceModal";
 import { useConferenceDataICODSA } from "@/hooks/useConferenceDataICODSA";
-import type { BackendConferenceSchedule } from "@/types";
 
-export default function ICODSAAdminPage() {
+import React, { Suspense } from 'react';
+
+export const dynamic = 'force-dynamic';
+
+function ICODSAAdminContent() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,7 +35,6 @@ export default function ICODSAAdminPage() {
 
   // Get ICODSA conferences and selected conference
   const {
-    icodsaConferences,
     availableYears,
     selectedConference
   } = useConferenceDataICODSA(conferences, selectedYear);
@@ -228,5 +230,17 @@ export default function ICODSAAdminPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ICODSAAdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <ICODSAAdminContent />
+    </Suspense>
   );
 }

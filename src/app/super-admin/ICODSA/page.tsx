@@ -13,9 +13,12 @@ import ConferenceContent from "@/components/admin/conference/ConferenceContent";
 import CreateConferenceModal from "@/components/admin/CreateConferenceModal";
 import { useConferenceDataICODSA } from "@/hooks/useConferenceDataICODSA";
 import conferenceScheduleService from "@/services/ConferenceScheduleService";
-import type { BackendConferenceSchedule } from "@/types";
 
-export default function ICODSASuperAdminPage() {
+import React, { Suspense } from 'react';
+
+export const dynamic = 'force-dynamic';
+
+function ICODSASuperAdminContent() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -77,7 +80,7 @@ export default function ICODSASuperAdminPage() {
 
       toast.success(`Conference ${isActive ? 'activated' : 'deactivated'} successfully!`);
       refetchConferences();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update conference status");
     }
   };
@@ -240,5 +243,17 @@ export default function ICODSASuperAdminPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function ICODSASuperAdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <ICODSASuperAdminContent />
+    </Suspense>
   );
 }

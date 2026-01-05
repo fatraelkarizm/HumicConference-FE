@@ -257,7 +257,6 @@ export default function ConferenceContent({
         selectedTrackSession={selectedTrackSession}
         tracks={tracks}
         onRefresh={handleRefresh}
-        onCreateConference={() => onModalOpen("create-conference")}
       />
 
       {/* Edit Conference Modal */}

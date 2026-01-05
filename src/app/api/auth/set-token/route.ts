@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Set httpOnly cookie for refresh token
     const response = NextResponse.json({ success: true });
-    
+
     response.cookies.set('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -27,7 +27,6 @@ interface Props {
   selectedTrackSession: any;
   tracks: BackendTrack[];
   onRefresh: () => void;
-  onCreateConference: () => void;
 }
 
 export default function ConferenceModals({
@@ -39,11 +38,10 @@ export default function ConferenceModals({
   selectedTrackSession,
   tracks,
   onRefresh,
-  onCreateConference,
 }: Props) {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const { deleteSchedule } = useScheduleActions();
+
   const { deleteRoom } = useRoomActions();
   const { deleteTrackSession } = useTrackSessionActions();
 
@@ -112,8 +110,9 @@ export default function ConferenceModals({
           isOpen={true}
           onClose={onClose}
           scheduleId={selectedSchedule?.id}
-          onSubmit={function (roomData: any): Promise<void> {
-            throw new Error("Function not implemented.");
+          onSubmit={async () => {
+            // Placeholder: functionality handled inside AddRoomModal or parent
+            console.warn("onSubmit placeholder in ConferenceModals called");
           }}
           selectedScheduleForRoom={null}
           selectedRoomType={""}
@@ -126,8 +125,8 @@ export default function ConferenceModals({
             startTime: "",
             endTime: "",
           }}
-          setNewRoom={function (room: any): void {
-            throw new Error("Function not implemented.");
+          setNewRoom={() => {
+            // Placeholder
           }}
           loading={false}
         />
@@ -143,7 +142,7 @@ export default function ConferenceModals({
 
       {/* Track Session Modals */}
       {activeModal === "add-track-session" && (
-        <AddTrackSessionModal isOpen={true} onClose={onClose} conference={conference} tracks={tracks} />
+        <AddTrackSessionModal isOpen={true} onClose={onClose} tracks={tracks} />
       )}
 
       {activeModal === "edit-track-session" && selectedTrackSession && (

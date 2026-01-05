@@ -34,12 +34,12 @@ export default function ManageAdminPage() {
     setError(null);
     try {
       const list = await AdminService.getAdmins();
-      
+
       // Filter hanya admin users (exclude SUPER_ADMIN) - UPDATED ICODSA
-      const adminUsers = list.filter(admin => 
+      const adminUsers = list.filter(admin =>
         admin.role === 'ADMIN_ICICYTA' || admin.role === 'ADMIN_ICODSA' // FIXED: ICODSA
       );
-      
+
       // Normalize shape to AdminRow for table
       const normalized: AdminRow[] = adminUsers.map((a: Admin) => ({
         id: a.id,
@@ -48,7 +48,7 @@ export default function ManageAdminPage() {
         role: a.role,
         joinedAt: a.createdAt,
       }));
-      
+
       setAdmins(normalized);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load admins');
@@ -77,15 +77,15 @@ export default function ManageAdminPage() {
   }
 
   async function handleSave(
-    payload: { fullName: string; email: string; password?: string; role: string }, 
+    payload: { fullName: string; email: string; password?: string; role: string },
     id?: string
   ) {
     try {
       setError(null);
-      
+
       if (modalMode === "create") {
         const created = await AdminService.createAdmin(payload);
-        
+
         const newRow: AdminRow = {
           id: created.id,
           fullName: created.fullName,
@@ -95,20 +95,20 @@ export default function ManageAdminPage() {
           lastActive: 'Never',
           avatarUrl: created.profile_uri || undefined,
         };
-        
+
         setAdmins((prev) => [newRow, ...prev]);
       } else if (modalMode === "edit" && id) {
         const updated = await AdminService.updateAdmin(id, payload);
-        
+
         setAdmins((prev) =>
           prev.map((p) =>
             p.id === id
               ? {
-                  ...p,
-                  fullName: updated.fullName,
-                  email: updated.email,
-                  role: updated.role,
-                }
+                ...p,
+                fullName: updated.fullName,
+                email: updated.email,
+                role: updated.role,
+              }
               : p
           )
         );
@@ -122,7 +122,7 @@ export default function ManageAdminPage() {
   async function handleDelete(id: string) {
     try {
       setError(null);
-      
+
       await AdminService.deleteAdmin(id);
       setAdmins((prev) => prev.filter((p) => p.id !== id));
     } catch (err: unknown) {
@@ -162,11 +162,11 @@ export default function ManageAdminPage() {
             <div className="text-sm text-gray-500">Loading admins...</div>
           </div>
         ) : (
-          <AdminTable 
-            admins={admins} 
-            onCreate={openCreate} 
-            onEdit={openEdit} 
-            onDelete={handleDelete} 
+          <AdminTable
+            admins={admins}
+            onCreate={openCreate}
+            onEdit={openEdit}
+            onDelete={handleDelete}
           />
         )}
       </div>
@@ -183,7 +183,7 @@ export default function ManageAdminPage() {
           try {
             await handleSave(payload as { fullName: string; email: string; password?: string; role: string }, id);
             setModalOpen(false);
-          } catch (err) {
+          } catch {
             // Error is handled in handleSave, modal stays open
           }
         }}
