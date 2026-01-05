@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from '@/context/AuthContext';
 import { useConferenceSchedule } from "@/hooks/useConferenceSchedule";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,10 @@ import type { BackendConferenceSchedule } from "@/types";
 
 export default function ICODSAAdminPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [selectedYear, setSelectedYear] = useState<string>("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialYear = searchParams.get('year') || "";
+  const [selectedYear, setSelectedYear] = useState<string>(initialYear);
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   // Base conferences hook
@@ -27,18 +31,32 @@ export default function ICODSAAdminPage() {
   } = useConferenceSchedule();
 
   // Get ICODSA conferences and selected conference
-  const { 
-    icodsaConferences, 
-    availableYears, 
-    selectedConference 
+  const {
+    icodsaConferences,
+    availableYears,
+    selectedConference
   } = useConferenceDataICODSA(conferences, selectedYear);
 
-  // Auto-select most recent year
+  // Auto-select most recent year or use URL param
   useEffect(() => {
-    if (availableYears.length > 0 && ! selectedYear) {
-      setSelectedYear(availableYears[0]);
+    const yearParam = searchParams.get('year');
+    if (yearParam && availableYears.includes(yearParam)) {
+      if (selectedYear !== yearParam) {
+        setSelectedYear(yearParam);
+      }
+    } else if (availableYears.length > 0 && !selectedYear) {
+      // Default to latest if no param or invalid param
+      const latestYear = availableYears[0];
+      setSelectedYear(latestYear);
+      // Update URL to match default
+      router.replace(`/admin/ICODSA?year=${latestYear}`, { scroll: false });
     }
-  }, [availableYears, selectedYear]);
+  }, [availableYears, searchParams, router, selectedYear]);
+
+  const handleYearSelect = (year: string) => {
+    setSelectedYear(year);
+    router.push(`/admin/ICODSA?year=${year}`, { scroll: false });
+  };
 
   const handleModalClose = () => {
     setActiveModal(null);
@@ -99,7 +117,7 @@ export default function ICODSAAdminPage() {
               No ICODSA Conferences Found
             </h2>
             <p className="text-gray-600 mb-6">
-              Create your first ICODSA conference to get started. 
+              Create your first ICODSA conference to get started.
             </p>
             <Button
               onClick={() => setActiveModal("create-conference")}
@@ -121,7 +139,7 @@ export default function ICODSAAdminPage() {
                     {selectedConference?.name || "ICODSA Conference"}
                   </h1>
                   <p className="text-sm text-gray-500 mt-1">
-                    {selectedConference ?  (
+                    {selectedConference ? (
                       <>
                         {new Date(selectedConference.start_date).toLocaleDateString()} -{" "}
                         {new Date(selectedConference.end_date).toLocaleDateString()}
@@ -136,7 +154,7 @@ export default function ICODSAAdminPage() {
                     <CalendarDays className="w-4 h-4 mr-1" />
                     ICODSA {selectedYear}
                   </Badge>
-                  
+
                   {/* ✅ Simple Action Buttons - No Delete */}
                   <div className="flex items-center space-x-2">
                     {/* No buttons needed */}
@@ -146,16 +164,16 @@ export default function ICODSAAdminPage() {
             </div>
           </div>
 
-      {/* Conference Year Series */}
-      <ConferenceYearTabs
-        availableYears={availableYears}
-        selectedYear={selectedYear}
-        onYearSelect={setSelectedYear}
-        onCreateNew={() => setActiveModal("create-conference")}
-        conferenceType="ICODSA"
-      />          {/* Main Content */}
+          {/* Conference Year Series */}
+          <ConferenceYearTabs
+            availableYears={availableYears}
+            selectedYear={selectedYear}
+            onYearSelect={handleYearSelect}
+            onCreateNew={() => setActiveModal("create-conference")}
+            conferenceType="ICODSA"
+          />          {/* Main Content */}
           <div className="max-w-full mx-auto py-8">
-            {! selectedConference ? (
+            {!selectedConference ? (
               // Empty State
               <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
@@ -177,7 +195,7 @@ export default function ICODSAAdminPage() {
               </div>
             ) : (
               // Conference Content with Tabs
-              <ConferenceContent 
+              <ConferenceContent
                 conference={selectedConference}
                 onModalOpen={setActiveModal}
                 onRefresh={refetchConferences}

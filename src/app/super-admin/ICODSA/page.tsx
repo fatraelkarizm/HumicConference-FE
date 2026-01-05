@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from '@/context/AuthContext';
 import { useConferenceSchedule } from "@/hooks/useConferenceSchedule";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,10 @@ import type { BackendConferenceSchedule } from "@/types";
 
 export default function ICODSASuperAdminPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [selectedYear, setSelectedYear] = useState<string>("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialYear = searchParams.get('year') || "";
+  const [selectedYear, setSelectedYear] = useState<string>(initialYear);
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   // Base conferences hook
@@ -34,12 +38,26 @@ export default function ICODSASuperAdminPage() {
     selectedConference
   } = useConferenceDataICODSA(conferences, selectedYear);
 
-  // Auto-select most recent year
+  // Auto-select most recent year or use URL param
   useEffect(() => {
-    if (availableYears.length > 0 && ! selectedYear) {
-      setSelectedYear(availableYears[0]);
+    const yearParam = searchParams.get('year');
+    if (yearParam && availableYears.includes(yearParam)) {
+      if (selectedYear !== yearParam) {
+        setSelectedYear(yearParam);
+      }
+    } else if (availableYears.length > 0 && !selectedYear) {
+      // Default to latest if no param or invalid param
+      const latestYear = availableYears[0];
+      setSelectedYear(latestYear);
+      // Update URL to match default
+      router.replace(`/super-admin/ICODSA?year=${latestYear}`, { scroll: false });
     }
-  }, [availableYears, selectedYear]);
+  }, [availableYears, searchParams, router, selectedYear]);
+
+  const handleYearSelect = (year: string) => {
+    setSelectedYear(year);
+    router.push(`/super-admin/ICODSA?year=${year}`, { scroll: false });
+  };
 
   const handleModalClose = () => {
     setActiveModal(null);
@@ -141,7 +159,7 @@ export default function ICODSASuperAdminPage() {
                     {selectedConference?.name || "ICODSA Conference"}
                   </h1>
                   <p className="text-sm text-gray-500 mt-1">
-                    {selectedConference ?  (
+                    {selectedConference ? (
                       <>
                         {selectedConference.start_date ? new Date(selectedConference.start_date).toLocaleDateString() : 'TBD'} -{" "}
                         {selectedConference.end_date ? new Date(selectedConference.end_date).toLocaleDateString() : 'TBD'}
@@ -166,18 +184,18 @@ export default function ICODSASuperAdminPage() {
             </div>
           </div>
 
-      {/* Conference Year Series */}
-      <ConferenceYearTabs
-        availableYears={availableYears}
-        selectedYear={selectedYear}
-        onYearSelect={setSelectedYear}
-        onCreateNew={() => setActiveModal("create-conference")}
-        conferenceType="ICODSA"
-        conferences={icodsaConferences}
-        onToggleActive={handleToggleActive}
-      />          {/* Main Content */}
+          {/* Conference Year Series */}
+          <ConferenceYearTabs
+            availableYears={availableYears}
+            selectedYear={selectedYear}
+            onYearSelect={handleYearSelect}
+            onCreateNew={() => setActiveModal("create-conference")}
+            conferenceType="ICODSA"
+            conferences={icodsaConferences}
+            onToggleActive={handleToggleActive}
+          />          {/* Main Content */}
           <div className="max-w-full mx-auto py-8">
-            {! selectedConference ? (
+            {!selectedConference ? (
               // Empty State
               <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">

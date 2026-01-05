@@ -26,8 +26,8 @@ interface Props {
 export default function DetailTrackSessionModal({ isOpen, onClose, session }: Props) {
   const getModeIcon = (mode: string) => {
     switch (mode) {
-      case 'ONLINE': return '💻';
-      case 'ONSITE': return '🏢';
+      case 'ONLINE': return '';
+      case 'ONSITE': return '';
       default: return '📍';
     }
   };

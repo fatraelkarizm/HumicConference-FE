@@ -27,9 +27,9 @@ interface Props {
 export default function DetailRoomModal({ isOpen, onClose, room }: Props) {
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'MAIN': return '🏛️';
-      case 'PARALLEL': return '🏢';
-      default: return '🏠';
+      case 'MAIN': return '';
+      case 'PARALLEL': return '';
+      default: return '';
     }
   };
 

@@ -49,7 +49,6 @@ const ParallelSessionScheduleUI = () => {
     if (rooms && rooms.length > 0) {
       const foundRoom = rooms.find((room) => room.track_id === session.track_id);
       if (foundRoom) {
-        console.log('Found room from rooms API:', foundRoom);
         return foundRoom.name || "Room Assigned";
       }
     }
@@ -110,12 +109,6 @@ const ParallelSessionScheduleUI = () => {
           scheduleService.getAllSchedules(accessToken)
         ]);
 
-        console.group('🔍 PARALLEL SESSION DEBUG');
-        console.log('1. Target Conference ID:', targetConferenceId);
-        console.log('2. Active Conference:', activeConference);
-        console.log('3. All Track Sessions:', allTrackSessions.length, allTrackSessions);
-        console.log('4. All Schedules:', allSchedules.length, allSchedules);
-        console.log('4.1. Sample Schedule Structure:', allSchedules[0]); // Check actual structure
 
         // 4. Client-side Filter logic: Chain Filtering (Conf -> Sch -> Room -> Track)
         let filteredSessions = allTrackSessions;
@@ -125,10 +118,7 @@ const ParallelSessionScheduleUI = () => {
           // A. Find all schedules belonging to the active conference
           let validSchedules = allSchedules.filter((s: any) => s.conference_schedule_id === targetConferenceId);
 
-          // FALLBACK: If active conference has NO schedules (new/empty conference),
-          // use the conference that has the MOST schedules (likely the one with actual data)
           if (validSchedules.length === 0) {
-            console.warn('⚠️ Active conference has no schedules. Finding conference with most data...');
 
             // Group schedules by conference_schedule_id and count
             const conferenceScheduleCounts = new Map<string, number>();
@@ -147,63 +137,44 @@ const ParallelSessionScheduleUI = () => {
               }
             });
 
-            console.log('📊 Fallback to conference:', fallbackConferenceId, 'with', maxCount, 'schedules');
             targetConferenceId = fallbackConferenceId;
             validSchedules = allSchedules.filter((s: any) => s.conference_schedule_id === targetConferenceId);
           }
 
           const validScheduleIds = validSchedules.map((s: any) => s.id);
 
-          console.log('5. Valid Schedules for conference:', validSchedules.length, validSchedules);
-          console.log('6. Valid Schedule IDs:', validScheduleIds);
-
-          // B. Fetch rooms for EACH schedule to bypass pagination limits
-          // Instead of fetching all rooms globally (which gets paginated), 
-          // we fetch rooms per schedule which gives us complete data
           const roomsPromises = validScheduleIds.map(scheduleId =>
             roomService.getAllRooms(accessToken, scheduleId).catch(() => [])
           );
           const roomsArrays = await Promise.all(roomsPromises);
           const validRooms = roomsArrays.flat();
 
-          console.log('7. Valid Rooms:', validRooms.length, validRooms);
 
           setRooms(validRooms); // Update state with fetched rooms
 
-          // C. valid Tracks are those assigned to these rooms
           validRooms.forEach((room: any) => {
-            // Handle both track_id and nested track object
             if (room.track_id) validTrackIds.add(room.track_id);
             if (room.track && room.track.id) validTrackIds.add(room.track.id);
           });
 
-          console.log('8. Valid Track IDs:', Array.from(validTrackIds));
 
           // D. Filter sessions
           if (validTrackIds.size > 0) {
             filteredSessions = allTrackSessions.filter((session: any) => validTrackIds.has(session.track_id));
-            console.log('9. Filtered Sessions:', filteredSessions.length, filteredSessions);
           } else {
-            console.warn('⚠️ No valid tracks found - showing empty list');
-            // If no tracks found for this conference, show empty list
-            // This prevents showing old conference data (2024) when viewing new conference (2026)
             filteredSessions = [];
           }
         } else {
-          console.warn('⚠️ No target conference ID - fetching all rooms as fallback');
           // No target conference, fetch all rooms as fallback
           const allRooms = await roomService.getAllRooms(accessToken);
           setRooms(allRooms);
         }
 
-        console.log('10. FINAL Filtered Sessions:', filteredSessions.length);
-        console.groupEnd();
 
         setTrackSessions(filteredSessions);
         setLoading(false);
 
       } catch (err: any) {
-        console.error('Error fetching data:', err);
         setError(err.message || 'Failed to load parallel sessions');
         setLoading(false);
       }
@@ -212,11 +183,7 @@ const ParallelSessionScheduleUI = () => {
     fetchAllTrackSessions();
   }, [tracks]);
 
-  // Transform data
   useEffect(() => {
-    // Rely on data presence, but don't block based on length === 0 if we want to show "empty" state
-    // We only guard against uninitialized state if needed, but since we manage loading separately now, 
-    // we can let this run whenever dependencies change.
 
     const transformData = () => {
       try {
@@ -293,7 +260,6 @@ const ParallelSessionScheduleUI = () => {
 
             // --- ONSITE SESSION ---
             if (onsiteSessions.length > 0) {
-              // Ambil nama ruangan dengan logika baru
               const roomName = getRoomNameFromSchedules(
                 onsiteSessions[0],
                 conferenceSchedules,
@@ -301,7 +267,6 @@ const ParallelSessionScheduleUI = () => {
                 trackIteratorIndex
               );
 
-              // Format Badge Texts: ["Track Name", "Room Name"]
               const badgeTexts = [
                 track?.name || 'Unknown Track',
                 roomName
@@ -331,10 +296,8 @@ const ParallelSessionScheduleUI = () => {
         }).flat();
 
         setParallelSessionsData(uiData);
-        // Remove setLoading(false) from here since it's handled in the fetch effect
 
       } catch (err: any) {
-        console.error('Error transforming data:', err);
         setError(err.message || 'Failed to transform parallel sessions data');
       }
     };

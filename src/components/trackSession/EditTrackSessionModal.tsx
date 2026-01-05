@@ -66,7 +66,7 @@ export default function EditTrackSessionModal({ isOpen, onClose, session }: Prop
       value: 'ONSITE', 
       label: 'Onsite Presentation', 
       description: 'Physical presentation at conference venue',
-      icon: '🏢',
+      icon: '',
       color: 'bg-green-100 text-green-800'
     }
   ];

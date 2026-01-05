@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useConferenceSchedule, useConferenceScheduleActions } from "@/hooks/useConferenceSchedule";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,10 @@ import CreateConferenceModal from "@/components/admin/CreateConferenceModal";
 import { useConferenceData } from "@/hooks/useConferenceData";
 
 export default function ICICyTAAdminPage() {
-  const [selectedYear, setSelectedYear] = useState<string>("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialYear = searchParams.get('year') || "";
+  const [selectedYear, setSelectedYear] = useState<string>(initialYear);
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   // Base conferences hook
@@ -30,12 +34,26 @@ export default function ICICyTAAdminPage() {
     selectedConference
   } = useConferenceData(conferences, selectedYear);
 
-  // Auto-select most recent year
+  // Auto-select most recent year or use URL param
   useEffect(() => {
-    if (availableYears.length > 0 && !selectedYear) {
-      setSelectedYear(availableYears[0]);
+    const yearParam = searchParams.get('year');
+    if (yearParam && availableYears.includes(yearParam)) {
+      if (selectedYear !== yearParam) {
+        setSelectedYear(yearParam);
+      }
+    } else if (availableYears.length > 0 && !selectedYear) {
+      // Default to latest if no param or invalid param
+      const latestYear = availableYears[0];
+      setSelectedYear(latestYear);
+      // Update URL to match default
+      router.replace(`/admin/ICICYTA?year=${latestYear}`, { scroll: false });
     }
-  }, [availableYears, selectedYear]);
+  }, [availableYears, searchParams, router, selectedYear]);
+
+  const handleYearSelect = (year: string) => {
+    setSelectedYear(year);
+    router.push(`/admin/ICICYTA?year=${year}`, { scroll: false });
+  };
 
   const handleModalClose = () => {
     setActiveModal(null);
@@ -141,7 +159,7 @@ export default function ICICyTAAdminPage() {
       <ConferenceYearTabs
         availableYears={availableYears}
         selectedYear={selectedYear}
-        onYearSelect={setSelectedYear}
+        onYearSelect={handleYearSelect}
         onCreateNew={() => setActiveModal("create-conference")}
         conferenceType="ICICYTA"
         conferences={conferences}

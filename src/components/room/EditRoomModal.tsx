@@ -65,14 +65,14 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
       value: "MAIN",
       label: "Main Room",
       description: "Primary session room for main activities",
-      icon: "🏛️",
+      icon: "",
       color: "bg-blue-100 text-blue-800",
     },
     {
       value: "PARALLEL",
       label: "Parallel Session",
       description: "Concurrent session room for breakout activities",
-      icon: "🏢",
+      icon: "",
       color: "bg-green-100 text-green-800",
     },
   ];
