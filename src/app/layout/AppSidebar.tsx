@@ -79,8 +79,8 @@ const CollapsibleMenuItem = ({ item }: { item: MenuItem }) => {
               key={subItem.href}
               href={subItem.href}
               className={`flex items-center gap-2.5 rounded-[3px] px-4 py-2 font-satoshi text-base font-medium transition-colors ${pathname.startsWith(subItem.href)
-                  ? 'bg-[#333A48] text-white'
-                  : 'text-white/80 hover:bg-[#333A48] hover:text-white'
+                ? 'bg-[#333A48] text-white'
+                : 'text-white/80 hover:bg-[#333A48] hover:text-white'
                 }`}
             >
               <subItem.icon className="w-4 h-4 flex-shrink-0" />
@@ -111,13 +111,20 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
     }
   };
 
-  // Generate menu items berdasarkan role user
   const getMenuItems = (): MenuItem[] => {
+    let dashboardHref = "/super-admin/dashboard"; // Default to Super Admin
+
+    if (user?.role === 'ADMIN_ICICYTA') {
+      dashboardHref = "/admin/ICICYTA/dashboard";
+    } else if (user?.role === 'ADMIN_ICODSA') {
+      dashboardHref = "/admin/ICODSA/dashboard";
+    }
+
     const baseItems: MenuItem[] = [
       {
         id: "dashboard",
         label: "Dashboard",
-        href: "/super-admin/dashboard",
+        href: dashboardHref,
         icon: Squares2X2Icon,
         roles: ['SUPER_ADMIN', 'ADMIN_ICICYTA', 'ADMIN_ICODSA']
       },
