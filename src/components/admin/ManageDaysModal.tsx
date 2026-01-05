@@ -222,10 +222,8 @@ export default function ManageDaysModal({
 
                       if (newDateStr < currentStartStr) {
                         finalStart = newDateStr;
-                        // finalEnd remains currentEndStr
                       } else if (newDateStr > currentEndStr) {
                         finalEnd = newDateStr;
-                        // finalStart remains currentStartStr
                       } else {
                         toast.error("Date is already included in the conference duration");
                         return;
