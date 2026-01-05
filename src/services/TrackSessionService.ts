@@ -22,7 +22,7 @@ class TrackSessionService {
       if (!response.ok) return null;
       const result = await response.json();
       return result.data?.accessToken || null;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -139,4 +139,5 @@ class TrackSessionService {
   }
 }
 
-export default new TrackSessionService();
+const trackSessionService = new TrackSessionService();
+export default trackSessionService;

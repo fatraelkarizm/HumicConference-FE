@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useConferenceSchedule } from "@/hooks/useConferenceSchedule";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Plus, Calendar, BarChart3 } from "lucide-react";
+import { CalendarDays, Plus, Calendar, Activity } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ConferenceYearTabs from "@/components/admin/conference/ConferenceYearTabs";
 import ConferenceContent from "@/components/admin/conference/ConferenceContent";
@@ -163,7 +163,7 @@ export default function ICODSAAdminPage() {
                       onClick={() => router.push('/admin/ICODSA/dashboard')}
                       className="text-[#015B97] border-[#015B97] hover:bg-blue-50"
                     >
-                      <BarChart3 className="w-4 h-4 mr-2" />
+                      <Activity className="w-4 h-4 mr-2" />
                       Dashboard
                     </Button>
                   </div>

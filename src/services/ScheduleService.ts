@@ -23,7 +23,7 @@ class ScheduleService {
       if (!response.ok) return null;
       const result = await response.json();
       return result.data?.accessToken || null;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -233,4 +233,5 @@ class ScheduleService {
   }
 }
 
-export default new ScheduleService();
+const scheduleService = new ScheduleService();
+export default scheduleService;

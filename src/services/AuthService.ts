@@ -1,4 +1,4 @@
-import { LoginPayload, LoginResponse, RefreshTokenResponse, ApiResponse, User } from '@/types/auth';
+import { LoginPayload, LoginResponse, User } from '@/types/auth';
 
 class AuthService {
   private baseUrl: string;
@@ -94,12 +94,12 @@ class AuthService {
       if (typeof window !== 'undefined') {
         setTimeout(async () => {
           try {
-            const checkResponse = await fetch('/api/auth/refresh', {
+            await fetch('/api/auth/refresh', {
               method: 'GET',
               credentials: 'include'
             });
-            const checkResult = await checkResponse.json();
-          } catch (error) {
+          } catch {
+            // Ignore error
           }
         }, 500);
       }
@@ -120,7 +120,8 @@ class AuthService {
         method: 'POST',
         credentials: 'include',
       });
-    } catch (error) {
+    } catch {
+      // Ignore error
     } finally {
       await fetch('/api/auth/clear-token', {
         method: 'POST',
@@ -157,7 +158,7 @@ class AuthService {
       }
 
       return accessToken;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -185,7 +186,7 @@ class AuthService {
       }
 
       return result.data;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -227,7 +228,7 @@ class AuthService {
         user,
         accessToken,
       };
-    } catch (error) {
+    } catch {
       return { isAuthenticated: false, user: null, accessToken: null };
     }
   }
@@ -246,4 +247,5 @@ class AuthService {
   }
 }
 
-export default new AuthService();
+const authService = new AuthService();
+export default authService;

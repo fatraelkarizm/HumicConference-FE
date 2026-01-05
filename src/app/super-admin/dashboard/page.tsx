@@ -9,13 +9,12 @@ import {
   Calendar,
   Users,
   MapPin,
-  Clock,
   ArrowRight,
   Activity,
   BarChart3,
   CalendarDays
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -41,8 +40,7 @@ export default function DashboardPage() {
           const data = await conferenceScheduleService.getAllConferenceSchedules(token, false);
           setConferences(data);
         }
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
+      } catch {
       } finally {
         setLoading(false);
       }
@@ -79,7 +77,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-gray-900">
             Welcome back, {user?.name?.split(' ')[0]} 👋
           </h1>
-          <p className="text-gray-500 mt-1">Here's what's happening with your conferences today.</p>
+          <p className="text-gray-500 mt-1">Here&apos;s what&apos;s happening with your conferences today.</p>
         </div>
         <div className="flex gap-3">
           {/* Quick Action Buttons */}

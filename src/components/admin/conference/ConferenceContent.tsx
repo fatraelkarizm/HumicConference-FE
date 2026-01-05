@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Plus, Trash } from "lucide-react";
+import { Settings, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ConferenceScheduleTable from "@/components/admin/ConferenceScheduleTable";
@@ -73,7 +73,7 @@ export default function ConferenceContent({
       onRefresh();
 
       toast.success("Data refreshed successfully! ", { id: toastId });
-    } catch (error) {
+    } catch {
       toast.error("Failed to refresh data", { id: toastId });
     }
   };

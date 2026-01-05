@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, MoreHorizontal, Edit2, Eye, Trash2, Plus, Clock, Calendar } from "lucide-react";
+import { MapPin, MoreHorizontal, Edit2, Eye, Trash2, Plus, Calendar } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -152,14 +152,7 @@ export default function ScheduleTable({
     );
   };
 
-  const isSpanningSchedule = (schedule: BackendSchedule) => {
-    const notes = schedule.notes?.toLowerCase() || "";
-    return (
-      notes.includes("coffee break") ||
-      notes.includes("lunch break") ||
-      notes.includes("break")
-    );
-  };
+
 
   return (
     <Card className="border-0 shadow-sm">

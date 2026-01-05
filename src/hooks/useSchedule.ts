@@ -5,7 +5,6 @@ import { ScheduleProcessor, mapUserRoleToConference, findConferenceByType } from
 import type {
   ProcessedConferenceSchedule,
   ScheduleItem,
-  NewScheduleData,
   BackendSchedule,
   UpdateScheduleData,
   DaySchedule

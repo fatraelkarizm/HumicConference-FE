@@ -21,7 +21,7 @@ class AdminService {
 
       const result = await response.json();
       return result.data?.accessToken || null;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -86,7 +86,7 @@ class AdminService {
       }));
 
       return admins;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -147,7 +147,8 @@ class AdminService {
           } else if (errorData.message) {
             errorMessage = errorData.message;
           }
-        } catch (parseError) {
+        } catch {
+          // Ignore
         }
 
         throw new Error(errorMessage);
@@ -175,7 +176,7 @@ class AdminService {
       };
 
       return admin;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -237,7 +238,8 @@ class AdminService {
           } else if (errorData.message) {
             errorMessage = errorData.message;
           }
-        } catch (parseError) {
+        } catch {
+          // Ignore
         }
 
         throw new Error(errorMessage);
@@ -265,7 +267,7 @@ class AdminService {
       };
 
       return admin;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -297,7 +299,8 @@ class AdminService {
           if (errorData.message) {
             errorMessage = errorData.message;
           }
-        } catch (parseError) {
+        } catch {
+          // Ignore
         }
 
         throw new Error(errorMessage);
@@ -309,7 +312,7 @@ class AdminService {
         throw new Error(result.message || 'Failed to delete admin');
       }
 
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }
@@ -359,7 +362,7 @@ class AdminService {
       };
 
       return admin;
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }

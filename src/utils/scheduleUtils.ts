@@ -257,7 +257,8 @@ export class ScheduleProcessor {
       const day = String(date.getDate()).padStart(2, '0');
 
       return `${year}-${month}-${day}`;
-    } catch (error) {
+      return `${year}-${month}-${day}`;
+    } catch {
       // ✅ FIX: Safer fallback
       return isoString.includes('T') ? isoString.split('T')[0] : isoString;
     }
@@ -278,7 +279,7 @@ export class ScheduleProcessor {
       const weekday = dateObj.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
 
       return `${weekday}, ${day} ${month}`;
-    } catch (error) {
+    } catch {
       return `Day ${dayNumber}: ${date}`;
     }
   }

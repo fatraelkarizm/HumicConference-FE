@@ -40,8 +40,7 @@ export default function ICICYTADashboardPage() {
                          const icicytaData = data.filter(c => c.type === 'ICICYTA').sort((a, b) => parseInt(b.year) - parseInt(a.year));
                          setConferences(icicytaData);
                     }
-               } catch (error) {
-                    console.error("Failed to fetch dashboard data", error);
+               } catch {
                } finally {
                     setLoading(false);
                }

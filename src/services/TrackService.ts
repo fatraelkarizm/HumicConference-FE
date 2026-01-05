@@ -18,14 +18,14 @@ class TrackService {
       if (!response.ok) return null;
       const result = await response.json();
       return result.data?.accessToken || null;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<BackendApiResponse<any>> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ class TrackService {
     }
 
     const result = await response.json();
-    
+
     if (result.code && result.code >= 400) {
       throw new Error(result.message || `Request failed with code ${result.code}`);
     }
@@ -80,7 +80,7 @@ class TrackService {
 
     const response = await this.makeRequest('/api/v1/track', {
       method: 'POST',
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
@@ -93,13 +93,13 @@ class TrackService {
   // ✅ ADD: Update track method
   async updateTrack(accessToken: string, trackId: string, data: UpdateTrackData): Promise<BackendTrack> {
     const updatePayload: any = {};
-    
+
     if (data.name) updatePayload.name = data.name;
     if (data.description !== undefined) updatePayload.description = data.description;
 
     const response = await this.makeRequest(`/api/v1/track/${trackId}`, {
       method: 'PATCH',
-      headers: { 
+      headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
@@ -124,4 +124,5 @@ class TrackService {
   }
 }
 
-export default new TrackService();
+const trackService = new TrackService();
+export default trackService;

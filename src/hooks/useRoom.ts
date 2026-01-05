@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import roomService from '@/services/RoomServices';
-import conferenceScheduleService from '@/services/ConferenceScheduleService';
-import type { BackendRoom, NewRoomData, UpdateRoomData } from '@/types/room';
+import type { BackendRoom, UpdateRoomData } from '@/types/room';
 
 export interface CreateRoomPayload {
   name: string;
@@ -10,7 +9,7 @@ export interface CreateRoomPayload {
   description?: string;
   type: "MAIN" | "PARALLEL";
   online_meeting_url?: string | null;
-  onlineMeetingUrl?: string | null; 
+  onlineMeetingUrl?: string | null;
   startTime?: string;
   endTime?: string;
   scheduleId: string;

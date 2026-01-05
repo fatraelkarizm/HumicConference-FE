@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, Calendar } from "lucide-react";
+import { MapPin, Calendar } from "lucide-react";
 import type {
   BackendConferenceSchedule,
   BackendSchedule,
@@ -126,14 +126,7 @@ export default function UserScheduleTable({
     );
   };
 
-  const isSpanningSchedule = (schedule: BackendSchedule) => {
-    const notes = schedule.notes?.toLowerCase() || "";
-    return (
-      notes.includes("coffee break") ||
-      notes.includes("lunch break") ||
-      notes.includes("break")
-    );
-  };
+
 
   return (
     <Card className="border-0 shadow-sm max-w-full mx-auto">
@@ -167,8 +160,8 @@ export default function UserScheduleTable({
                   <th
                     key={roomColumn.id}
                     className={`text-left py-3 px-4 font-semibold ${index < roomColumnsForDay.length - 1
-                        ? "border-r border-gray-300"
-                        : ""
+                      ? "border-r border-gray-300"
+                      : ""
                       } bg-gray-50 min-w-[180px]`}
                     title={
                       roomColumn.room
@@ -252,8 +245,8 @@ export default function UserScheduleTable({
                         <td
                           key={roomColumn.id}
                           className={`py-4 px-4 ${roomIndex < roomColumnsForDay.length - 1
-                              ? "border-r border-gray-200"
-                              : ""
+                            ? "border-r border-gray-200"
+                            : ""
                             } align-top`}
                         >
                           <div className="min-h-[60px]">

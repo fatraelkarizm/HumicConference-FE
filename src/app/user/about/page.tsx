@@ -7,19 +7,19 @@ const AboutPage = () => {
     {
       id: 'icicyta',
       headerTitle: "ICICyTA: The International Conference on Information, Cybernetics, and Technology Advancement",
-      headerColor: "bg-blue-200", // Warna Header Biru Muda
+      headerColor: "bg-blue-200", 
       rows: [
-        { label: "Conference Title", value: "Conference Title: ICICyTA & ICoDSA 2025 The International Conference on Information, Cybernetics, and Technology Advancement (ICICyTA) and The International Conference on Data Science and Applications (ICoDSA)." },
+        { label: "Conference Title", value: "Conference Title: ICICyTA & IMPACT 2025 The International Conference on Information, Cybernetics, and Technology Advancement (ICICyTA) and The International Conference on Data Science and Applications (ICoDSA)." },
         { label: "Date and Location", value: "Regular text: 23 November – 24 November 2025 (Pukul 08:00 WIB - 17:00 WIB setiap hari) | Hybrid Event: Fisik: Auditorium & Ballroom UTB Virtual: Platform Zoom (Link akan diumumkan di sesi masing-masing)" },
         { label: "Theme/Objective", value: "Synergy in Digital Era: Fostering Innovation in AI, Cybernetics, and Big Data Applications." }
       ]
     },
     {
       id: 'icodsa',
-      headerTitle: "ICoDSA: The International Conference on Data Science and Applications",
+      headerTitle: "IMPACT: International Conference on Intelligent Multimedia, Physical-AI, and Cyber-Technologies",
       headerColor: "bg-[#D9F99D]",
       rows: [
-        { label: "Conference Title", value: "The International Conference on Data Science and Applications (ICoDSA) 2025" },
+        { label: "Conference Title", value: "IMPACT: International Conference on Intelligent Multimedia, Physical-AI, and Cyber-Technologies (IMPACT 2025)" },
         { label: "Date and Location", value: "Regular text: 23 November – 24 November 2025 (Pukul 08:00 WIB - 17:00 WIB setiap hari) | Hybrid Event: Fisik: Auditorium & Ballroom UTB Virtual: Platform Zoom (Link akan diumumkan di sesi masing-masing)" },
         { label: "Theme/Objective", value: "Synergy in Digital Era: Fostering Innovation in AI, Cybernetics, and Big Data Applications." }
       ]

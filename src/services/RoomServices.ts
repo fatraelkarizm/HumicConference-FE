@@ -1,7 +1,6 @@
 import { BackendApiResponse } from '@/types/api';
 import {
   BackendRoom,
-  NewRoomData,
   UpdateRoomData
 } from '@/types/room';
 
@@ -22,7 +21,7 @@ class RoomService {
       if (!response.ok) return null;
       const result = await response.json();
       return result.data?.accessToken || null;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -45,7 +44,7 @@ class RoomService {
     const text = await response.text();
     try {
       parsed = text ? JSON.parse(text) : null;
-    } catch (e) {
+    } catch {
       parsed = text;
     }
 
@@ -200,4 +199,5 @@ class RoomService {
   }
 }
 
-export default new RoomService();
+const roomService = new RoomService();
+export default roomService;

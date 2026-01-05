@@ -9,8 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Edit2, FileText, Users, Clock, Globe, Tag } from 'lucide-react';
+import { Edit2, FileText, Users, Clock, Tag } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { BackendTrackSession, UpdateTrackSessionData } from '@/types/trackSession';
 
@@ -55,16 +54,16 @@ export default function EditTrackSessionModal({ isOpen, onClose, session }: Prop
   }, [session]);
 
   const presentationModes = [
-    { 
-      value: 'ONLINE', 
-      label: 'Online Presentation', 
+    {
+      value: 'ONLINE',
+      label: 'Online Presentation',
       description: 'Virtual presentation via video conference',
       icon: '💻',
       color: 'bg-blue-100 text-blue-800'
     },
-    { 
-      value: 'ONSITE', 
-      label: 'Onsite Presentation', 
+    {
+      value: 'ONSITE',
+      label: 'Onsite Presentation',
       description: 'Physical presentation at conference venue',
       icon: '',
       color: 'bg-green-100 text-green-800'
@@ -73,7 +72,7 @@ export default function EditTrackSessionModal({ isOpen, onClose, session }: Prop
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!session) {
       toast.error('No session selected for editing');
       return;
@@ -114,7 +113,7 @@ export default function EditTrackSessionModal({ isOpen, onClose, session }: Prop
       await updateTrackSession(sessionId, updateData);
       toast.success('Track session updated successfully!');
       onClose();
-      
+
     } catch (error: any) {
       toast.error(error.message || 'Failed to update track session');
     } finally {

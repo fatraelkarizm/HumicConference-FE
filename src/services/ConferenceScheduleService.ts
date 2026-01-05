@@ -150,4 +150,5 @@ class ConferenceScheduleService {
   }
 }
 
-export default new ConferenceScheduleService();
+const conferenceScheduleService = new ConferenceScheduleService();
+export default conferenceScheduleService;

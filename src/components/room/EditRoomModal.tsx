@@ -22,7 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Edit2, Building, Globe, Tag, Users } from "lucide-react";
+import { Edit2, Building, Globe, Tag } from "lucide-react";
 import { toast } from "react-hot-toast";
 import type { BackendRoom, UpdateRoomData } from "@/types/room";
 
@@ -142,7 +142,7 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
     try {
       new URL(string);
       return true;
-    } catch (_) {
+    } catch {
       return false;
     }
   };

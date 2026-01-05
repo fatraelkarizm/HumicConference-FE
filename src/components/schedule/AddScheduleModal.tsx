@@ -205,8 +205,8 @@ export default function AddScheduleModal({
           } else {
             errorMessage = errorData.message || errorMessage;
           }
-        } catch (e) {
-          errorMessage = error.message;
+        } catch {
+          errorMessage = "An unexpected error occurred.";
         }
       }
 

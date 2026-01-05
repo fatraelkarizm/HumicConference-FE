@@ -20,10 +20,10 @@ interface AuthProviderProps {
   initialAccessToken?: string | null;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ 
-  children, 
+export const AuthProvider: React.FC<AuthProviderProps> = ({
+  children,
   initialUser = null,
-  initialAccessToken = null 
+  initialAccessToken = null
 }) => {
   const [user, setUser] = useState<User | null>(initialUser);
   const [loading, setLoading] = useState(!initialUser);
@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     try {
       const newAccessToken = await AuthService.refreshAccessToken();
       setAccessToken(newAccessToken);
-      
+
       if (newAccessToken && !user) {
         const currentUser = await AuthService.getCurrentUser(newAccessToken);
         if (currentUser) {
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       } else if (!newAccessToken) {
         setUser(null);
       }
-      
+
       return newAccessToken;
     } catch (error) {
       setAccessToken(null);
@@ -65,16 +65,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       const loginResponse = await AuthService.login({ email, password });
       setUser(loginResponse.user);
       setAccessToken(loginResponse.accessToken);
-      
+
       // Automatic redirect based on role
       const dashboardUrl = getDashboardUrl(loginResponse.user.role);
-      
+
       if (typeof window !== 'undefined') {
         setTimeout(() => {
           window.location.href = dashboardUrl;
         }, 200);
       }
-      
+
     } catch (error: any) {
       throw new Error(error.message || 'Login failed');
     } finally {
@@ -85,9 +85,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   // Logout function - UPDATED dengan proper cleanup
   const logout = useCallback(async (): Promise<void> => {
     setLoading(true);
-    
+
     try {
-      
+
       // Step 1: Try to call backend logout endpoint (jika ada)
       // Tapi kalau ga ada API, skip aja
       try {
@@ -98,11 +98,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
             'Content-Type': 'application/json',
           }
         });
-        
+
         if (response.ok) {
         } else {
         }
-      } catch (apiError) {
+      } catch {
       }
 
       // Step 2: Clear all client-side auth state
@@ -117,13 +117,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('user');
           localStorage.removeItem('auth_token');
-          
+
           // Clear session storage too
           sessionStorage.removeItem('accessToken');
           sessionStorage.removeItem('refreshToken');
           sessionStorage.removeItem('user');
-          
-        } catch (storageError) {
+
+        } catch {
         }
       }
 
@@ -133,23 +133,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
           method: 'POST',
           credentials: 'include',
         });
-      } catch (cookieError) {
+      } catch {
       }
 
-      
+
     } catch (error) {
       // Even if there's an error, still clear client state
       setUser(null);
       setAccessToken(null);
     } finally {
       setLoading(false);
-      
+
       // Step 5: Redirect to login page
       if (typeof window !== 'undefined') {
-        
+
         // Clear the current page from history
         window.history.replaceState(null, '', '/login');
-        
+
         // Force redirect
         setTimeout(() => {
           window.location.href = '/login';
@@ -165,12 +165,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         method: 'GET',
         credentials: 'include',
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         return result.hasRefreshToken || false;
       }
-      
+
       return false;
     } catch (error) {
       return false;
@@ -216,7 +216,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (!initialUser && !initialAccessToken && typeof window !== 'undefined') {
       const initializeAuth = async () => {
         const hasToken = await checkRefreshToken();
-        
+
         if (hasToken) {
           setLoading(true);
           try {

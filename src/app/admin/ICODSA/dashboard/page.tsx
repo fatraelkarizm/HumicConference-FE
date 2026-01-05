@@ -38,8 +38,7 @@ export default function ICODSADashboardPage() {
                          const icodsaData = data.filter(c => c.type === 'ICODSA').sort((a, b) => parseInt(b.year) - parseInt(a.year));
                          setConferences(icodsaData);
                     }
-               } catch (error) {
-                    console.error("Failed to fetch dashboard data", error);
+               } catch {
                } finally {
                     setLoading(false);
                }

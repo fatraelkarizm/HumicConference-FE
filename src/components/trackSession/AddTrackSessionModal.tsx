@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, Users, Clock, Globe, MapPin, Tag } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { NewTrackSessionData } from '@/types/trackSession';
 import type { BackendConferenceSchedule, BackendTrack } from '@/types';
@@ -18,11 +18,10 @@ import type { BackendConferenceSchedule, BackendTrack } from '@/types';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  conference?: BackendConferenceSchedule;
   tracks?: BackendTrack[];
 }
 
-export default function AddTrackSessionModal({ isOpen, onClose, conference, tracks }: Props) {
+export default function AddTrackSessionModal({ isOpen, onClose, tracks }: Props) {
   const [formData, setFormData] = useState<NewTrackSessionData>({
     paperId: '',
     title: '',
@@ -33,8 +32,6 @@ export default function AddTrackSessionModal({ isOpen, onClose, conference, trac
     endTime: '',
     trackId: ''
   });
-  const [trackName, setTrackName] = useState('');
-  const [isCreatingNewTrack, setIsCreatingNewTrack] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { createTrackSession } = useTrackSessionActions();

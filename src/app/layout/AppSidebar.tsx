@@ -139,7 +139,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }
         roles: ['SUPER_ADMIN'],
         subItems: [
           { label: "Konferensi ICICyTA", href: "/super-admin/ICICYTA", icon: DocumentTextIcon },
-          { label: "Konferensi ICoDSA", href: "/super-admin/ICODSA", icon: DocumentTextIcon },
+          { label: "Konferensi IMPACT", href: "/super-admin/ICODSA", icon: DocumentTextIcon },
         ],
       });
     } else if (user?.role === 'ADMIN_ICICYTA') {
