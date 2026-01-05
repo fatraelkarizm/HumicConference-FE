@@ -84,14 +84,12 @@ export default function EditConferenceModal({ isOpen, onClose, conference, onSuc
         isActive: formData.is_active,
       };
 
-      console.log("📝 Updating conference:", updateData);
       await conferenceScheduleService.updateConferenceSchedule(accessToken, conference.id, updateData);
 
       toast.success("Conference updated successfully!");
       onSuccess();
       onClose();
     } catch (error) {
-      console.error("❌ Update error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to update conference");
     } finally {
       setLoading(false);

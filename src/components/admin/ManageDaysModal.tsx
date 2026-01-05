@@ -149,7 +149,6 @@ export default function ManageDaysModal({
 
                               // Safety Check
                               if (newStartDate > newEndDate) {
-                                console.error('Date range invalid:', newStartDate, newEndDate);
                                 throw new Error(`Invalid date range calculated: ${newStartDate} to ${newEndDate}`);
                               }
 
@@ -166,7 +165,6 @@ export default function ManageDaysModal({
 
                               onRefresh?.();
                             } catch (error: any) {
-                              console.error("Delete day error:", error);
                               toast.error(error.message || "Failed to delete day");
                             } finally {
                               setLoading(false);
@@ -227,7 +225,6 @@ export default function ManageDaysModal({
                         finalEnd = newDateStr;
 
                       } else {
-                        console.warn('Date inside range:', newDateStr);
                         toast.error("Date is already within conference duration");
                         return;
                       }
@@ -239,7 +236,6 @@ export default function ManageDaysModal({
                         input.value = '';
                         onRefresh?.();
                       } catch (error: any) {
-                        console.error('Add day error:', error);
                         toast.error(error.message || "Failed to add day");
                       } finally {
                         setLoading(false);

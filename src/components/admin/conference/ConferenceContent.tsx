@@ -66,11 +66,6 @@ export default function ConferenceContent({
 
   // ✅ Enhanced refresh function with delay
   const handleRefresh = async () => {
-    console.log(
-      `🔄 Refreshing data for ${conference.name} (${conference.year})`
-    );
-
-    // ✅ Show loading toast
     const toastId = toast.loading("Refreshing conference data...");
 
     try {
@@ -78,9 +73,7 @@ export default function ConferenceContent({
       onRefresh();
 
       toast.success("Data refreshed successfully! ", { id: toastId });
-      console.log("✅ Conference data refreshed");
     } catch (error) {
-      console.error("❌ Refresh error:", error);
       toast.error("Failed to refresh data", { id: toastId });
     }
   };

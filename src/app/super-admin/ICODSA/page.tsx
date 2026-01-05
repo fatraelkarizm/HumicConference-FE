@@ -60,7 +60,6 @@ export default function ICODSASuperAdminPage() {
       toast.success(`Conference ${isActive ? 'activated' : 'deactivated'} successfully!`);
       refetchConferences();
     } catch (error) {
-      console.error("Failed to toggle conference status:", error);
       toast.error("Failed to update conference status");
     }
   };

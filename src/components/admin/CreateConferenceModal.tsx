@@ -178,7 +178,6 @@ export default function CreateConferenceModal({
       }, 1000);
 
     } catch (error: any) {
-      console.error('Create conference error:', error);
       toast.error(error.message || "Failed to create conference");
     } finally {
       setLoading(false);

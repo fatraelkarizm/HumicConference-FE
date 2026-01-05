@@ -121,7 +121,6 @@ class AuthService {
         credentials: 'include',
       });
     } catch (error) {
-      console.error('Logout error:', error);
     } finally {
       await fetch('/api/auth/clear-token', {
         method: 'POST',
@@ -229,7 +228,6 @@ class AuthService {
         accessToken,
       };
     } catch (error) {
-      console.error('Server side auth check error:', error);
       return { isAuthenticated: false, user: null, accessToken: null };
     }
   }

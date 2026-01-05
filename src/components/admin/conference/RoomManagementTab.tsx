@@ -109,7 +109,6 @@ export default function RoomManagementTab({
           await deleteRoom(roomId);
           successCount++;
         } catch (error) {
-          console.error(`Failed to delete room ${roomId}`, error);
         }
       });
 

@@ -31,14 +31,12 @@ export default function DeleteConferenceModal({ isOpen, onClose, conference, onS
         toast.error("Authentication failed");
         return;
       }
-      console.log("🗑️ Deleting conference:", conference.id);
       await conferenceScheduleService.deleteConferenceSchedule(accessToken, conference.id);
 
       toast.success("Conference deleted successfully!");
       onSuccess();
       onClose();
     } catch (error) {
-      console.error("❌ Delete error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to delete conference");
     } finally {
       setLoading(false);

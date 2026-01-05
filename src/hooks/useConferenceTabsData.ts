@@ -78,7 +78,6 @@ export function useConferenceTabsData(conference: BackendConferenceSchedule) {
         refetchTrackSessions(),
       ]);
     } catch (error) {
-      console.error('❌ Error refetching data:', error);
     }
   };
 

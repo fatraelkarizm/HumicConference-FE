@@ -183,7 +183,6 @@ class RoomService {
       }
     }
 
-    console.error('🚨 All update attempts failed');
     throw lastError;
   }
 

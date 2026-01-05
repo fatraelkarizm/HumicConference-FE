@@ -111,7 +111,6 @@ export default function EditRoomModal({ isOpen, onClose, room }: Props) {
       toast.success("Room updated successfully! ");
       onClose();
     } catch (error: any) {
-      console.error("❌ Room update failed:", error);
 
       // Show detailed validation errors
       const data = error?.data;

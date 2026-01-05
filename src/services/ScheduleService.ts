@@ -199,11 +199,6 @@ class ScheduleService {
 
       return response.data;
     } catch (error: any) {
-      console.error('❌ PATCH failed:', {
-        error: error.message,
-        payload: updatePayload,
-        id
-      });
       throw error;
     }
   }

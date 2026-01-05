@@ -33,7 +33,6 @@ export const useConferenceSchedule = (includeRelation: boolean = true) => {
       setConferences(conferencesData);
 
     } catch (err: any) {
-      console.error('Error fetching conferences:', err);
       setError(err.message || 'Failed to load conference schedules');
     } finally {
       setLoading(false);

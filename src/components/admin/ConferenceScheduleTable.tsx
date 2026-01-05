@@ -203,13 +203,11 @@ export default function ConferenceScheduleTable({
       }, 1000);
 
     } catch (error) {
-      console.error('❌ Refresh error:', error);
     }
   };
 
   // Handle room cell click (for adding parallel rooms)
   const handleRoomCellClick = (columnId: string, schedule: BackendSchedule) => {
-    console.log('Room cell clicked for', columnId, 'schedule', schedule.id);
     const existingRoom = currentDayRooms.find((room) => {
       const extractedId = extractRoomId(room);
       return extractedId === columnId && room.schedule_id === schedule.id;
@@ -373,7 +371,6 @@ export default function ConferenceScheduleTable({
 
       toast.success('Schedule exported to Excel!');
     } catch (error) {
-      console.error('Export error:', error);
       toast.error('Failed to export schedule');
     }
   };
@@ -428,18 +425,16 @@ export default function ConferenceScheduleTable({
               try {
                 await deleteRoom(room.id);
               } catch (e) {
-                console.error('Failed to delete room:', e);
               }
             }
 
             // Then delete the schedule
             await deleteSchedule(schedule.id);
           } catch (e) {
-            console.error('Failed to delete schedule:', e);
           }
         }
 
-        toast.success(`✅ Deleted ${existingCount} schedules`, { id: 'delete-schedules' });
+        toast.success(`Deleted ${existingCount} schedules`, { id: 'delete-schedules' });
 
         // Wait and refresh to ensure data is clean
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -530,7 +525,6 @@ export default function ConferenceScheduleTable({
               });
               roomsCreated++;
             } catch (e) {
-              console.error('Failed to create main room:', e);
             }
           }
 
@@ -570,14 +564,12 @@ export default function ConferenceScheduleTable({
                   });
                   roomsCreated++;
                 } catch (e) {
-                  console.error(`Failed to create room ${letter}:`, e);
                 }
               }
             }
           }
 
         } catch (rowError) {
-          console.error('Error processing row:', row, rowError);
         }
       }
 
@@ -585,7 +577,6 @@ export default function ConferenceScheduleTable({
       await refetchRooms?.();
       onRefresh?.();
     } catch (error: any) {
-      console.error('Import error:', error);
       throw error;
     }
   };
@@ -617,9 +608,9 @@ export default function ConferenceScheduleTable({
         grouped={grouped}
         selectedDay={selectedDay}
         onDaySelect={setSelectedDay}
-        onManageDays={() => { console.log('Manage Days clicked'); setShowManageDays(true); }}
-        onManageRooms={() => { console.log('Manage Rooms clicked'); setShowManageRooms(true); }}
-        onManageSchedules={() => { console.log('Manage Schedules clicked'); setShowManageSchedules(true); }}
+        onManageDays={() => setShowManageDays(true)}
+        onManageRooms={() => setShowManageRooms(true)}
+        onManageSchedules={() => setShowManageSchedules(true)}
         onManageImportExport={() => setShowManageImportExport(true)}
         formatDate={formatDate}
         getDayNumber={getDayNumber}
@@ -708,7 +699,6 @@ export default function ConferenceScheduleTable({
               toast.success("Room deleted successfully");
               handleScheduleSuccess();
             } catch (e: any) {
-              console.error(e);
               toast.error(e.message || "Failed to delete room");
             }
           }
