@@ -10,6 +10,7 @@ interface Props {
   onManageDays: () => void;
   onManageRooms: () => void;
   onManageSchedules: () => void;
+  onManageLinks: () => void;
   onManageImportExport?: () => void;
   formatDate: (dateStr: string) => string;
   getDayNumber: (dateStr: string) => number;
@@ -23,6 +24,7 @@ export default function ConferenceDayTabs({
   onManageDays,
   onManageRooms,
   onManageSchedules,
+  onManageLinks,
   onManageImportExport,
   formatDate,
   getDayNumber,
@@ -59,6 +61,15 @@ export default function ConferenceDayTabs({
           >
             <Settings className="w-4 h-4 mr-2" />
             Manage Days
+          </Button>
+          <Button
+            onClick={onManageLinks}
+            size="sm"
+            variant="outline"
+            className="text-teal-600 border-teal-300 hover:bg-teal-50"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Manage Links
           </Button>
           {onManageImportExport && (
             <Button

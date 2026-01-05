@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useTrack } from '@/hooks/useTrack';
 import trackSessionService from '@/services/TrackSessionService';
 import conferenceScheduleService from '@/services/ConferenceScheduleService';
@@ -28,6 +29,8 @@ interface Session {
 }
 
 const ParallelSessionScheduleUI = () => {
+  const searchParams = useSearchParams();
+  const conferenceIdParam = searchParams.get('conferenceId');
   const { tracks, loading: tracksLoading, error: tracksError } = useTrack();
   const [parallelSessionsData, setParallelSessionsData] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,14 +90,18 @@ const ParallelSessionScheduleUI = () => {
         setConferenceSchedules(conferenceSchedulesData);
 
         // 2. Identify target conference (Active one, or latest year as fallback)
-        let targetConferenceId: string | undefined;
         const activeConference = conferenceSchedulesData.find(conf => conf.is_active === true);
+        let targetConferenceId: string | undefined;
 
-        if (activeConference) {
-          targetConferenceId = activeConference.id;
-        } else if (conferenceSchedulesData.length > 0) {
-          const sorted = [...conferenceSchedulesData].sort((a, b) => parseInt(b.year) - parseInt(a.year));
-          targetConferenceId = sorted[0].id;
+        if (conferenceIdParam) {
+          targetConferenceId = conferenceIdParam;
+        } else {
+          if (activeConference) {
+            targetConferenceId = activeConference.id;
+          } else if (conferenceSchedulesData.length > 0) {
+            const sorted = [...conferenceSchedulesData].sort((a, b) => parseInt(b.year) - parseInt(a.year));
+            targetConferenceId = sorted[0].id;
+          }
         }
 
         // 3. Fetch ALL necessary data separately (Robustness check)

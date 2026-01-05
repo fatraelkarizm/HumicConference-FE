@@ -37,7 +37,7 @@ export default function UserScheduleTable({
 }: Props) {
 
   const formatTime = (time?: string) => {
-    if (! time) return "--:--";
+    if (!time) return "--:--";
     const normalizedTime = time.replace(/\./g, ":");
     return normalizedTime.length <= 5 ? normalizedTime : normalizedTime.substring(0, 5);
   };
@@ -78,7 +78,7 @@ export default function UserScheduleTable({
   const getMainRoomContent = (schedule?: BackendSchedule) => {
     if (!schedule) return null;
 
-    if (schedule.notes?. toLowerCase().includes("coffee break")) {
+    if (schedule.notes?.toLowerCase().includes("coffee break")) {
       return (
         <div className="text-center py-2">
           <div className="font-medium text-sm">Coffee Break</div>
@@ -163,22 +163,21 @@ export default function UserScheduleTable({
                   Main Room
                 </th>
 
-                {roomColumnsForDay. map((roomColumn, index) => (
+                {roomColumnsForDay.map((roomColumn, index) => (
                   <th
                     key={roomColumn.id}
-                    className={`text-left py-3 px-4 font-semibold ${
-                      index < roomColumnsForDay.length - 1
+                    className={`text-left py-3 px-4 font-semibold ${index < roomColumnsForDay.length - 1
                         ? "border-r border-gray-300"
                         : ""
-                    } bg-gray-50 min-w-[180px]`}
+                      } bg-gray-50 min-w-[180px]`}
                     title={
                       roomColumn.room
-                        ? `${roomColumn. room.name} (${roomColumn.room. identifier})`
+                        ? `${roomColumn.room.name} (${roomColumn.room.identifier})`
                         : roomColumn.label
                     }
                   >
                     {roomColumn.label}
-                    {roomColumn.room?. identifier && (
+                    {roomColumn.room?.identifier && (
                       <div className="text-xs font-normal text-gray-500 mt-1">
                         {roomColumn.room.identifier}
                       </div>
@@ -227,9 +226,8 @@ export default function UserScheduleTable({
                 return (
                   <tr
                     key={schedule.id}
-                    className={`border-b border-gray-200 hover:bg-gray-50 ${
-                      index % 2 === 0 ?  "bg-white" : "bg-gray-50/50"
-                    }`}
+                    className={`border-b border-gray-200 hover:bg-gray-50 ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                      }`}
                   >
                     {/* Time Columns */}
                     <td
@@ -253,11 +251,10 @@ export default function UserScheduleTable({
                       return (
                         <td
                           key={roomColumn.id}
-                          className={`py-4 px-4 ${
-                            roomIndex < roomColumnsForDay.length - 1
+                          className={`py-4 px-4 ${roomIndex < roomColumnsForDay.length - 1
                               ? "border-r border-gray-200"
                               : ""
-                          } align-top`}
+                            } align-top`}
                         >
                           <div className="min-h-[60px]">
                             {roomContent || (
@@ -305,9 +302,14 @@ export default function UserScheduleTable({
             <span className="font-medium">
               Link Zoom Main Room & Parallel Session:
             </span>
-            <span className="font-mono text-blue-600">
-              {conference.online_presentation}
-            </span>
+            <a
+              href={conference.online_presentation?.startsWith('http') ? conference.online_presentation : `https://${conference.online_presentation}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-blue-600 hover:underline hover:text-blue-800 transition-colors"
+            >
+              {conference.online_presentation || "Zoom Meeting"}
+            </a>
           </div>
         </div>
       </CardContent>

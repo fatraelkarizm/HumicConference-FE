@@ -21,6 +21,7 @@ import ManageDaysModal from "@/components/admin/ManageDaysModal";
 import ManageRoomsModal from "@/components/admin/ManageRoomsModal";
 import ManageSchedulesModal from "@/components/admin/ManageSchedulesModal";
 import ManageImportExportModal from "@/components/admin/ManageImportExportModal";
+import ManageLinksModal from "@/components/admin/ManageLinksModal";
 import { useScheduleTableLogic } from "@/hooks/useScheduleTableLogic";
 import conferenceScheduleService from "@/services/ConferenceScheduleService";
 import roomService from "@/services/RoomServices";
@@ -54,6 +55,7 @@ export default function ConferenceScheduleTable({
   const [showManageDays, setShowManageDays] = useState(false);
   const [showManageRooms, setShowManageRooms] = useState(false);
   const [showManageSchedules, setShowManageSchedules] = useState(false);
+  const [showManageLinks, setShowManageLinks] = useState(false);
   const [showManageImportExport, setShowManageImportExport] = useState(false);
   const [selectedScheduleForRoom, setSelectedScheduleForRoom] = useState<BackendSchedule | null>(null);
   const [selectedRoomType, setSelectedRoomType] = useState<string>("");
@@ -115,6 +117,20 @@ export default function ConferenceScheduleTable({
     } catch (error: any) {
       toast.error(error.message || "Failed to update conference dates");
     }
+  };
+
+  const updateConferenceLink = async (id: string, link: string) => {
+    const token = await conferenceScheduleService.getAccessToken();
+    if (!token) {
+      throw new Error("No access token available");
+    }
+
+    await conferenceScheduleService.updateConferenceSchedule(token, id, {
+      onlinePresentation: link,
+    });
+
+    // Optimistic or real refresh needed - parent will handle full refresh via onRefresh
+    onRefresh?.();
   };
 
   // Fetch ALL rooms and filter them
@@ -611,6 +627,7 @@ export default function ConferenceScheduleTable({
         onManageDays={() => setShowManageDays(true)}
         onManageRooms={() => setShowManageRooms(true)}
         onManageSchedules={() => setShowManageSchedules(true)}
+        onManageLinks={() => setShowManageLinks(true)}
         onManageImportExport={() => setShowManageImportExport(true)}
         formatDate={formatDate}
         getDayNumber={getDayNumber}
@@ -738,6 +755,13 @@ export default function ConferenceScheduleTable({
         onExport={handleExportToExcel}
         onImport={handleImportFromExcel}
         selectedDay={selectedDay}
+      />
+
+      <ManageLinksModal
+        isOpen={showManageLinks}
+        onClose={() => setShowManageLinks(false)}
+        conference={conference}
+        updateConferenceLink={updateConferenceLink}
       />
     </div>
   );

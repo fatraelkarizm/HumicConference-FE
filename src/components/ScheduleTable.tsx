@@ -446,9 +446,14 @@ export default function ScheduleTable({
             <span className="font-medium">
               Link Zoom Main Room & Parallel Session:
             </span>
-            <span className="font-mono text-blue-600">
-              {conference.online_presentation}
-            </span>
+            <a
+              href={conference.online_presentation?.startsWith('http') ? conference.online_presentation : `https://${conference.online_presentation}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-blue-600 hover:underline hover:text-blue-800 transition-colors"
+            >
+              {conference.online_presentation || "Zoom Meeting"}
+            </a>
           </div>
         </div>
       </CardContent>

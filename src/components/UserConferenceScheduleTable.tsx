@@ -149,8 +149,8 @@ export default function UserConferenceScheduleTable({
               key={day}
               onClick={() => setSelectedDay(day)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedDay === day
-                  ? 'bg-[#015B97] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-[#015B97] text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Day {getDayNumber(day)}: {formatDate(day).split(',')[0]}
@@ -159,7 +159,7 @@ export default function UserConferenceScheduleTable({
         </div>
 
         <Button
-          onClick={() => router.push('/user/parallel')}
+          onClick={() => router.push(`/user/parallel?conferenceId=${conference.id}`)}
           className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm flex items-center gap-2"
         >
           <Layout className="w-4 h-4" />
