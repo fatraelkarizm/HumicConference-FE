@@ -3,9 +3,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRoom, useRoomActions } from "@/hooks/useRoom";
 import { useScheduleActions } from "@/hooks/useSchedule";
-import { Button } from "@/components/ui/button";
+// Restoration of imports
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, Plus, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { toast } from "react-hot-toast";
 import type {
   BackendConferenceSchedule,
@@ -31,7 +31,6 @@ import * as XLSX from 'xlsx';
 interface Props {
   conference: BackendConferenceSchedule;
   schedules: BackendSchedule[];
-  onScheduleSelect: (schedule: BackendSchedule) => void;
   onScheduleEdit: (schedule: BackendSchedule) => void;
   onScheduleDetail: (schedule: BackendSchedule) => void;
   onRoomEdit: (room: BackendRoom) => void;
@@ -39,10 +38,30 @@ interface Props {
   onRefresh?: () => void;
 }
 
+// Standalone function - move outside component
+const extractRoomId = (room: any): string | null => {
+  const identifier = (room.identifier || '').trim();
+
+  // Match PSA-0930 -> A, PSB-1040 -> B, etc.
+  const psMatch = identifier.match(/PS([A-E])-/);
+  if (psMatch) return psMatch[1];
+
+  // Fallback: match "Parallel Session 1A", "Room A", etc.
+  const name = (room.name || '').toLowerCase().trim();
+  const identifierLower = identifier.toLowerCase();
+
+  if (name.includes('room a') || identifierLower.includes('session a') || identifierLower.includes('session 1a')) return 'A';
+  if (name.includes('room b') || identifierLower.includes('session b') || identifierLower.includes('session 1b')) return 'B';
+  if (name.includes('room c') || identifierLower.includes('session c') || identifierLower.includes('session 1c')) return 'C';
+  if (name.includes('room d') || identifierLower.includes('session d') || identifierLower.includes('session 1d')) return 'D';
+  if (name.includes('room e') || identifierLower.includes('session e') || identifierLower.includes('session 1e')) return 'E';
+
+  return null;
+};
+
 export default function ConferenceScheduleTable({
   conference,
   schedules,
-  onScheduleSelect,
   onScheduleEdit,
   onScheduleDetail,
   onRoomEdit,
@@ -73,27 +92,6 @@ export default function ConferenceScheduleTable({
   const { createRoom, deleteRoom } = useRoomActions();
   const { deleteSchedule } = useScheduleActions();
 
-  // ✅ Extract room letter (A, B, C, D, E) from room identifier
-  const extractRoomId = (room: any): string | null => {
-    const identifier = (room.identifier || '').trim();
-
-    // Match PSA-0930 -> A, PSB-1040 -> B, etc.
-    const psMatch = identifier.match(/PS([A-E])-/);
-    if (psMatch) return psMatch[1];
-
-    // Fallback: match "Parallel Session 1A", "Room A", etc.
-    const name = (room.name || '').toLowerCase().trim();
-    const identifierLower = identifier.toLowerCase();
-
-    if (name.includes('room a') || identifierLower.includes('session a') || identifierLower.includes('session 1a')) return 'A';
-    if (name.includes('room b') || identifierLower.includes('session b') || identifierLower.includes('session 1b')) return 'B';
-    if (name.includes('room c') || identifierLower.includes('session c') || identifierLower.includes('session 1c')) return 'C';
-    if (name.includes('room d') || identifierLower.includes('session d') || identifierLower.includes('session 1d')) return 'D';
-    if (name.includes('room e') || identifierLower.includes('session e') || identifierLower.includes('session 1e')) return 'E';
-
-    return null;
-  };
-
   // Schedule logic
   const { grouped, daysList, selectedDay, setSelectedDay, formatDate, getDayNumber } =
     useScheduleTableLogic(conference, schedules);
@@ -114,8 +112,8 @@ export default function ConferenceScheduleTable({
       });
       toast.success("Conference dates updated successfully");
       onRefresh?.();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update conference dates");
+    } catch {
+      toast.error("Failed to update conference dates");
     }
   };
 
@@ -134,7 +132,7 @@ export default function ConferenceScheduleTable({
   };
 
   // Fetch ALL rooms and filter them
-  const { rooms: allRooms, loading: roomsLoading, refetch: refetchRooms } = useRoom();
+  const { rooms: allRooms, refetch: refetchRooms } = useRoom();
 
   // Helper to produce UTC YYYY-MM-DD key (same logic as useScheduleTableLogic)
   const toUtcDateKey = (d: Date | string) => {
@@ -169,16 +167,16 @@ export default function ConferenceScheduleTable({
       currentScheduleIds.includes(room.schedule_id)
     );
 
-    // ✅ Combine both sources and deduplicate by ID
+    // Combine both sources and deduplicate by ID
     const allCurrentRooms = [...roomsFromSchedules, ...roomsFromAllRooms];
     const uniqueRooms = allCurrentRooms.filter((room, index, self) =>
       index === self.findIndex(r => r.id === room.id)
     );
 
     return uniqueRooms;
-  }, [allRooms, grouped, selectedDay]);
+  }, [allRooms, grouped, selectedDay, conference]);
 
-  // ✅ Auto-generate room columns - NOW extractRoomId is defined
+  // Auto-generate room columns - NOW extractRoomId is defined
   const roomColumnsForDay = useMemo(() => {
     const columns: any[] = [];
     const roomLabels = ['A', 'B', 'C', 'D', 'E'];
@@ -198,7 +196,7 @@ export default function ConferenceScheduleTable({
     });
 
     return columns;
-  }, [currentDayRooms, extractRoomId]);
+  }, [currentDayRooms]);
 
   // Refresh data when schedules change
   useEffect(() => {
@@ -218,7 +216,7 @@ export default function ConferenceScheduleTable({
         onRefresh?.();
       }, 1000);
 
-    } catch (error) {
+    } catch {
     }
   };
 
@@ -386,7 +384,7 @@ export default function ConferenceScheduleTable({
       XLSX.writeFile(workbook, fileName);
 
       toast.success('Schedule exported to Excel!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to export schedule');
     }
   };
@@ -440,13 +438,13 @@ export default function ConferenceScheduleTable({
             for (const room of scheduleRooms) {
               try {
                 await deleteRoom(room.id);
-              } catch (e) {
+              } catch {
               }
             }
 
             // Then delete the schedule
             await deleteSchedule(schedule.id);
-          } catch (e) {
+          } catch {
           }
         }
 
@@ -540,7 +538,7 @@ export default function ConferenceScheduleTable({
                 onlineMeetingUrl: '',
               });
               roomsCreated++;
-            } catch (e) {
+            } catch {
             }
           }
 
@@ -579,13 +577,13 @@ export default function ConferenceScheduleTable({
                     track: { name: roomDescription || roomName, description: `Track for ${roomName}` }
                   });
                   roomsCreated++;
-                } catch (e) {
+                } catch {
                 }
               }
             }
           }
 
-        } catch (rowError) {
+        } catch {
         }
       }
 

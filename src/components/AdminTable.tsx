@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import Image from "next/image";
 
 export type AdminRow = {
   id: string;
@@ -144,7 +145,7 @@ export default function AdminTable({ admins = [], onCreate, onEdit, onDelete }: 
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex-shrink-0">
                           {a.avatarUrl ? (
-                            <img src={a.avatarUrl} alt={a.fullName} className="w-full h-full object-cover" />
+                            <Image src={a.avatarUrl} alt={a.fullName} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-sm text-gray-500">
                               {a.fullName.charAt(0).toUpperCase()}

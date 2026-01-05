@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight, Globe, Mail } from 'lucide-react';
+import Image from 'next/image';
 
 const AboutPage = () => {
   
@@ -107,7 +108,7 @@ const AboutPage = () => {
                   
                   {/* Avatar Image (Using Dicebear for illustration style) */}
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 w-28 h-28">
-                     <img 
+                     <Image 
                       src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${dev.imageSeed}&clothing=blazerAndShirt&accessories=glasses`} 
                       alt={dev.name}
                       className="w-full h-full object-contain drop-shadow-md transform hover:scale-105 transition-transform duration-300"

@@ -224,14 +224,6 @@ export default function ConferenceContent({
               <ConferenceScheduleTable
                 conference={conference}
                 schedules={schedules}
-                onScheduleSelect={(schedule) => {
-                  setSelectedSchedule(schedule);
-                  if (schedule.id) {
-                    setActiveModal("edit-schedule");
-                  } else {
-                    setActiveModal("add-schedule");
-                  }
-                }}
                 onScheduleEdit={(schedule) => {
                   setSelectedSchedule(schedule);
                   setActiveModal("edit-schedule");

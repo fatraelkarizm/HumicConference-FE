@@ -28,6 +28,8 @@ interface Session {
   papers: Paper[];
 }
 
+const roomNamesFallback = ['Room A', 'Room B', 'Room C', 'Room D', 'Room E'];
+
 const ParallelSessionScheduleUI = () => {
   const searchParams = useSearchParams();
   const conferenceIdParam = searchParams.get('conferenceId');
@@ -40,11 +42,8 @@ const ParallelSessionScheduleUI = () => {
   const [trackSessions, setTrackSessions] = useState<BackendTrackSession[]>([]);
   const [rooms, setRooms] = useState<BackendRoom[]>([]);
 
-  // Room names fallback (jika data API kosong/gagal mapping)
-  const roomNamesFallback = ['Room A', 'Room B', 'Room C', 'Room D', 'Room E'];
-
   // --- LOGIKA UTAMA YANG DIPERBAIKI ---
-  const getRoomNameFromSchedules = (session: BackendTrackSession, schedules: BackendConferenceSchedule[], rooms: BackendRoom[], trackIndex: number) => {
+  const getRoomNameFromSchedules = React.useCallback((session: BackendTrackSession, schedules: BackendConferenceSchedule[], rooms: BackendRoom[], trackIndex: number) => {
     // Prioritas: Cek langsung di rooms API berdasarkan track_id
     if (rooms && rooms.length > 0) {
       const foundRoom = rooms.find((room) => room.track_id === session.track_id);
@@ -69,7 +68,7 @@ const ParallelSessionScheduleUI = () => {
 
     // Fallback terakhir: Ambil dari array manual berdasarkan urutan track
     return roomNamesFallback[trackIndex % roomNamesFallback.length];
-  };
+  }, []);
 
   // Fetch track sessions for all tracks
   useEffect(() => {

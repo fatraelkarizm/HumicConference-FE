@@ -1,0 +1,143 @@
+
+> humic-fe@0.1.0 build
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of E:\pnpm-lock.yaml as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * E:\Humic-Conference\HumicConference-FE\package-lock.json
+
+   ▲ Next.js 15.5.7
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 5.8s
+   Linting and checking validity of types ...
+
+./src/app/admin/ICODSA/page.tsx
+15:15  Warning: 'BackendConferenceSchedule' is defined but never used.  @typescript-eslint/no-unused-vars
+35:5  Warning: 'icodsaConferences' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/auth/clear-cookies/route.ts
+3:28  Warning: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+36:12  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/auth/clear-token/route.ts
+3:28  Warning: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+17:12  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/auth/login/route.ts
+23:31  Warning: 'value' is defined but never used.  @typescript-eslint/no-unused-vars
+23:38  Warning: 'key' is defined but never used.  @typescript-eslint/no-unused-vars
+63:12  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/auth/refresh/route.ts
+13:12  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+95:12  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/api/auth/set-token/route.ts
+26:12  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/layout/AppSidebar.tsx
+108:16  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/super-admin/ICICYTA/page.tsx
+16:15  Warning: 'BackendConferenceSchedule' is defined but never used.  @typescript-eslint/no-unused-vars
+76:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/super-admin/ICODSA/page.tsx
+16:15  Warning: 'BackendConferenceSchedule' is defined but never used.  @typescript-eslint/no-unused-vars
+80:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/super-admin/manage-admin/page.tsx
+186:20  Warning: 'err' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/user/parallel/page.tsx
+183:6  Warning: React Hook useEffect has a missing dependency: 'conferenceIdParam'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+305:6  Warning: React Hook useEffect has a missing dependency: 'getRoomNameFromSchedules'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/admin/conference/ConferenceModal.tsx
+42:3  Warning: 'onCreateConference' is defined but never used.  @typescript-eslint/no-unused-vars
+46:11  Warning: 'deleteSchedule' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+115:31  Warning: 'roomData' is defined but never used.  @typescript-eslint/no-unused-vars
+129:33  Warning: 'room' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/admin/conference/RoomManagementTab.tsx
+31:3  Warning: 'conferenceId' is defined but never used.  @typescript-eslint/no-unused-vars
+111:18  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+120:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/admin/conference/TrackSessionsTab.tsx
+30:3  Warning: 'conferenceId' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/admin/ConferenceDayTabs.tsx
+29:3  Warning: 'formatDate' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/admin/CreateConferenceModal.tsx
+137:18  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+143:13  Warning: 'result' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/admin/ManageImportExportModal.tsx
+141:30  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/admin/ManageRoomsModal.tsx
+43:10  Warning: 'editingRoom' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+43:23  Warning: 'setEditingRoom' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/admin/ScheduleModal.tsx
+27:3  Warning: 'currentDay' is defined but never used.  @typescript-eslint/no-unused-vars
+32:3  Warning: 'refetchRooms' is defined but never used.  @typescript-eslint/no-unused-vars
+34:3  Warning: 'getDayNumber' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/room/AddRoomModal.tsx
+44:3  Warning: 'scheduleId' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/schedule/DetailScheduleModal.tsx
+11:3  Warning: 'MapPin' is defined but never used.  @typescript-eslint/no-unused-vars
+12:3  Warning: 'Users' is defined but never used.  @typescript-eslint/no-unused-vars
+206:47  Warning: 'index' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/trackSession/AddTrackSessionModal.tsx
+16:15  Warning: 'BackendConferenceSchedule' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/UserScheduleTable.tsx
+185:23  Warning: 'mainRoom' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/context/AuthContext.tsx
+54:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+140:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+175:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+226:20  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+257:16  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/hooks/useConferenceTabsData.ts
+51:6  Warning: React Hook useMemo has an unnecessary dependency: 'conference.id'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+59:6  Warning: React Hook useMemo has an unnecessary dependency: 'conference.id'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+67:6  Warning: React Hook useMemo has an unnecessary dependency: 'conference.id'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+80:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/middleware.ts
+23:7  Warning: 'adminRoutes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+29:7  Warning: 'superAdminRoutes' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+54:9  Warning: 'isPublicRoute' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/services/ConferenceScheduleService.ts
+25:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+Failed to compile.
+
+./src/components/admin/conference/ConferenceModal.tsx:146:63
+Type error: Type '{ isOpen: true; onClose: () => void; conference: BackendConferenceSchedule; tracks: BackendTrack[]; }' is not assignable to type 'IntrinsicAttributes & Props'.
+  Property 'conference' does not exist on type 'IntrinsicAttributes & Props'.
+
+[0m [90m 144 |[39m       {[90m/* Track Session Modals */[39m}
+ [90m 145 |[39m       {activeModal [33m===[39m [32m"add-track-session"[39m [33m&&[39m (
+[31m[1m>[22m[39m[90m 146 |[39m         [33m<[39m[33mAddTrackSessionModal[39m isOpen[33m=[39m{[36mtrue[39m} onClose[33m=[39m{onClose} conference[33m=[39m{conference} tracks[33m=[39m{tracks} [33m/[39m[33m>[39m
+ [90m     |[39m                                                               [31m[1m^[22m[39m
+ [90m 147 |[39m       )}
+ [90m 148 |[39m
+ [90m 149 |[39m       {activeModal [33m===[39m [32m"edit-track-session"[39m [33m&&[39m selectedTrackSession [33m&&[39m ([0m
+Next.js build worker exited with code: 1 and signal: null
