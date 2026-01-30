@@ -26,7 +26,7 @@ export default function UserLayout({
               ICICyTA
             </Link>
             <Link href="/user/ICODSA" className="text-white">
-              ICoDSA
+              IMPACT
             </Link>
             <Link href="/user/about" className="text-white">
               About

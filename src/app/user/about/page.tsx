@@ -3,15 +3,15 @@ import { ArrowRight, Globe, Mail } from 'lucide-react';
 import Image from 'next/image';
 
 const AboutPage = () => {
-  
+
   const conferenceInfo = [
     {
       id: 'icicyta',
       headerTitle: "ICICyTA: The International Conference on Information, Cybernetics, and Technology Advancement",
-      headerColor: "bg-blue-200", 
+      headerColor: "bg-blue-200",
       rows: [
-        { label: "Conference Title", value: "Conference Title: ICICyTA & IMPACT 2025 The International Conference on Information, Cybernetics, and Technology Advancement (ICICyTA) and The International Conference on Data Science and Applications (ICoDSA)." },
-        { label: "Date and Location", value: "Regular text: 23 November – 24 November 2025 (Pukul 08:00 WIB - 17:00 WIB setiap hari) | Hybrid Event: Fisik: Auditorium & Ballroom UTB Virtual: Platform Zoom (Link akan diumumkan di sesi masing-masing)" },
+        { label: "Conference Title", value: "Conference Title: ICICyTA & IMPACT 2025 The International Conference on Information, Cybernetics, and Technology Advancement (ICICyTA) and IMPACT: International Conference on Intelligent Multimedia, Physical-AI, and Cyber-Technologies" },
+        { label: "Date and Location", value: "Will be updated" },
         { label: "Theme/Objective", value: "Synergy in Digital Era: Fostering Innovation in AI, Cybernetics, and Big Data Applications." }
       ]
     },
@@ -21,7 +21,7 @@ const AboutPage = () => {
       headerColor: "bg-[#D9F99D]",
       rows: [
         { label: "Conference Title", value: "IMPACT: International Conference on Intelligent Multimedia, Physical-AI, and Cyber-Technologies (IMPACT 2025)" },
-        { label: "Date and Location", value: "Regular text: 23 November – 24 November 2025 (Pukul 08:00 WIB - 17:00 WIB setiap hari) | Hybrid Event: Fisik: Auditorium & Ballroom UTB Virtual: Platform Zoom (Link akan diumumkan di sesi masing-masing)" },
+        { label: "Date and Location", value: "Will be updated" },
         { label: "Theme/Objective", value: "Synergy in Digital Era: Fostering Innovation in AI, Cybernetics, and Big Data Applications." }
       ]
     }
@@ -34,8 +34,8 @@ const AboutPage = () => {
       name: "Fatra Al Khawarizmi",
       role: "Front - End",
       desc: "Laborum quasi distinctio est et. Sequi omnis molestiae. Officia occaecati voluptatem accusantium.",
-      color: "bg-[#DCE74A]", 
-      imageSeed: "Fatra",
+      color: "bg-[#DCE74A]",
+      imageSeed: "/Mahananta.jpeg",
       gender: "male"
     },
     {
@@ -44,7 +44,7 @@ const AboutPage = () => {
       role: "Design UI/UX",
       desc: "Laborum quasi distinctio est et. Sequi omnis molestiae. Officia occaecati voluptatem accusantium.",
       color: "bg-[#4AA3E7]",
-      imageSeed: "Ananta",
+      imageSeed: "/Mahananta.jpeg",
       gender: "female"
     },
     {
@@ -53,7 +53,7 @@ const AboutPage = () => {
       role: "Back - End",
       desc: "Laborum quasi distinctio est et. Sequi omnis molestiae. Officia occaecati voluptatem accusantium.",
       color: "bg-[#E78B4A]",
-      imageSeed: "Hendika",
+      imageSeed: "/Mahananta.jpeg",
       gender: "male"
     }
   ];
@@ -61,10 +61,10 @@ const AboutPage = () => {
   return (
     <div className="min-h-screen bg-[#F8F9FA] p-6 font-sans text-slate-800">
       <div className="max-w-11/12 mx-auto space-y-6">
-        
+
         <section>
           <h1 className="text-3xl font-bold text-slate-900 mb-4">General Conference Info</h1>
-          
+
           <div className="space-y-10">
             {conferenceInfo.map((info) => (
               <div key={info.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
@@ -96,22 +96,24 @@ const AboutPage = () => {
         {/* --- SECTION 2: DATA DEVELOPER --- */}
         <section>
           <h1 className="text-3xl font-bold text-slate-900 mb-4">Data Developer</h1>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {developerTeam.map((dev) => (
               <div key={dev.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex overflow-hidden min-h-[180px]">
-                
+
                 {/* Left Side: Image & Color Background */}
                 <div className="w-[140px] relative flex-shrink-0">
                   {/* Colored Shape Background */}
                   <div className={`absolute top-0 left-0 w-full h-full ${dev.color} rounded-br-[80px]`}></div>
-                  
+
                   {/* Avatar Image (Using Dicebear for illustration style) */}
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 w-28 h-28">
-                     <Image 
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${dev.imageSeed}&clothing=blazerAndShirt&accessories=glasses`} 
+                    <Image
+                      src={dev.imageSeed}
                       alt={dev.name}
                       className="w-full h-full object-contain drop-shadow-md transform hover:scale-105 transition-transform duration-300"
+                      width={100}
+                      height={100}
                     />
                   </div>
 
@@ -131,7 +133,7 @@ const AboutPage = () => {
                   <p className="text-xs text-slate-500 leading-relaxed line-clamp-4">
                     {dev.desc}
                   </p>
-                  
+
                   {/* Optional: Social Icons placeholder */}
                   <div className="flex gap-2 mt-3 opacity-40">
                     <Globe size={12} />

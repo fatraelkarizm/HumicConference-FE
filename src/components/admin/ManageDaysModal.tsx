@@ -121,9 +121,6 @@ export default function ManageDaysModal({
                                 return;
                               }
                             }
-
-
-
                             setLoading(true);
                             try {
                               let newStartDate = conference.start_date.split("T")[0];
@@ -210,7 +207,6 @@ export default function ManageDaysModal({
                         return;
                       }
 
-                      // We use string comparison for YYYY-MM-DD to avoid timezone issues with Date objects
                       const newDateStr = selectedDate;
                       const currentStartStr = conference.start_date.split("T")[0];
                       const currentEndStr = conference.end_date.split("T")[0];
