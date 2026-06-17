@@ -1,42 +1,67 @@
 # Humic Conference Frontend
 
-Frontend application for the Humic Conference management system. Built with modern web technologies to provide a seamless user experience.
+A robust frontend application for the Humic Conference management system, designed to handle conference events, participant registrations, and administrative tasks seamlessly.
 
-## Technology Stack
+## 🎯 Problem Statement
+Managing academic and professional conferences often involves scattered tools for registration, scheduling, paper submissions, and attendee communication. This project aims to centralize the conference experience by providing an intuitive, centralized portal for organizers, speakers, and attendees, reducing administrative overhead and improving overall event engagement.
 
-- **Framework**: [Next.js 15](https://nextjs.org/)
+## ✨ Key Features
+- **User Authentication**: Secure login and registration for attendees, speakers, and admins.
+- **Event Scheduling**: Interactive calendar and agenda views for conference sessions.
+- **Paper Submission**: Seamless upload and management for academic paper submissions.
+- **Admin Dashboard**: Comprehensive control panel for organizers to manage participants, sessions, and content.
+- **Responsive Design**: Fully optimized experience across desktop, tablet, and mobile devices.
+
+## 💻 Tech Stack
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
 - **UI Library**: [React 19](https://react.dev/)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
-- **Components**: [Radix UI](https://www.radix-ui.com/) + Lucide Icons
+- **Components**: [Radix UI](https://www.radix-ui.com/) & [shadcn/ui](https://ui.shadcn.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
 - **Language**: TypeScript
 
-## Getting Started
+## 📸 Screenshot / Demo
+> *(Add your screenshots or demo GIFs here)*
+
+`![Dashboard Preview](/path/to/screenshot.png)`
+
+## 🚀 Installation & Running Locally
 
 ### Prerequisites
+Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
 
-Make sure you have Node.js installed on your machine.
+### Setup Instructions
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/fatraelkarizm/HumicConference-FE.git
+   ```
+2. Navigate into the project directory:
+   ```bash
+   cd HumicConference-FE
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-### Installation
+## 🏗️ Brief Architecture
+The application follows a modern component-driven architecture using Next.js App Router:
+- `src/app/`: Contains the main routing, pages, and layouts.
+- `src/components/`: Reusable UI components (buttons, modals, form inputs).
+- `src/lib/`: Utility functions and shared helpers.
+- **State Management**: React Context & Hooks (for local state) with server-side rendering optimizations.
+- **Styling Strategy**: Tailwind CSS utility classes combined with CSS variables for dynamic theming and consistent design language.
 
-1. Clone the repository
-2. Install dependencies:
-```bash
-npm install
-```
+## 📊 Project Status
+**Active / In Development**  
+Core features are currently being built and refined. Future updates will include advanced ticketing and integrated payment gateways.
 
-### Development Server
+## 🌐 Deployment
+> *(Update this link when the app is deployed)*  
 
-Run the development server:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
-
-## Available Scripts
-
-- `npm run dev` - Starts the development server.
-- `npm run build` - Builds the app for production.
-- `npm run start` - Runs the built app in production mode.
-- `npm run lint` - Runs ESLint to check for code issues.
+[Live Demo Link (TBD)](https://your-deployment-link.com)
