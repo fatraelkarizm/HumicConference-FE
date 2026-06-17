@@ -21,9 +21,6 @@ Managing academic and professional conferences often involves scattered tools fo
 - **Language**: TypeScript
 
 ## 📸 Screenshot / Demo
-> *(Add your screenshots or demo GIFs here)*
-
-`![Dashboard Preview](/path/to/screenshot.png)`
 
 ## 🚀 Installation & Running Locally
 
@@ -58,10 +55,5 @@ The application follows a modern component-driven architecture using Next.js App
 - **Styling Strategy**: Tailwind CSS utility classes combined with CSS variables for dynamic theming and consistent design language.
 
 ## 📊 Project Status
-**Active / In Development**  
-Core features are currently being built and refined. Future updates will include advanced ticketing and integrated payment gateways.
 
 ## 🌐 Deployment
-> *(Update this link when the app is deployed)*  
-
-[Live Demo Link (TBD)](https://your-deployment-link.com)
