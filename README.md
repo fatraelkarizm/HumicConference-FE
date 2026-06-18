@@ -5,39 +5,41 @@
 
 ## 1. Overview
 
-The **Humic Conference Frontend** is a modern, high-performance web application designed to handle the complex requirements of academic and professional conference management. Built with scale and user experience in mind, this project serves as a comprehensive portal that seamlessly connects event organizers, speakers, and attendees. It demonstrates production-ready engineering practices, robust state management, and a premium, accessible user interface.
+The **Humic Conference Frontend** is a modern, enterprise-grade web application designed to handle the complex, multi-layered requirements of academic and professional conference management. Built with scale, security, and user experience at its core, this project serves as a comprehensive portal featuring a strict Role-Based Access Control (RBAC) system for Users, Admins, and Super Admins. It demonstrates production-ready engineering practices, robust state management, and a premium, accessible user interface.
 
 ## 2. Problem Statement
 
-Modern conferences and events face several digital challenges that directly impact business growth and user satisfaction:
-- **Low Organic Visibility**: Traditional Single Page Applications (SPAs) often struggle with SEO, leading to low organic traffic and higher marketing costs.
-- **Brand Trust & Professionalism**: A generic or clunky UI/UX can damage brand perception, whereas a premium, well-crafted interface is critical for building trust with high-ticket clients, sponsors, and academic professionals.
-- **Information Overload**: Conferences generate massive amounts of data (schedules, speaker bios, ticketing info). Users often suffer from cognitive overload if this data is not presented with clear visual hierarchy and intuitive navigation.
+Organizing large-scale conferences presents several digital challenges that directly impact operational efficiency and user satisfaction:
+- **Fragmented Scheduling & Room Allocation**: Managing concurrent track sessions, room capacities, and timelines often leads to overlaps and confusion for both organizers and attendees.
+- **Security & Data Governance**: Lack of proper role segregation makes it difficult to safely delegate tasks to staff without exposing sensitive administrative controls.
+- **Brand Trust & Cognitive Overload**: A clunky UI/UX damages brand perception. Furthermore, presenting massive amounts of schedule and speaker data often causes cognitive overload if not structured intuitively.
+- **Low Organic Visibility**: Traditional Single Page Applications (SPAs) struggle with SEO, leading to low organic traffic and higher marketing costs for the event.
 
 ## 3. Solution
 
 This application was engineered specifically to solve these industry challenges:
-- **SEO-Optimized Architecture**: Leveraging Next.js Server-Side Rendering (SSR) and React Server Components (RSC) ensures that search engine crawlers can index page content instantly, significantly boosting organic website traffic.
-- **Premium, Trust-Building UI/UX**: The interface features a clean, sophisticated design system using Tailwind CSS and Radix UI primitives. Subtle, interactive micro-animations guide the user's attention, creating a dynamic and professional feel that elevates the brand.
-- **Cognitive Clarity**: Complex data sets (like event schedules and participant lists) are abstracted into digestible, interactive components. The layout is purposefully designed to prevent information overload while keeping essential data easily accessible.
-- **Secure & Robust Integration**: Built with secure, scalable design patterns to ensure safe data handling and seamless future API integrations.
+- **Unified & Interactive Management**: Features dynamic components like interactive Schedule Tables, Room Detail Modals, and Timeline Rows that abstract complex data into digestible, user-friendly interfaces.
+- **Strict Multi-Role Architecture**: Implements dedicated, secure dashboards for `user`, `admin`, and `super-admin` roles, ensuring strict data governance and streamlined workflows.
+- **Premium, Trust-Building UI/UX**: The interface features a clean, sophisticated design system using Tailwind CSS and Radix UI primitives. Subtle micro-animations guide the user's attention, creating a dynamic, professional feel that elevates the brand.
+- **SEO-Optimized Architecture**: Leveraging Next.js Server-Side Rendering (SSR) and App Router ensures that search engine crawlers can index public-facing content instantly, boosting organic website traffic.
 
 ## 4. Key Features & Tech Stack
 
 ### ⚡ Key Features
-- **Role-Based Dashboards**: Secure, dedicated interfaces tailored for attendees, speakers, and administrators.
-- **Dynamic Event Scheduling**: Interactive agendas that adapt to user timezones and preferences.
-- **Optimized Data Tables**: High-performance data visualization for administrative management (including `.xlsx` spreadsheet exports).
-- **Responsive & Accessible**: Fully optimized for cross-device compatibility, adhering to strict web accessibility standards.
+- **Multi-Level RBAC Dashboards**: Secure, dedicated interfaces tailored for Super Admins (system oversight), Admins (event management), and Users (attendees/speakers).
+- **Advanced Event Scheduling**: Interactive `ScheduleTable` and `TimelineRow` components that adapt to concurrent track sessions.
+- **Room & Track Management**: Comprehensive CRUD capabilities for conference rooms and academic track sessions, visualized through interactive modals.
+- **Data Analytics & Export**: High-performance data visualization using `StatCard` components and optimized tables (including `.xlsx` spreadsheet exports).
+- **Secure Middleware**: Next.js middleware implementation for robust route protection and session validation.
 
 ### 🛠️ Technology Stack
-- **Core Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Core Framework**: [Next.js 15](https://nextjs.org/) (App Router & Middleware)
 - **UI Library**: [React 19](https://react.dev/)
 - **Styling & Theming**: [Tailwind CSS v4](https://tailwindcss.com/)
 - **Component Primitives**: [Radix UI](https://www.radix-ui.com/) & [shadcn/ui](https://ui.shadcn.com/)
 - **Icons & Typography**: [Lucide React](https://lucide.dev/)
 - **Animation & Utilities**: `tw-animate-css`, `clsx`, `tailwind-merge`, `class-variance-authority`
-- **Data Handling**: `js-cookie` (for secure client-side auth state) and `xlsx` (for spreadsheet processing)
+- **Data Handling**: `js-cookie` (secure auth state) and `xlsx` (spreadsheet processing)
 - **Language**: Strict TypeScript
 
 ## 5. Getting Started
@@ -65,10 +67,13 @@ Follow these instructions to set up the project locally.
    npm install
    ```
 
-4. **Run the development server**
+4. **Environment Variables**
+   Duplicate `.env.example` (if available) or create a `.env` file based on the project's required variables.
+
+5. **Run the development server**
    ```bash
    npm run dev
    ```
 
-5. **View the application**
+6. **View the application**
    Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
