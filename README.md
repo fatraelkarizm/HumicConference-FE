@@ -25,8 +25,9 @@ This application was engineered specifically to solve these industry challenges:
 
 ## 4. Key Features & Tech Stack
 
-### ⚡ Key Features
+### ⚡ Key Features & Architecture
 - **Multi-Level RBAC Dashboards**: Secure, dedicated interfaces tailored for Super Admins (system oversight), Admins (event management), and Users (attendees/speakers).
+- **Modular Service Layer**: Clean separation of concerns using dedicated API services (`AuthService`, `RoomServices`, `TrackSessionService`) for highly maintainable and testable data fetching.
 - **Advanced Event Scheduling**: Interactive `ScheduleTable` and `TimelineRow` components that adapt to concurrent track sessions.
 - **Room & Track Management**: Comprehensive CRUD capabilities for conference rooms and academic track sessions, visualized through interactive modals.
 - **Data Analytics & Export**: High-performance data visualization using `StatCard` components and optimized tables (including `.xlsx` spreadsheet exports).
